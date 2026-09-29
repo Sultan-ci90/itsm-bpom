@@ -8,6 +8,12 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 // FullCalendar
 import { Calendar } from 'fullcalendar';
+//chartticket
+import initTicketStatusChart from "./components/chart/ticket-charts";
+
+document.addEventListener("DOMContentLoaded", () => {
+    initTicketStatusChart();
+});
 
 
 

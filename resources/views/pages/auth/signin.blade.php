@@ -64,23 +64,24 @@
                                     <span class="bg-white p-2 text-gray-400 sm:px-5 sm:py-2 dark:bg-gray-900">Or</span>
                                 </div>
                             </div>
-                            <form>
+                            <form action="{{ route('login') }}" method="POST" >
+                                @csrf
                                 <div class="space-y-5">
                                     <!-- Email -->
                                     <div>
-                                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                        <label for="email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                             Email<span class="text-error-500">*</span>
                                         </label>
-                                        <input type="email" id="email" name="email" placeholder="info@gmail.com"
+                                        <input type="email" id="email" name="email" placeholder="info@gmail.com" value="{{ old('email') }}" required autofocus
                                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                     </div>
                                     <!-- Password -->
                                     <div>
-                                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                        <label for="password" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                             Password<span class="text-error-500">*</span>
                                         </label>
                                         <div x-data="{ showPassword: false }" class="relative">
-                                            <input :type="showPassword ? 'text' : 'password'"
+                                            <input :type="showPassword ? 'text' : 'password'" type="password" name="password"
                                                 placeholder="Enter your password"
                                                 class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                             <span @click="showPassword = !showPassword"
@@ -120,9 +121,15 @@
                                             Forgot password?
                                         </a>
                                     </div>
+
+                                        @error('email')
+                                            <div class="text-red-500">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
                                     <!-- Button -->
                                     <div>
-                                        <button
+                                        <button type = "submit"
                                             class="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition">
                                             Sign In
                                         </button>
