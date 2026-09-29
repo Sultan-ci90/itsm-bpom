@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\IncidentController;
 
 
 // =========================
@@ -32,6 +33,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])
         ->name('logout');
 
+    // =========================
+    // INCIDENT (Lapor Kendala)
+    // =========================
+    Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
+    Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
+    Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
+
+});
+
+// =========================
+// API (AJAX auto-fill lokasi) — diproteksi auth session yang sama
+// =========================
+Route::middleware('auth')->prefix('api')->group(function () {
+    Route::get('/assets/{id}', [IncidentController::class, 'getAssetDetail']);
 });
 
 
