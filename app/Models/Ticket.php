@@ -21,6 +21,10 @@ class Ticket extends Model
         'user_id',
     ];
 
+    protected $casts = [
+        'tgl_pelaporan' => 'datetime',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

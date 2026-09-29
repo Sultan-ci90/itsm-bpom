@@ -115,11 +115,11 @@ class SidebarController extends Controller
                     ],
                     [
                         'icon' => 'call-icon',
-                        'name' => 'Support Ticket',
+                        'name' => 'IT Support',
                         'new' => true,
                         'subItems' => [
-                            ['name' => 'Ticket List', 'path' => '/support-tickets'],
-                            ['name' => 'Ticket Reply', 'path' => '/support-ticket-reply'],
+                            ['name' => 'Daftar Aduan', 'path' => '/incidents'],
+                            ['name' => 'Lapor Kendala', 'path' => '/incidents/create'],
                         ],
                     ],
                     [
