@@ -11,6 +11,9 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- TomSelect -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+
     <!-- Theme Store -->
     <style>
         [x-cloak] {
@@ -161,6 +164,19 @@
         </div>
 
     </div>
+
+    <!-- TomSelect -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        // Auto-initialize TomSelect pada semua <select class="tom-select">
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof TomSelect !== 'undefined') {
+                document.querySelectorAll('select.tom-select').forEach((el) => {
+                    if (!el.tomselect) new TomSelect(el, { create: false });
+                });
+            }
+        });
+    </script>
 
 </body>
 
