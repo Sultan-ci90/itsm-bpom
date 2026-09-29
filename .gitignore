@@ -1,1 +1,11 @@
-(empty)
+/node_modules
+/public/build
+/public/hot
+/storage/*
+!/storage/app/public
+/vendor
+/.env
+/tailadmin_laravel
+/database/database.sqlite
+*.log
+/server.log
