@@ -9,23 +9,24 @@ class DepartmentSeeder extends Seeder
 {
     public function run(): void
     {
-        Department::insert([
-            [
-                'name' => 'IT',
-                'code' => 'IT',
-            ],
-            [
-                'name' => 'Human Resources',
-                'code' => 'HR',
-            ],
-            [
-                'name' => 'Finance',
-                'code' => 'FIN',
-            ],
-            [
-                'name' => 'Operations',
-                'code' => 'OPS',
-            ],
-        ]);
+        Department::updateOrCreate(
+            ['code' => 'IT'],
+            ['name' => 'IT']
+        );
+
+        Department::updateOrCreate(
+            ['code' => 'HR'],
+            ['name' => 'Human Resources']
+        );
+
+        Department::updateOrCreate(
+            ['code' => 'FIN'],
+            ['name' => 'Finance']
+        );
+
+        Department::updateOrCreate(
+            ['code' => 'OPS'],
+            ['name' => 'Operations']
+        );
     }
 }

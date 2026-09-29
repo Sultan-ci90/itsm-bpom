@@ -1,5 +1,5 @@
-# Environment files
+# Environment
 .env
 
-# Database files
-database/sqlite.db
+# Logs
+server.log
