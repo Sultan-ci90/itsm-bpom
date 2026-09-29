@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\ServiceRequestController;
 
 
 // =========================
@@ -39,6 +40,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
     Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
     Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
+
+    // =========================
+    // SERVICE REQUEST (Permintaan Layanan)
+    // =========================
+    Route::get('/requests', [ServiceRequestController::class, 'index'])->name('requests.index');
+    Route::get('/requests/create', [ServiceRequestController::class, 'create'])->name('requests.create');
+    Route::post('/requests', [ServiceRequestController::class, 'store'])->name('requests.store');
+    Route::get('/requests/all', [ServiceRequestController::class, 'all'])->name('requests.all');
+    Route::get('/requests/{id}', [ServiceRequestController::class, 'show'])->name('requests.show');
 
 });
 

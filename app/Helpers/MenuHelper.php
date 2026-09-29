@@ -18,7 +18,7 @@ class MenuHelper
         ],
 
         // =========================
-        // SERVICE REQUEST
+        // SERVICE REQUEST (ITSM)
         // =========================
         [
             'icon' => 'forms',
@@ -26,91 +26,32 @@ class MenuHelper
             'subItems' => [
                 [
                     'name' => 'Request Baru',
-                    'path' => '/service-requests/create',
+                    'path' => '/requests/create',
                     'pro' => false,
                 ],
                 [
                     'name' => 'Request Saya',
-                    'path' => '/service-requests/my',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Semua Request',
-                    'path' => '/service-requests',
+                    'path' => '/requests',
                     'pro' => false,
                 ],
             ],
         ],
 
         // =========================
-        // TICKET
+        // INCIDENT (LAPOR KENDALA)
         // =========================
         [
             'icon' => 'support-ticket',
-            'name' => 'Ticket',
+            'name' => 'Insiden',
             'subItems' => [
                 [
-                    'name' => 'Ticket Saya',
-                    'path' => '/tickets/my',
+                    'name' => 'Lapor Kendala',
+                    'path' => '/incidents/create',
                     'pro' => false,
                 ],
                 [
-                    'name' => 'Semua Ticket',
-                    'path' => '/tickets',
-                    'pro' => false,
-                ],
-            ],
-        ],
-
-        // =========================
-        // ASSET
-        // =========================
-        [
-            'icon' => 'tables',
-            'name' => 'Asset',
-            'subItems' => [
-                [
-                    'name' => 'Daftar Asset',
-                    'path' => '/assets',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Asset Saya',
-                    'path' => '/assets/my',
-                    'pro' => false,
-                ],
-            ],
-        ],
-
-        // =========================
-        // KNOWLEDGE BASE
-        // =========================
-        [
-            'icon' => 'pages',
-            'name' => 'Knowledge Base',
-            'path' => '/knowledge-base',
-        ],
-
-        // =========================
-        // REPORT
-        // =========================
-        [
-            'icon' => 'charts',
-            'name' => 'Laporan',
-            'subItems' => [
-                [
-                    'name' => 'Laporan Request',
-                    'path' => '/reports/service-requests',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Laporan Ticket',
-                    'path' => '/reports/tickets',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'SLA',
-                    'path' => '/reports/sla',
+                    'name' => 'Daftar Aduan',
+                    'path' => '/incidents',
                     'pro' => false,
                 ],
             ],
@@ -130,33 +71,8 @@ class MenuHelper
             'name' => 'Administration',
             'subItems' => [
                 [
-                    'name' => 'Users',
-                    'path' => '/admin/users',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Service Type',
-                    'path' => '/admin/service-types',
-                    'pro' => false,
-                ],
-            ],
-        ],
-
-        // =========================
-        // AUTHENTICATION
-        // =========================
-        [
-            'icon' => 'authentication',
-            'name' => 'Authentication',
-            'subItems' => [
-                [
-                    'name' => 'Sign In',
-                    'path' => '/signin',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Sign Up',
-                    'path' => '/signup',
+                    'name' => 'Semua Request',
+                    'path' => '/requests/all',
                     'pro' => false,
                 ],
             ],
