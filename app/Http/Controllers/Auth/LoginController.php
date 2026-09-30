@@ -35,7 +35,6 @@ class LoginController extends Controller
             [
                 'email' => $credentials['email'],
                 'password' => $credentials['password'],
-                'is_active' => true,
             ],
             $remember
         )) {
