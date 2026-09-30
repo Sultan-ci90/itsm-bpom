@@ -21,9 +21,9 @@
             <thead>
                 <tr class="border-b border-gray-200 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
                     <th class="px-5 py-4 font-medium">Nomor</th>
-                    <th class="px-5 py-4 font-medium">Judul</th>
-                    <th class="px-5 py-4 font-medium">Kategori</th>
-                    <th class="px-5 py-4 font-medium">Prioritas</th>
+                    <th class="px-5 py-4 font-medium">Layanan</th>
+                    <th class="px-5 py-4 font-medium">Lokasi</th>
+                    
                     <th class="px-5 py-4 font-medium">Tanggal</th>
                     <th class="px-5 py-4 font-medium">Status</th>
                 </tr>
@@ -33,26 +33,15 @@
                     <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer"
                         onclick="window.location='{{ route('requests.show', $req->id) }}'">
                         <td class="px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ $req->judul_permintaan }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->kategori }}</td>
-                        <td class="px-5 py-4">
-                            @php
-                                $badge = match ($req->prioritas) {
-                                    'Darurat' => 'bg-red-100 text-red-700 dark:bg-red-800/20 dark:text-red-400',
-                                    'Tinggi'  => 'bg-orange-100 text-orange-700 dark:bg-orange-800/20 dark:text-orange-400',
-                                    'Sedang'  => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800/20 dark:text-yellow-400',
-                                    default   => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
-                                };
-                            @endphp
-                            <span class="inline-block rounded-full px-3 py-1 text-xs font-medium {{ $badge }}">{{ $req->prioritas }}</span>
-                        </td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->tgl_permintaan?->format('d/m/Y') ?? '-' }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ $req->layanan ? ucfirst($req->layanan) : "-" }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->lokasi ?? "-" }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->tgl_request?->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-5 py-4">
                             @php
                                 $statusBadge = match ($req->status) {
-                                    'selesai' => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
-                                    'diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
-                                    'ditolak' => 'bg-red-100 text-red-700 dark:bg-red-800/20 dark:text-red-400',
+                                    'Selesai' => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
+                                    'Diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
+                                    'Ditolak' => 'bg-red-100 text-red-700 dark:bg-red-800/20 dark:text-red-400',
                                     default => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
                                 };
                             @endphp

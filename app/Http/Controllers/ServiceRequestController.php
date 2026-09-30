@@ -12,6 +12,42 @@ use Illuminate\Support\Str;
 
 class ServiceRequestController extends Controller
 {
+    /**
+     * Daftar request milik user yang login (Request Saya).
+     */
+    public function index()
+    {
+        $requests = ServiceRequest::query()
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->get();
+
+        return view('requests.index', compact('requests'));
+    }
+
+    /**
+     * Semua request (khusus IT Support / Admin).
+     */
+    public function all()
+    {
+        $requests = ServiceRequest::with('user')->latest()
+            ->get();
+
+        return view('requests.all', compact('requests'));
+    }
+
+    /**
+     * Detail satu request.
+     */
+    public function show($id)
+    {
+        $req = ServiceRequest::with(['user', 'detailZoom', 'detailAkun', 'detailPeminjaman'])->findOrFail($id);
+
+        return view('requests.show', compact('req'));
+
+        
+    }
+
     public function create()
     {
         // Ambil data untuk dropdown

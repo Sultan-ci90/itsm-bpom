@@ -11,11 +11,11 @@
         <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nomor</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</dd></div>
             <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt><dd class="text-base capitalize text-gray-800 dark:text-white/90">{{ $req->status }}</dd></div>
-            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Judul</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->judul_permintaan }}</dd></div>
-            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kategori / Prioritas</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->kategori }} &middot; {{ $req->prioritas }}</dd></div>
-            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tanggal Permintaan</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->tgl_permintaan?->format('d/m/Y H:i') ?? '-' }}</dd></div>
-            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Ditagihkan Ke</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->teknisi?->name ?? 'Belum ditugaskan' }}</dd></div>
-            <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Aset Terkait</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->asset ? $req->asset->kode_barang . ' - ' . $req->asset->nama_barang : 'Tidak terkait aset' }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Judul</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->deskripsi ?? "-" }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kategori / Prioritas</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ ucfirst($req->layanan ?? "-") }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tanggal Permintaan</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->tgl_request?->format('d/m/Y H:i') ?? '-' }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Ditagihkan Ke</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->user?->nama ?? '-' }}</dd></div>
+            <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Lokasi</dt><dd class="text-base text-gray-800 dark:text-white/90">{{ $req->lokasi ?? '-' }}</dd></div>
             <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Deskripsi</dt><dd class="text-base whitespace-pre-line text-gray-800 dark:text-white/90">{{ $req->deskripsi }}</dd></div>
         </dl>
     </div>

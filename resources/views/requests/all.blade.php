@@ -20,10 +20,10 @@
                     <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer"
                         onclick="window.location='{{ route('requests.show', $req->id) }}'">
                         <td class="px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ $req->judul_permintaan }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->pemohon?->name ?? '-' }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->kategori }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->prioritas }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ $req->layanan ? ucfirst($req->layanan) : "-" }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->user?->nama ?? '-' }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->lokasi ?? "-" }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400"></td>
                         <td class="px-5 py-4">
                             <span class="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium capitalize text-gray-700 dark:bg-gray-800 dark:text-gray-400">{{ $req->status }}</span>
                         </td>
