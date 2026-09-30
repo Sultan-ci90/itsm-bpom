@@ -18,7 +18,7 @@
                 <!-- Info Pelapor (Read Only) -->
                 <div class="mb-6">
                     <label class="mb-3 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
-                    <input type="text" value="{{ auth()->user()->name }}" readonly
+                    <input type="text" value="{{ auth()->user()->nama }}" readonly
                         class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-form-strokedark dark:bg-form-input dark:text-white dark:disabled:bg-black">
                 </div>
 

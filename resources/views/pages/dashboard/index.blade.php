@@ -13,7 +13,7 @@
         </h1>
 
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Selamat datang kembali, {{ $user->name }}.
+            Selamat datang kembali, {{ $user->nama }}.
         </p>
     </div>
 
@@ -33,7 +33,7 @@
             </p>
 
             <h2 class="mt-2 text-lg font-semibold text-gray-800 dark:text-white">
-                {{ $user->name }}
+                {{ $user->nama }}
             </h2>
 
         </div>
@@ -49,7 +49,7 @@
             </p>
 
             <h2 class="mt-2 text-lg font-semibold text-gray-800 dark:text-white">
-                {{ $user->role?->name ?? '-' }}
+                {{ ucfirst($user->role ?? '-') }}
             </h2>
 
         </div>
@@ -65,7 +65,7 @@
             </p>
 
             <h2 class="mt-2 text-lg font-semibold text-gray-800 dark:text-white">
-                {{ $user->department?->name ?? '-' }}
+                {{ $user->bidang?->nama_bidang ?? '-' }}
             </h2>
 
         </div>
