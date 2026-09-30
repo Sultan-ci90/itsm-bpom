@@ -5,22 +5,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Role;
-use App\Models\Department;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name',
+        'nip',
+        'nama',
         'email',
-        'phone',
-        'department_id',
-        'role_id',
         'password',
-        'is_active',
+        // Field Profil Baru
+        'tempat_lahir',
+        'tanggal_lahir',
+        'jenkel',
+        'status_kepegawaian',
+        'status_pernikahan',
+        'no_telp',
+        'alamat',
+        'jabatan_fungsional',
+        // Relasi
+        'bidang_id',
+        'jabatan_id',
+        'panggol_id',
+        'role',
     ];
 
     protected $hidden = [
@@ -33,39 +42,34 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_active' => 'boolean',
+            'tanggal_lahir' => 'date',
         ];
     }
-    
-    public function role()
+
+    // ==========================================
+    // RELASI
+    // ==========================================
+
+    public function bidang(): BelongsTo
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Bidang::class, 'bidang_id');
     }
 
-    public function department()
+    public function jabatan(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(Jabatan::class, 'jabatan_id');
     }
 
-    
-    public function hasRole(string $role): bool
+    public function panggol(): BelongsTo
     {
-        return $this->role?->name === $role;
+        return $this->belongsTo(Panggol::class, 'panggol_id');
     }
 
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole('Super Admin');
-    }
+    // ==========================================
+    // HELPER ROLE
+    // ==========================================
 
-    public function isAdmin(): bool
-    {
-        return $this->hasRole('Admin');
-    }
-
-    public function isStaff(): bool
-    {
-        return $this->hasRole('Staff');
-    }
-
+    public function isAdmin(): bool { return $this->role === 'admin'; }
+    public function isTeknisi(): bool { return $this->role === 'teknisi'; }
+    public function isPelapor(): bool { return $this->role === 'pelapor'; }
 }

@@ -1,149 +1,224 @@
-@extends('layouts.app')
+@extends('layouts.app') {{-- Sesuaikan dengan layout utama Anda --}}
 
 @section('content')
-    <x-common.page-breadcrumb pageTitle="Buat Permintaan Baru (Service Request)" />
+<div class="mx-auto max-w-4xl">
+    
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 class="text-title-md2 font-semibold text-black dark:text-white">Lapor Request (Layanan IT)</h2>
+        <nav>
+            <ol class="flex items-center gap-2">
+                <li><a class="font-medium text-primary" href="{{ route('dashboard') }}">Dashboard /</a></li>
+                <li class="font-medium text-gray-500">Buat Request</li>
+            </ol>
+        </nav>
+    </div>
 
-    <div class="mx-auto max-w-3xl">
-        <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-
-            @if ($errors->any())
-                <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-800/40 dark:bg-red-800/15 dark:text-red-400">
-                    <ul class="list-disc pl-5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <form action="{{ route('requests.store') }}" method="POST" x-data="requestForm()">
+    <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div class="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
+            <h3 class="font-medium text-black dark:text-white">Formulir Permintaan Layanan</h3>
+        </div>
+        
+        <div class="p-6.5">
+            <!-- Alpine.js Data untuk Form Dinamis -->
+            <form action="{{ route('requests.store') }}" method="POST" x-data="{ layanan: '{{ old('layanan') }}' }">
                 @csrf
 
-                <!-- Pemohon (Read Only) -->
+                <!-- SECTION 1: Data Umum -->
                 <div class="mb-6">
-                    <label class="mb-3 block text-sm font-medium text-black dark:text-white">Nama Pemohon</label>
-                    <input type="text" value="{{ auth()->user()->name }}" readonly
-                        class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition dark:border-form-strokedark dark:bg-form-input dark:text-white">
-                </div>
+                    <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Informasi Umum</h4>
+                    <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
+                        
+                        <!-- Nama Pelapor -->
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
+                            <input type="text" value="{{ auth()->user()->nama }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                        </div>
 
-                <!-- Judul Permintaan -->
-                <div class="mb-6">
-                    <label class="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Judul Permintaan <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="judul_permintaan" value="{{ old('judul_permintaan') }}"
-                        class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                        placeholder="Contoh: Minta install aplikasi ACCURATE">
-                    @error('judul_permintaan')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                        <!-- Tanggal -->
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Request</label>
+                            <input type="text" value="{{ \Carbon\Carbon::now()->format('d/m/Y') }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                        </div>
 
-                <div class="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <!-- Kategori -->
-                    <div>
-                        <label class="mb-3 block text-sm font-medium text-black dark:text-white">
-                            Kategori <span class="text-red-500">*</span>
-                        </label>
-                        <select name="kategori"
-                            class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
-                            <option value="Permintaan Layanan" @selected(old('kategori') === 'Permintaan Layanan')>Permintaan Layanan (Request)</option>
-                            <option value="Insiden" @selected(old('kategori') === 'Insiden')>Insiden (Kendala)</option>
-                        </select>
-                        @error('kategori')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                        <!-- Jenis Layanan -->
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Layanan <span class="text-meta-1">*</span></label>
+                            <select x-model="layanan" name="layanan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="">-- Pilih Layanan --</option>
+                                <option value="zoom" {{ old('layanan') == 'zoom' ? 'selected' : '' }}>Permintaan Link Zoom Meeting</option>
+                                <option value="akun" {{ old('layanan') == 'akun' ? 'selected' : '' }}>Reset Password Aplikasi (Srikandi/SIPT)</option>
+                                <option value="peminjaman" {{ old('layanan') == 'peminjaman' ? 'selected' : '' }}>Peminjaman Perangkat IT</option>
+                                <option value="konsultasi" {{ old('layanan') == 'konsultasi' ? 'selected' : '' }}>Konsultasi / Asistensi IT</option>
+                                <option value="operator" {{ old('layanan') == 'operator' ? 'selected' : '' }}>Permintaan Operator Kegiatan</option>
+                            </select>
+                            @error('layanan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
 
-                    <!-- Prioritas -->
-                    <div>
-                        <label class="mb-3 block text-sm font-medium text-black dark:text-white">
-                            Prioritas <span class="text-red-500">*</span>
-                        </label>
-                        <select name="prioritas"
-                            class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
-                            @foreach (['Rendah', 'Sedang', 'Tinggi', 'Darurat'] as $p)
-                                <option value="{{ $p }}" @selected(old('prioritas') === $p)>{{ $p }}</option>
-                            @endforeach
-                        </select>
-                        @error('prioritas')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                        <!-- Lokasi -->
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Lokasi <span class="text-meta-1">*</span></label>
+                            <select name="lokasi" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="">-- Pilih Lokasi --</option>
+                                @foreach($lokasis as $lokasi)
+                                    <option value="{{ $lokasi }}" {{ old('lokasi') == $lokasi ? 'selected' : '' }}>{{ $lokasi }}</option>
+                                @endforeach
+                            </select>
+                            @error('lokasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <!-- Deskripsi Umum -->
+                        <div class="sm:col-span-2">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Deskripsi Tambahan</label>
+                            <textarea name="deskripsi" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">{{ old('deskripsi') }}</textarea>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Terkait Aset (Opsional, Searchable) -->
-                <div class="mb-6">
-                    <label class="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Terkait Aset <span class="text-gray-500 text-xs">(Opsional)</span>
-                    </label>
-                    <select id="asset_select" name="asset_id" x-ref="assetSelect" @change="fetchAssetDetail($event.target.value)"
-                        class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
-                        <option value="">-- Tidak terkait aset --</option>
-                        @foreach ($assets as $asset)
-                            <option value="{{ $asset->id }}">
-                                {{ $asset->kode_barang }} - {{ $asset->nama_barang }} (NUP: {{ $asset->nup }})
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="lokasi" x-text="'Lokasi aset: ' + lokasi"></p>
-                    @error('asset_id')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                <!-- SECTION 2: Form Dinamis Zoom -->
+                <div x-show="layanan === 'zoom'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-strokedark">
+                    <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Zoom Meeting</h4>
+                    <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
+                        
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Bidang <span class="text-meta-1">*</span></label>
+                            <select name="bidang_id" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="">-- Pilih Bidang --</option>
+                                @foreach($bidangs as $bidang)
+                                    <option value="{{ $bidang->id }}" {{ old('bidang_id') == $bidang->id ? 'selected' : '' }}>{{ $bidang->nama_bidang }}</option>
+                                @endforeach
+                            </select>
+                            @error('bidang_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Nama Acara <span class="text-meta-1">*</span></label>
+                            <input type="text" name="nama_acara" value="{{ old('nama_acara') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('nama_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jam Mulai <span class="text-meta-1">*</span></label>
+                            <input type="time" name="jam_mulai" value="{{ old('jam_mulai') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('jam_mulai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jam Selesai <span class="text-meta-1">*</span></label>
+                            <input type="time" name="jam_selesai" value="{{ old('jam_selesai') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('jam_selesai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Acara <span class="text-meta-1">*</span></label>
+                            <select name="jenis_acara" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="Rapat" {{ old('jenis_acara') == 'Rapat' ? 'selected' : '' }}>Rapat</option>
+                                <option value="Webinar" {{ old('jenis_acara') == 'Webinar' ? 'selected' : '' }}>Webinar</option>
+                                <option value="Hybrid" {{ old('jenis_acara') == 'Hybrid' ? 'selected' : '' }}>Hybrid</option>
+                            </select>
+                            @error('jenis_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Butuh Operator? <span class="text-meta-1">*</span></label>
+                            <select name="butuh_operator" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="Tidak" {{ old('butuh_operator') == 'Tidak' ? 'selected' : '' }}>Tidak</option>
+                                <option value="Ya" {{ old('butuh_operator') == 'Ya' ? 'selected' : '' }}>Ya</option>
+                            </select>
+                            @error('butuh_operator') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Bentuk Ruangan <span class="text-meta-1">*</span></label>
+                            <select name="bentuk_ruangan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="Classroom" {{ old('bentuk_ruangan') == 'Classroom' ? 'selected' : '' }}>Classroom</option>
+                                <option value="Shape U" {{ old('bentuk_ruangan') == 'Shape U' ? 'selected' : '' }}>Shape U</option>
+                                <option value="Theater" {{ old('bentuk_ruangan') == 'Theater' ? 'selected' : '' }}>Theater</option>
+                            </select>
+                            @error('bentuk_ruangan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jumlah Kursi <span class="text-meta-1">*</span></label>
+                            <input type="number" name="jumlah_kursi" value="{{ old('jumlah_kursi') }}" min="1" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('jumlah_kursi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Deskripsi -->
-                <div class="mb-6">
-                    <label class="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Deskripsi Kebutuhan <span class="text-red-500">*</span>
-                    </label>
-                    <textarea name="deskripsi" rows="4"
-                        class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                        placeholder="Jelaskan kebutuhan / permintaan Anda...">{{ old('deskripsi') }}</textarea>
-                    @error('deskripsi')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                <!-- SECTION 3: Form Dinamis Akun (Reset Password) -->
+                <div x-show="layanan === 'akun'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-strokedark">
+                    <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Reset Password</h4>
+                    <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Pengajuan <span class="text-meta-1">*</span></label>
+                            <select name="jenis_pengajuan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="Reset Password" {{ old('jenis_pengajuan') == 'Reset Password' ? 'selected' : '' }}>Reset Password</option>
+                                <option value="Buat Akun Baru" {{ old('jenis_pengajuan') == 'Buat Akun Baru' ? 'selected' : '' }}>Buat Akun Baru</option>
+                            </select>
+                            @error('jenis_pengajuan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Sistem Tujuan <span class="text-meta-1">*</span></label>
+                            <select name="sistem_tujuan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                                <option value="Srikandi" {{ old('sistem_tujuan') == 'Srikandi' ? 'selected' : '' }}>Srikandi</option>
+                                <option value="SIPT" {{ old('sistem_tujuan') == 'SIPT' ? 'selected' : '' }}>SIPT</option>
+                            </select>
+                            @error('sistem_tujuan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">NIP Terkait <span class="text-meta-1">*</span></label>
+                            <input type="text" name="nip_terkait" value="{{ old('nip_terkait') }}" placeholder="Masukkan NIP pemilik akun" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('nip_terkait') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
                 </div>
 
-                <div class="flex justify-end gap-3">
-                    <a href="{{ route('requests.index') }}"
-                        class="inline-flex items-center rounded-lg border border-gray-300 px-5 py-3 text-xs font-semibold uppercase tracking-widest text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-                        Batal
-                    </a>
-                    <button type="submit"
-                        class="inline-flex items-center rounded-lg bg-[#10B981] px-6 py-3 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700">
-                        Kirim Permintaan
+                <!-- SECTION 4: Form Dinamis Peminjaman -->
+                <div x-show="layanan === 'peminjaman'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-strokedark">
+                    <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Peminjaman Perangkat</h4>
+                    <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
+                        <div class="sm:col-span-2">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Perangkat <span class="text-meta-1">*</span></label>
+                            <input type="text" name="jenis_perangkat" value="{{ old('jenis_perangkat') }}" placeholder="Contoh: Laptop, Proyektor, Sound System" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('jenis_perangkat') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Mulai <span class="text-meta-1">*</span></label>
+                            <input type="date" name="tgl_mulai" value="{{ old('tgl_mulai') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('tgl_mulai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Kembali <span class="text-meta-1">*</span></label>
+                            <input type="date" name="tgl_kembali" value="{{ old('tgl_kembali') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('tgl_kembali') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Keperluan <span class="text-meta-1">*</span></label>
+                            <textarea name="keperluan" rows="2" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">{{ old('keperluan') }}</textarea>
+                            @error('keperluan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Lokasi Penggunaan <span class="text-meta-1">*</span></label>
+                            <input type="text" name="lokasi_penggunaan" value="{{ old('lokasi_penggunaan') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            @error('lokasi_penggunaan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Submit -->
+                <div class="flex justify-end border-t border-stroke pt-5 dark:border-strokedark">
+                    <button type="submit" class="inline-flex items-center justify-center gap-2.5 rounded-lg bg-primary py-4 px-10 text-center font-medium text-white hover:bg-opacity-90">
+                        Tambah Request
                     </button>
                 </div>
             </form>
         </div>
     </div>
-
-    <script>
-        function requestForm() {
-            return {
-                lokasi: '',
-                init() {
-                    if (typeof TomSelect !== 'undefined') {
-                        new TomSelect(this.$refs.assetSelect, {
-                            create: false,
-                            allowEmptyOption: true,
-                            sortField: { field: "text", direction: "asc" },
-                            placeholder: 'Ketik untuk mencari aset...',
-                        });
-                    }
-                },
-                async fetchAssetDetail(assetId) {
-                    if (!assetId) { this.lokasi = ''; return; }
-                    try {
-                        const res = await fetch(`/api/assets/${assetId}`);
-                        const data = await res.json();
-                        this.lokasi = data.lokasi || 'Lokasi tidak diketahui';
-                    } catch (e) {
-                        console.error('Gagal mengambil detail aset:', e);
-                    }
-                }
-            }
-        }
-    </script>
+</div>
 @endsection

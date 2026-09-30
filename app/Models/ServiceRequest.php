@@ -4,40 +4,45 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ServiceRequest extends Model
 {
+    // KRITIK: Tabel service_requests hanya punya created_at
+    const UPDATED_AT = null;
+
     protected $fillable = [
         'nomor_request',
-        'judul_permintaan',
+        'user_id',
+        'layanan',
+        'tgl_request',
+        'lokasi',
         'deskripsi',
-        'kategori',
-        'prioritas',
-        'asset_id',
-        'pemohon_id',
-        'ditagihkan_ke',
         'status',
-        'tgl_permintaan',
-        'tgl_selesai',
     ];
 
     protected $casts = [
-        'tgl_permintaan' => 'date',
-        'tgl_selesai' => 'datetime',
+        'tgl_request' => 'date',
+        'created_at' => 'datetime',
     ];
 
-    public function pemohon(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'pemohon_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function teknisi(): BelongsTo
+    public function detailZoom(): HasOne
     {
-        return $this->belongsTo(User::class, 'ditagihkan_ke');
+        return $this->hasOne(ReqDetailZoom::class, 'request_id');
     }
 
-    public function asset(): BelongsTo
+    public function detailAkun(): HasOne
     {
-        return $this->belongsTo(Asset::class, 'asset_id');
+        return $this->hasOne(ReqDetailAkun::class, 'request_id');
+    }
+
+    public function detailPeminjaman(): HasOne
+    {
+        return $this->hasOne(ReqDetailPeminjaman::class, 'request_id');
     }
 }

@@ -4,9 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
+    // KRITIK: Tabel tickets hanya punya created_at
+    const UPDATED_AT = null;
+
     protected $fillable = [
         'nomor_aduan',
         'asset_id',
@@ -14,21 +19,13 @@ class Ticket extends Model
         'tgl_pelaporan',
         'deskripsi_masalah',
         'foto_kendala',
-        'ticket_number',
-        'title',
-        'description',
         'status',
-        'user_id',
     ];
 
     protected $casts = [
-        'tgl_pelaporan' => 'datetime',
+        'tgl_pelaporan' => 'date',
+        'created_at' => 'datetime',
     ];
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function asset(): BelongsTo
     {
@@ -40,8 +37,13 @@ class Ticket extends Model
         return $this->belongsTo(User::class, 'pelapor_id');
     }
 
-    public function histories()
+    public function histories(): HasMany
     {
-        return $this->hasMany(TicketHistory::class);
+        return $this->hasMany(TicketHistory::class, 'ticket_id');
+    }
+
+    public function resolution(): HasOne
+    {
+        return $this->hasOne(TicketResolution::class, 'ticket_id');
     }
 }
