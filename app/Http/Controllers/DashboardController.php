@@ -3,64 +3,86 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
-use Illuminate\Support\Facades\Auth;
+use App\Models\TicketResolution;
+use App\Models\ServiceRequest;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
+        // 1. STATISTIK KARTU (Cards)
+        $totalIncident = Ticket::count();
+        $totalRequest = ServiceRequest::count();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Statistik Ticket
-        |--------------------------------------------------------------------------
-        | Ambil status yang BENAR-BENAR ada di database.
-        */
-        $ticketStats = Ticket::query()
-            ->selectRaw('status, COUNT(*) as total')
+        // Hitung status incident, default 0 jika tidak ada
+        $incidentStatusCounts = Ticket::selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
-            ->orderBy('status')
+            ->pluck('total', 'status');
+            
+        $statusIncident = [
+            'Belum diperiksa' => $incidentStatusCounts['Belum diperiksa'] ?? 0,
+            'Sedang diproses' => $incidentStatusCounts['Sedang diproses'] ?? 0,
+            'Selesai'         => $incidentStatusCounts['Selesai'] ?? 0,
+            'Ditolak'         => $incidentStatusCounts['Ditolak'] ?? 0,
+        ];
+
+        // 2. DATA CHART
+        // Chart 1: Tren Incident 6 Bulan Terakhir
+        $last6Months = [];
+        $incidentTrend = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $last6Months[] = $date->format('M Y');
+            $incidentTrend[] = Ticket::whereMonth('created_at', $date->month)
+                                     ->whereYear('created_at', $date->year)
+                                     ->count();
+        }
+
+        // Chart 2: Penyelesaian Incident (Internal vs Pihak ke-3)
+        $resolutionStats = TicketResolution::selectRaw('jenis_penyelesaian, COUNT(*) as total')
+            ->groupBy('jenis_penyelesaian')
+            ->pluck('total', 'jenis_penyelesaian');
+        $resolutionData = [
+            'labels' => array_keys($resolutionStats->toArray()),
+            'data'   => array_values($resolutionStats->toArray()),
+        ];
+
+        // Chart 3: Request Berdasarkan Jenis Layanan
+        $requestByLayanan = ServiceRequest::selectRaw('layanan, COUNT(*) as total')
+            ->groupBy('layanan')
+            ->pluck('total', 'layanan');
+        $layananData = [
+            'labels' => array_keys($requestByLayanan->toArray()),
+            'data'   => array_values($requestByLayanan->toArray()),
+        ];
+
+        // Chart 4: Request Berdasarkan Status
+        $requestByStatus = ServiceRequest::selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $requestStatusData = [
+            'labels' => array_keys($requestByStatus->toArray()),
+            'data'   => array_values($requestByStatus->toArray()),
+        ];
+
+        // 3. DATA TABEL (Hanya 5 Terbaru untuk performa)
+        $recentIncidents = Ticket::with(['asset', 'pelapor'])
+            ->latest('created_at')
+            ->take(5)
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Total Ticket
-        |--------------------------------------------------------------------------
-        */
-        $totalTickets = Ticket::count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Data untuk statistic cards
-        |--------------------------------------------------------------------------
-        | Menggunakan status dari database.
-        |
-        | Jika status tidak ada, nilainya otomatis 0.
-        */
-        $statusCounts = $ticketStats->pluck('total', 'status');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Data Chart
-        |--------------------------------------------------------------------------
-        | Kita kirim array sederhana ke Blade.
-        */
-        $chartLabels = $ticketStats
-            ->pluck('status')
-            ->values();
-
-        $chartData = $ticketStats
-            ->pluck('total')
-            ->values();
+        $recentRequests = ServiceRequest::with(['user'])
+            ->latest('created_at')
+            ->take(5)
+            ->get();
 
         return view('pages.dashboard.index', compact(
-            'user',
-            'ticketStats',
-            'statusCounts',
-            'totalTickets',
-            'chartLabels',
-            'chartData'
+            'totalIncident', 'totalRequest', 'statusIncident',
+            'last6Months', 'incidentTrend',
+            'resolutionData', 'layananData', 'requestStatusData',
+            'recentIncidents', 'recentRequests'
         ));
     }
 }

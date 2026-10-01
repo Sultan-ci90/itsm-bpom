@@ -8,6 +8,7 @@
 
     <title>{{ $title ?? 'Dashboard' }} | ITSM - BPOM</title>
 
+    
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
