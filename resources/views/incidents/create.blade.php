@@ -109,24 +109,46 @@
                 submitting: false,
                 init() {
                     const select = this.$refs.assetSelect;
-                    if (typeof TomSelect === 'undefined' || !select) return;
+                    if (!select) return;
+
+                    // Peta lokasi sudah di-preload via ASSET_LOKASI (lihat head section).
+                    const applyLokasi = (value) => {
+                        this.lokasi = value ? ((window.ASSET_LOKASI || {})[value] ?? 'Lokasi tidak diketahui') : '';
+                    };
 
                     // Retensi lokasi jika form gagal validasi dan asset_id lama terpilih kembali
-                    if (select.value) {
-                        this.lokasi = ASSET_LOKASI[select.value] ?? '';
-                    }
+                    if (select.value) applyLokasi(select.value);
+
+                    if (typeof TomSelect === 'undefined') return;
 
                     new TomSelect(select, {
                         create: false,
                         sortField: { field: 'text', direction: 'asc' },
                         placeholder: 'Ketik untuk mencari aset...',
                         maxOptions: 200,
-                        onChange: (value) => {
-                            this.lokasi = value ? (ASSET_LOKASI[value] ?? 'Lokasi tidak diketahui') : '';
-                        },
+                        onChange: applyLokasi,
                     });
                 },
             };
         }
+
+        // Safety net non-Alpine: cegah double-submit & beri feedback visual.
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form[action*="incidents"]');
+            if (!form) return;
+            form.addEventListener('submit', function () {
+                const btn = form.querySelector('button[type="submit"]');
+                if (btn && !btn.dataset.submitting) {
+                    btn.dataset.submitting = '1';
+                    btn.disabled = true;
+                    btn.classList.add('opacity-60', 'cursor-not-allowed');
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        delete btn.dataset.submitting;
+                        btn.classList.remove('opacity-60', 'cursor-not-allowed');
+                    }, 8000);
+                }
+            });
+        });
     </script>
 @endsection

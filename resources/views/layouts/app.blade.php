@@ -17,6 +17,9 @@
 
     <!-- Theme Store -->
     <style>
+        /* x-cloak WAJIB di head: mencegah elemen Alpine (form dinamis request, dsb.)
+           terlihat/flicker sebelum Alpine.start(). Tanpa ini, Alpine gagal init secara
+           senyap dan submit form tampak "tidak terjadi apa-apa". */
         [x-cloak] {
             display: none !important;
         }
@@ -169,12 +172,27 @@
     <!-- TomSelect -->
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <script>
-        // Auto-initialize TomSelect pada semua <select class="tom-select">
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof TomSelect !== 'undefined') {
-                document.querySelectorAll('select.tom-select').forEach((el) => {
-                    if (!el.tomselect) new TomSelect(el, { create: false });
-                });
+        // Inisialisasi TomSelect dipanggil ulang setiap DOMContentLoaded & turboload.
+        function initTomSelect() {
+            if (typeof TomSelect === 'undefined') return;
+            document.querySelectorAll('select.tom-select').forEach((el) => {
+                if (!el.tomselect) new TomSelect(el, { create: false });
+            });
+        }
+        document.addEventListener('DOMContentLoaded', initTomSelect);
+    </script>
+
+    {{-- Fallback: jika Vite build belum dijalankan (`npm run build`) ATAU CDN Alpine mati,
+         load Alpine dari CDN agar x-data/x-show/submit handler tetap berfungsi.
+         window.Alpine sudah diset oleh bundle Vite bila tersedia. --}}
+    <script>
+        window.addEventListener('load', function () {
+            if (typeof window.Alpine === 'undefined' || typeof window.Alpine.start !== 'function') {
+                var s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
+                s.defer = true;
+                document.head.appendChild(s);
+                console.warn('[ITSM] Bundle Alpine tidak ditemukan — fallback ke CDN. Jalankan `npm run build` di folder proyek.');
             }
         });
     </script>
