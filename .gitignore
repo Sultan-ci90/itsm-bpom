@@ -1,21 +1,14 @@
-/node_modules
-/public/build
-/public/hot
-/vendor
-/.env
-/tailadmin_laravel
-/database/*.sqlite
+# Dependency directories
+node_modules/
+vendor/
+
+# Build artifacts and compiled files
+public/build/
 *.log
-/server.log
-/storage/*.key
-Homestead.json
-Homestead.yaml
-auth.json
-npm-debug.log
-yarn-error.log
-.env.backup
-.phpunit.result.cache
-/.idea
-/.vscode
-backup_db.sqlite~
+.env
+
+# Database & backup files
+tailadmin_laravel
 *.sqlite~
+backup_db.sqlite*
+*~

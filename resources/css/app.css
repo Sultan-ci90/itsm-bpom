@@ -143,6 +143,14 @@
 
   --color-theme-purple-500: #7a5af8;
 
+  /* ---- TailAdmin legacy palette (compat) ---- */
+  --color-boxdark: #1d2939;        /* gray-800: card/box background in dark mode */
+  --color-boxdark-2: #101828;      /* gray-900: deeper surface */
+  --color-strokedark: #344054;     /* gray-700: border color in dark mode */
+  --color-form-strokedark: #344054;
+  --color-form-input: #101828;     /* input background in dark mode */
+  --color-dark: #1a2231;
+
   --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
   --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
     0px 4px 6px -2px rgba(16, 24, 40, 0.03);
@@ -1299,6 +1307,31 @@ pre[class*='language-'] {
 #card-slider-prev.swiper-button-disabled,
 #card-slider-next.swiper-button-disabled {
   @apply pointer-events-none opacity-50;
+}
+
+/* ---- TailAdmin legacy utility compat (v3 class names used in views) ---- */
+@utility shadow-default {
+  box-shadow: 0px 1px 3px rgba(16, 24, 40, 0.1), 0px 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.dark .ts-control,
+.dark .ts-dropdown {
+  background-color: var(--color-form-input);
+  border-color: var(--color-strokedark);
+  color: rgb(255 255 255 / 0.9);
+}
+.dark .ts-control > input {
+  color: #fff;
+}
+.dark .ts-dropdown .active,
+.dark .ts-dropdown .highlighted {
+  background-color: rgb(255 255 255 / 0.06);
+  color: #fff;
+}
+.dark .ts-wrapper.single .ts-control .ts-dropdown,
+.dark .ts-wrapper.multi .ts-control div {
+  background-color: var(--color-boxdark);
+  color: #fff;
 }
 
 /* Force code blocks and syntax highlighting to always remain LTR */

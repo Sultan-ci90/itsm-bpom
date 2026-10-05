@@ -22,21 +22,21 @@
             <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6">
                 <h3 class="mb-4 text-lg font-medium text-black dark:text-white">Informasi Kendala</h3>
                 <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div><span class="font-medium text-gray-500">Pelapor:</span> <br> {{ $ticket->pelapor->nama }} ({{ $ticket->pelapor->bidang->nama_bidang ?? '-' }})</div>
-                    <div><span class="font-medium text-gray-500">Tanggal Lapor:</span> <br> {{ $ticket->tgl_pelaporan->format('d M Y') }}</div>
+                    <div><span class="font-medium text-gray-500 dark:text-gray-400">Pelapor:</span> <br> {{ $ticket->pelapor->nama }} ({{ $ticket->pelapor->bidang->nama_bidang ?? '-' }})</div>
+                    <div><span class="font-medium text-gray-500 dark:text-gray-400">Tanggal Lapor:</span> <br> {{ $ticket->tgl_pelaporan->format('d M Y') }}</div>
                     <div class="col-span-2">
-                        <span class="font-medium text-gray-500">Aset Bermasalah:</span> <br> 
-                        {{ $ticket->asset->nama_barang }} <span class="text-xs text-gray-400">({{ $ticket->asset->kode_barang }} / NUP: {{ $ticket->asset->nup }})</span>
+                        <span class="font-medium text-gray-500 dark:text-gray-400">Aset Bermasalah:</span> <br> 
+                        {{ $ticket->asset->nama_barang }} <span class="text-xs text-gray-400 dark:text-gray-500">({{ $ticket->asset->kode_barang }} / NUP: {{ $ticket->asset->nup }})</span>
                         <br> <span class="text-xs">Lokasi: {{ $ticket->asset->lokasi }}</span>
                     </div>
                     <div class="col-span-2">
-                        <span class="font-medium text-gray-500">Deskripsi Masalah:</span> <br> 
+                        <span class="font-medium text-gray-500 dark:text-gray-400">Deskripsi Masalah:</span> <br> 
                         <p class="text-gray-800 dark:text-gray-200 whitespace-pre-line">{{ $ticket->deskripsi_masalah }}</p>
                     </div>
                     @if($ticket->foto_kendala)
                     <div class="col-span-2">
-                        <span class="font-medium text-gray-500">Foto Kendala:</span> <br>
-                        <img src="{{ asset('storage/' . $ticket->foto_kendala) }}" alt="Foto Kendala" class="mt-2 max-h-64 rounded border border-stroke">
+                        <span class="font-medium text-gray-500 dark:text-gray-400">Foto Kendala:</span> <br>
+                        <img src="{{ asset('storage/' . $ticket->foto_kendala) }}" alt="Foto Kendala" class="mt-2 max-h-64 rounded border border-stroke dark:border-strokedark">
                     </div>
                     @endif
                 </div>
@@ -55,7 +55,7 @@
                     <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-medium text-black dark:text-white">Update Status</label>
-                            <select name="status" x-model="status" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:bg-form-input dark:text-white">
+                            <select name="status" x-model="status" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:bg-form-input dark:text-white">
                                 <option value="Sedang diproses">Sedang diproses</option>
                                 <option value="Selesai">Selesai</option>
                                 <option value="Ditolak">Ditolak</option>
@@ -63,7 +63,7 @@
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium text-black dark:text-white">Jenis Penyelesaian</label>
-                            <select name="jenis_penyelesaian" x-model="jenis" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:bg-form-input dark:text-white">
+                            <select name="jenis_penyelesaian" x-model="jenis" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:bg-form-input dark:text-white">
                                 <option value="Internal">Internal IT</option>
                                 <option value="Pihak ke-3">Pihak ke-3 (Vendor)</option>
                             </select>
@@ -71,18 +71,18 @@
                     </div>
 
                     {{-- Conditional Fields: Pihak ke-3 --}}
-                    <div x-show="jenis === 'Pihak ke-3'" x-transition class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 p-4 bg-gray-50 dark:bg-black/20 rounded-lg border border-stroke">
+                    <div x-show="jenis === 'Pihak ke-3'" x-transition class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 p-4 bg-gray-50 dark:bg-black/20 rounded-lg border border-stroke dark:border-strokedark">
                         <div>
                             <label class="mb-2 block text-sm font-medium text-black dark:text-white">Nama Vendor</label>
-                            <input type="text" name="vendor" value="{{ old('vendor', $ticket->resolution?->vendor) }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 dark:bg-form-input">
+                            <input type="text" name="vendor" value="{{ old('vendor', $ticket->resolution?->vendor) }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 dark:bg-form-input">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium text-black dark:text-white">Estimasi Biaya (Rp)</label>
-                            <input type="number" name="estimasi_biaya" value="{{ old('estimasi_biaya', $ticket->resolution?->estimasi_biaya) }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 dark:bg-form-input">
+                            <input type="number" name="estimasi_biaya" value="{{ old('estimasi_biaya', $ticket->resolution?->estimasi_biaya) }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 dark:bg-form-input">
                         </div>
                         <div class="md:col-span-2">
                             <label class="mb-2 block text-sm font-medium text-black dark:text-white">Surat Justifikasi (PDF/Doc)</label>
-                            <input type="file" name="file_surat_justifikasi" class="w-full rounded-lg border-[1.5px] border-stroke py-2 px-4 dark:bg-form-input">
+                            <input type="file" name="file_surat_justifikasi" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark py-2 px-4 dark:bg-form-input">
                             @if($ticket->resolution?->file_surat_justifikasi)
                                 <p class="text-xs text-green-600 mt-1">File saat ini: <a href="{{ asset('storage/'.$ticket->resolution->file_surat_justifikasi) }}" target="_blank" class="underline">Lihat File</a></p>
                             @endif
@@ -92,33 +92,33 @@
                     <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-medium">Tgl Analisa</label>
-                            <input type="date" name="tgl_analisa" value="{{ old('tgl_analisa', $ticket->resolution?->tgl_analisa?->format('Y-m-d') ?? date('Y-m-d')) }}" class="w-full rounded-lg border-[1.5px] border-stroke py-3 px-5 dark:bg-form-input" required>
+                            <input type="date" name="tgl_analisa" value="{{ old('tgl_analisa', $ticket->resolution?->tgl_analisa?->format('Y-m-d') ?? date('Y-m-d')) }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark py-3 px-5 dark:bg-form-input" required>
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium">Tgl Tindak Lanjut</label>
-                            <input type="date" name="tgl_tindak_lanjut" value="{{ old('tgl_tindak_lanjut', $ticket->resolution?->tgl_tindak_lanjut?->format('Y-m-d') ?? date('Y-m-d')) }}" class="w-full rounded-lg border-[1.5px] border-stroke py-3 px-5 dark:bg-form-input" required>
+                            <input type="date" name="tgl_tindak_lanjut" value="{{ old('tgl_tindak_lanjut', $ticket->resolution?->tgl_tindak_lanjut?->format('Y-m-d') ?? date('Y-m-d')) }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark py-3 px-5 dark:bg-form-input" required>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label class="mb-2 block text-sm font-medium">Analisa Teknis</label>
-                        <textarea name="analisa_teknis" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke py-3 px-5 dark:bg-form-input" required>{{ old('analisa_teknis', $ticket->resolution?->analisa_teknis) }}</textarea>
+                        <textarea name="analisa_teknis" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark py-3 px-5 dark:bg-form-input" required>{{ old('analisa_teknis', $ticket->resolution?->analisa_teknis) }}</textarea>
                     </div>
 
                     <div class="mb-4">
                         <label class="mb-2 block text-sm font-medium">Tindak Lanjut Teknis</label>
-                        <textarea name="tindak_lanjut_teknis" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke py-3 px-5 dark:bg-form-input" required>{{ old('tindak_lanjut_teknis', $ticket->resolution?->tindak_lanjut_teknis) }}</textarea>
+                        <textarea name="tindak_lanjut_teknis" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark py-3 px-5 dark:bg-form-input" required>{{ old('tindak_lanjut_teknis', $ticket->resolution?->tindak_lanjut_teknis) }}</textarea>
                     </div>
 
                     {{-- Conditional Fields: Hasil (Muncul jika status = Selesai) --}}
                     <div x-show="status === 'Selesai'" x-transition class="mb-4 p-4 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
                         <div class="mb-4">
                             <label class="mb-2 block text-sm font-medium text-green-800 dark:text-green-300">Tanggal Selesai</label>
-                            <input type="date" name="tgl_hasil" value="{{ old('tgl_hasil', $ticket->resolution?->tgl_hasil?->format('Y-m-d') ?? date('Y-m-d')) }}" class="w-full rounded-lg border-[1.5px] border-stroke py-3 px-5 dark:bg-form-input">
+                            <input type="date" name="tgl_hasil" value="{{ old('tgl_hasil', $ticket->resolution?->tgl_hasil?->format('Y-m-d') ?? date('Y-m-d')) }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark py-3 px-5 dark:bg-form-input">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium text-green-800 dark:text-green-300">Hasil Akhir / Kesimpulan</label>
-                            <textarea name="hasil" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke py-3 px-5 dark:bg-form-input">{{ old('hasil', $ticket->resolution?->hasil) }}</textarea>
+                            <textarea name="hasil" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark py-3 px-5 dark:bg-form-input">{{ old('hasil', $ticket->resolution?->hasil) }}</textarea>
                         </div>
                     </div>
 

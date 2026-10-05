@@ -32,15 +32,11 @@
     <div class="mb-6 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
         <div class="col-span-12 rounded-sm border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-7">
             <h4 class="mb-6 text-lg font-semibold text-black dark:text-white">Tren Incident (6 Bulan Terakhir)</h4>
-            <div class="h-72">
-                <canvas id="incidentTrendChart"></canvas>
-            </div>
+            <div id="incidentTrendChart" class="h-72 w-full"></div>
         </div>
         <div class="col-span-12 rounded-sm border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-5">
             <h4 class="mb-6 text-lg font-semibold text-black dark:text-white">Metode Penyelesaian Incident</h4>
-            <div class="h-72 flex justify-center">
-                <canvas id="resolutionChart"></canvas>
-            </div>
+            <div id="resolutionChart" class="h-72 w-full"></div>
         </div>
     </div>
 
@@ -48,15 +44,11 @@
     <div class="mb-6 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
         <div class="col-span-12 rounded-sm border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-7">
             <h4 class="mb-6 text-lg font-semibold text-black dark:text-white">Permintaan Berdasarkan Jenis Layanan</h4>
-            <div class="h-72">
-                <canvas id="requestLayananChart"></canvas>
-            </div>
+            <div id="requestLayananChart" class="h-72 w-full"></div>
         </div>
         <div class="col-span-12 rounded-sm border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-5">
             <h4 class="mb-6 text-lg font-semibold text-black dark:text-white">Distribusi Status Request</h4>
-            <div class="h-72 flex justify-center">
-                <canvas id="requestStatusChart"></canvas>
-            </div>
+            <div id="requestStatusChart" class="h-72 w-full"></div>
         </div>
     </div>
 
@@ -132,108 +124,143 @@
     </div>
 </div>
 
-{{-- SCRIPT CHART.JS DENGAN MUTATION OBSERVER --}}
+{{-- SCRIPT APEXCHARTS DENGAN MUTATION OBSERVER --}}
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
-    // Objek untuk menyimpan instance chart agar bisa di-destroy
-    const chartInstances = {};
+    // Objek untuk menyimpan instance ApexChart agar bisa di-destroy
+    const apexInstances = {};
 
-    // Fungsi untuk mengambil warna berdasarkan mode saat ini
-    function getThemeColors() {
+    // Fungsi untuk mengambil warna & tema berdasarkan mode saat ini (TailAdmin native)
+    function getApexTheme() {
         const isDark = document.documentElement.classList.contains('dark');
         return {
-            text: isDark ? '#A3A3A3' : '#64748B',
-            grid: isDark ? '#333333' : '#E2E8F0',
-            primary: '#3C50E0', secondary: '#80CAEE', 
-            success: '#10B981', warning: '#F59E0B', danger: '#EF4444'
+            isDark,
+            text: isDark ? '#A3A3A3' : '#64748B',        // gray-400 / slate-500
+            grid: isDark ? '#1F2937' : '#E2E8F0',       // strokedark / stroke
+            tooltipBg: isDark ? '#1F2937' : '#FFFFFF',
+            primary: '#3C50E0',   // TailAdmin primary
+            secondary: '#41B1FB', // TailAdmin meta-4
+            success: '#4DA863',   // TailAdmin green
+            warning: '#FBBF24',   // TailAdmin yellow
+            danger: '#FA5656',    // TailAdmin red
+            sky: '#0EA5E9',
+        };
+    }
+
+    // Opsi umum yang disesuaikan gaya TailAdmin (chart cards)
+    function baseOptions(colors) {
+        return {
+            chart: {
+                fontFamily: 'inherit',
+                foreColor: colors.text,
+                background: 'transparent',
+                toolbar: { show: false },
+                animations: { enabled: true, speed: 600 },
+            },
+            theme: { mode: colors.isDark ? 'dark' : 'light' },
+            grid: {
+                borderColor: colors.grid,
+                strokeDashArray: 4,
+                xaxis: { lines: { show: true } },
+                yaxis: { lines: { show: true } },
+            },
+            dataLabels: { enabled: false },
+            tooltip: {
+                theme: colors.isDark ? 'dark' : 'light',
+                style: { fontSize: '12px' },
+            },
+            legend: {
+                labels: { colors: colors.text },
+                markers: { width: 10, height: 10, radius: 12 },
+                itemMargin: { horizontal: 5, vertical: 3 },
+            },
+            noData: { style: { color: colors.text, fontSize: '14px' } },
         };
     }
 
     // Fungsi utama untuk merender semua chart
     function renderCharts() {
-        // 1. Hancurkan chart lama jika ada (Mencegah tumpukan/overlay)
-        Object.values(chartInstances).forEach(chart => chart.destroy());
+        // 1. Hancurkan chart lama jika ada
+        Object.values(apexInstances).forEach(chart => chart.destroy());
 
-        const colors = getThemeColors();
+        const colors = getApexTheme();
+        const base = baseOptions(colors);
 
-        // Opsi umum untuk Bar Chart
-        const barOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { ticks: { color: colors.text }, grid: { color: colors.grid, drawBorder: false } },
-                y: { ticks: { color: colors.text }, grid: { color: colors.grid, drawBorder: false } }
-            }
-        };
-
-        // Opsi umum untuk Pie/Doughnut Chart
-        const pieOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { 
-                legend: { position: 'bottom', labels: { color: colors.text, usePointStyle: true, padding: 20 } } 
-            }
-        };
-
-        // 2. Render Chart 1: Tren Incident
-        chartInstances.trend = new Chart(document.getElementById('incidentTrendChart'), {
-            type: 'bar',
-            data: {
-                labels: @json($last6Months),
-                datasets: [{ label: 'Jumlah Incident', data: @json($incidentTrend), backgroundColor: colors.primary, borderRadius: 4 }]
+        // 2. Chart 1: Tren Incident (Bar)
+        apexInstances.trend = new ApexCharts(document.querySelector('#incidentTrendChart'), {
+            ...base,
+            chart: { ...base.chart, type: 'bar', height: '100%' },
+            series: [{ name: 'Jumlah Incident', data: @json($incidentTrend) }],
+            colors: [colors.primary],
+            xaxis: {
+                categories: @json($last6Months),
+                labels: { style: { colors: colors.text, fontSize: '12px' } },
+                axisBorder: { show: false },
+                axisTicks: { show: false },
             },
-            options: barOptions
+            yaxis: { labels: { style: { colors: colors.text, fontSize: '12px' } } },
+            plotOptions: { bar: { columnWidth: '45%', borderRadius: 4, borderRadiusApplication: 'end' } },
+            fill: { opacity: 1 },
+            grid: { ...base.grid, yaxis: { lines: { show: true } }, xaxis: { lines: { show: false } } },
         });
 
-        // 3. Render Chart 2: Penyelesaian
-        chartInstances.resolution = new Chart(document.getElementById('resolutionChart'), {
-            type: 'doughnut',
-            data: {
-                labels: @json($resolutionData['labels']),
-                datasets: [{ data: @json($resolutionData['data']), backgroundColor: [colors.success, colors.warning], borderWidth: 0 }]
-            },
-            options: pieOptions
+        // 3. Chart 2: Metode Penyelesaian Incident (Donut)
+        apexInstances.resolution = new ApexCharts(document.querySelector('#resolutionChart'), {
+            ...base,
+            chart: { ...base.chart, type: 'donut', height: '100%' },
+            series: @json($resolutionData['data']),
+            labels: @json($resolutionData['labels']),
+            colors: [colors.success, colors.warning],
+            stroke: { show: false },
+            legend: { ...base.legend, position: 'bottom', fontSize: '12px' },
+            dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 500 } },
+            plotOptions: { pie: { donut: { size: '70%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: colors.text } } } } },
         });
 
-        // 4. Render Chart 3: Request Layanan
-        chartInstances.layanan = new Chart(document.getElementById('requestLayananChart'), {
-            type: 'bar',
-            data: {
-                labels: @json($layananData['labels']),
-                datasets: [{ label: 'Jumlah Request', data: @json($layananData['data']), backgroundColor: colors.secondary, borderRadius: 4 }]
+        // 4. Chart 3: Permintaan per Jenis Layanan (Bar Horizontal)
+        apexInstances.layanan = new ApexCharts(document.querySelector('#requestLayananChart'), {
+            ...base,
+            chart: { ...base.chart, type: 'bar', height: '100%' },
+            series: [{ name: 'Jumlah Request', data: @json($layananData['data']) }],
+            colors: [colors.secondary],
+            plotOptions: { bar: { horizontal: true, barHeight: '55%', borderRadius: 4, borderRadiusApplication: 'end' } },
+            xaxis: {
+                categories: @json($layananData['labels']),
+                labels: { style: { colors: colors.text, fontSize: '12px' } },
             },
-            options: barOptions
+            yaxis: { labels: { style: { colors: colors.text, fontSize: '12px' } } },
+            grid: { ...base.grid, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
         });
 
-        // 5. Render Chart 4: Status Request
-        chartInstances.status = new Chart(document.getElementById('requestStatusChart'), {
-            type: 'pie',
-            data: {
-                labels: @json($requestStatusData['labels']),
-                datasets: [{ data: @json($requestStatusData['data']), backgroundColor: [colors.warning, '#0EA5E9', colors.success, colors.danger], borderWidth: 0 }]
-            },
-            options: pieOptions
+        // 5. Chart 4: Distribusi Status Request (Pie)
+        apexInstances.status = new ApexCharts(document.querySelector('#requestStatusChart'), {
+            ...base,
+            chart: { ...base.chart, type: 'pie', height: '100%' },
+            series: @json($requestStatusData['data']),
+            labels: @json($requestStatusData['labels']),
+            colors: [colors.warning, colors.sky, colors.success, colors.danger],
+            stroke: { show: false },
+            legend: { ...base.legend, position: 'bottom', fontSize: '12px' },
+            dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 500 } },
         });
+
+        Object.values(apexInstances).forEach(chart => chart.render());
     }
 
     // Jalankan saat halaman pertama kali dimuat
     document.addEventListener('DOMContentLoaded', renderCharts);
 
     // KRITIK: MutationObserver untuk mendeteksi perubahan class 'dark' pada tag <html>
-    // Ini yang membuat chart otomatis berubah warna saat tombol dark mode diklik
-    const htmlElement = document.documentElement;
+    // Ini membuat chart otomatis berubah warna saat tombol dark mode diklik
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'class') {
-                renderCharts(); // Render ulang chart dengan warna baru
+                renderCharts(); // Render ulang chart dengan tema baru
             }
         });
     });
-    
-    // Mulai mengamati perubahan atribut class pada tag <html>
-    observer.observe(htmlElement, { attributes: true });
+    observer.observe(document.documentElement, { attributes: true });
 </script>
 @endpush
 @endsection
