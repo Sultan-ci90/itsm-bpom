@@ -12,9 +12,32 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. STATISTIK KARTU (Cards)
+        // 1. STATISTIK KARTU (Cards) — dengan perbandingan bulan ini vs bulan lalu
+        $bulanIni  = Carbon::now()->format('Y-m');
+        $bulanLalu = Carbon::now()->subMonth()->format('Y-m');
+
+        $hitungPerBulan = function ($query) use ($bulanIni, $bulanLalu) {
+            return [
+                'ini'  => (clone $query)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanIni])->count(),
+                'lalu' => (clone $query)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanLalu])->count(),
+            ];
+        };
+
+        $persen = function ($ini, $lalu) {
+            if ($lalu == 0) return $ini > 0 ? 100 : 0;
+            return round((($ini - $lalu) / $lalu) * 100);
+        };
+
         $totalIncident = Ticket::count();
         $totalRequest = ServiceRequest::count();
+
+        $incBulanan = $hitungPerBulan(Ticket::query());
+        $reqBulanan = $hitungPerBulan(ServiceRequest::query());
+
+        $statsDelta = [
+            'incident' => ['value' => $incBulanan['ini'], 'delta' => $persen($incBulanan['ini'], $incBulanan['lalu'])],
+            'request'  => ['value' => $reqBulanan['ini'],  'delta' => $persen($reqBulanan['ini'], $reqBulanan['lalu'])],
+        ];
 
         // Hitung status incident, default 0 jika tidak ada
         $incidentStatusCounts = Ticket::selectRaw('status, COUNT(*) as total')
@@ -79,7 +102,7 @@ class DashboardController extends Controller
             ->get();
 
         return view('pages.dashboard.index', compact(
-            'totalIncident', 'totalRequest', 'statusIncident',
+            'totalIncident', 'totalRequest', 'statusIncident', 'statsDelta',
             'last6Months', 'incidentTrend',
             'resolutionData', 'layananData', 'requestStatusData',
             'recentIncidents', 'recentRequests'
