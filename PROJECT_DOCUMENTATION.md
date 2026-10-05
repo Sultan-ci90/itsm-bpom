@@ -25,7 +25,14 @@ Aplikasi **IT Service Management (ITSM)** untuk BPOM yang mencakup:
 | `development` | Pengembangan fitur baru | ✅ Sinkron dengan GitHub |
 | `testing` | QA / pengujian | ✅ Sinkron dengan GitHub |
 
-**Alur kerja:** `development` → `testing` → `main`. Ketiga branch saat ini berada pada commit yang sama (`9ae7991`).
+**Alur kerja:** `development` → `testing` → `main`. Ketiga branch saat ini berada pada commit yang sama (`8267895`).
+
+### Fitur Tambahan (push manual dari laptop, commit `1318099`)
+- **Halaman Choice per Role:** `resources/views/pages/choice/index.blade.php` — menu pilihan fitur sesuai akun user
+- **Detail Incident:** `resources/views/incidents/show.blade.php` + Request `UpdateIncident.php`
+- **Model baru:** `app/Models/TicketResolution.php` (resolusi tiket)
+- **Seeder baru:** `database/seeders/PelaporanSeeder.php`
+- **Favicon ITSM:** `public/images/logo/itsmfavicon.svg`
 
 ---
 
