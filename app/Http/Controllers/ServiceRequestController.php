@@ -1,124 +1,163 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreServiceRequestRequest;
-use App\Models\Bidang;
 use App\Models\ServiceRequest;
-use Carbon\Carbon;
+use App\Models\ReqDetailZoom;
+use App\Models\ReqDetailAkun;
+use App\Models\ReqDetailPeminjaman;
+use App\Models\Bidang;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ServiceRequestController extends Controller
 {
     /**
-     * Daftar request milik user yang login (Request Saya).
+     * Menampilkan daftar request (index)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $requests = ServiceRequest::query()
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->get();
+        $query = ServiceRequest::with(['user']);
+
+        // Jika user adalah pelapor, hanya tampilkan request miliknya sendiri
+        if (auth()->user()->isPelapor()) {
+            $query->where('user_id', auth()->id());
+        }
+
+        // Filter berdasarkan status
+        if ($request->filled('status')) {
+            $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
+            $status = $request->string('status')->toString();
+            if (in_array($status, $validStatuses, true)) {
+                $query->where('status', $status);
+            }
+        }
+
+        // Pencarian berdasarkan nomor request atau layanan
+        if ($request->filled('q')) {
+            $term = $request->string('q')->toString();
+            $query->where(function ($q) use ($term) {
+                $q->where('nomor_request', 'like', "%{$term}%")
+                  ->orWhere('layanan', 'like', "%{$term}%");
+            });
+        }
+
+        $requests = $query->latest('created_at')->paginate(10)->withQueryString();
 
         return view('requests.index', compact('requests'));
     }
 
     /**
-     * Semua request (khusus IT Support / Admin).
+     * Menampilkan form create request
      */
-    public function all()
-    {
-        $requests = ServiceRequest::with('user')->latest()
-            ->get();
-
-        return view('requests.all', compact('requests'));
-    }
-
-    /**
-     * Detail satu request.
-     */
-    public function show($id)
-    {
-        $req = ServiceRequest::with(['user', 'detailZoom', 'detailAkun', 'detailPeminjaman'])->findOrFail($id);
-
-        return view('requests.show', compact('req'));
-
-        
-    }
-
     public function create()
     {
-        // Ambil data untuk dropdown
-        $bidangs = Bidang::orderBy('nama_bidang')->get();
-        
-        // Opsi lokasi (Sesuaikan jika lokasi diambil dari tabel assets atau master lokasi)
-        // Untuk contoh ini, saya asumsikan Anda punya array statis atau tabel lokasi.
-        // Jika dari tabel assets: $lokasis = Asset::select('lokasi')->distinct()->pluck('lokasi');
-        $lokasis = ['R. Tata Usaha', 'R. Rapat Utama', 'Aula BPOM', 'Lobby']; 
+        $bidangs = Bidang::all();
+        $lokasis = [
+            'Ruang Rapat Utama',
+            'Ruang Rapat Bidang Pengawasan',
+            'Ruang Rapat Bidang Regulasi',
+            'Aula BPOM',
+            'Ruang Tata Usaha',
+            'Luar Kantor'
+        ];
 
         return view('requests.create', compact('bidangs', 'lokasis'));
     }
 
-    public function store(StoreServiceRequestRequest $request)
+    /**
+     * Menyimpan data request baru ke database
+     */
+    public function store(Request $request)
     {
+        // 1. Validasi Bersyarat
+        $validated = $request->validate([
+            'layanan' => 'required|in:zoom,akun,peminjaman,konsultasi,operator',
+            'lokasi' => 'required|string|max:100',
+            'deskripsi' => 'nullable|string',
+            
+            // Validasi khusus Zoom
+            'bidang_id' => 'required_if:layanan,zoom|exists:bidang,id',
+            'nama_acara' => 'required_if:layanan,zoom|string|max:255',
+            'jam_mulai' => 'required_if:layanan,zoom|date_format:H:i',
+            'jam_selesai' => 'required_if:layanan,zoom|date_format:H:i|after:jam_mulai',
+            'jenis_acara' => 'required_if:layanan,zoom|in:Rapat,Webinar,Hybrid',
+            'butuh_operator' => 'required_if:layanan,zoom|in:Ya,Tidak',
+            'bentuk_ruangan' => 'required_if:layanan,zoom|in:Classroom,Shape U,Theater',
+            'jumlah_kursi' => 'required_if:layanan,zoom|integer|min:1',
+
+            // Validasi khusus Akun
+            'jenis_pengajuan' => 'required_if:layanan,akun|in:Reset Password,Buat Akun Baru',
+            'sistem_tujuan' => 'required_if:layanan,akun|in:Srikandi,SIPT',
+            'nip_terkait' => 'required_if:layanan,akun|string|max:50',
+
+            // Validasi khusus Peminjaman
+            'jenis_perangkat' => 'required_if:layanan,peminjaman|string|max:255',
+            'tgl_mulai' => 'required_if:layanan,peminjaman|date',
+            'tgl_kembali' => 'required_if:layanan,peminjaman|date|after_or_equal:tgl_mulai',
+            'keperluan' => 'required_if:layanan,peminjaman|string',
+            'lokasi_penggunaan' => 'required_if:layanan,peminjaman|string|max:100',
+        ]);
+
+        // 2. Database Transaction
         DB::beginTransaction();
         try {
-            // 1. Generate Nomor Request (Format: REQ-YYYYMMDD-XXXX)
+            // Generate Nomor Request Otomatis
             $date = Carbon::now()->format('Ymd');
             $lastReq = ServiceRequest::where('nomor_request', 'like', "REQ-{$date}-%")->latest('id')->first();
-            $sequence = $lastReq ? (int) Str::afterLast($lastReq->nomor_request, '-') + 1 : 1;
+            $sequence = $lastReq ? (int) substr($lastReq->nomor_request, -4) + 1 : 1;
             $nomorRequest = 'REQ-' . $date . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
 
-            // 2. Simpan ke tabel utama service_requests
+            // Insert ke tabel utama
             $serviceRequest = ServiceRequest::create([
                 'nomor_request' => $nomorRequest,
-                'user_id' => Auth::id(),
-                'layanan' => $request->layanan,
+                'user_id' => auth()->id(),
+                'layanan' => $validated['layanan'],
                 'tgl_request' => Carbon::now(),
-                'lokasi' => $request->lokasi,
-                'deskripsi' => $request->deskripsi,
+                'lokasi' => $validated['lokasi'],
+                'deskripsi' => $validated['deskripsi'],
                 'status' => 'Diajukan',
             ]);
 
-            // 3. Simpan ke tabel detail berdasarkan jenis layanan (Conditional)
-            $layanan = $request->layanan;
-
-            if ($layanan === 'zoom') {
-                $serviceRequest->detailZoom()->create([
-                    'bidang_id' => $request->bidang_id,
-                    'nama_acara' => $request->nama_acara,
-                    'jam_mulai' => $request->jam_mulai,
-                    'jam_selesai' => $request->jam_selesai,
-                    'jenis_acara' => $request->jenis_acara,
-                    'butuh_operator' => $request->butuh_operator,
-                    'bentuk_ruangan' => $request->bentuk_ruangan,
-                    'jumlah_kursi' => $request->jumlah_kursi,
+            // 3. Insert ke tabel detail berdasarkan jenis layanan
+            if ($validated['layanan'] === 'zoom') {
+                ReqDetailZoom::create([
+                    'request_id' => $serviceRequest->id,
+                    'bidang_id' => $validated['bidang_id'],
+                    'nama_acara' => $validated['nama_acara'],
+                    'jam_mulai' => $validated['jam_mulai'],
+                    'jam_selesai' => $validated['jam_selesai'],
+                    'jenis_acara' => $validated['jenis_acara'],
+                    'butuh_operator' => $validated['butuh_operator'],
+                    'bentuk_ruangan' => $validated['bentuk_ruangan'],
+                    'jumlah_kursi' => $validated['jumlah_kursi'],
                 ]);
-            } elseif ($layanan === 'akun') {
-                $serviceRequest->detailAkun()->create([
-                    'jenis_pengajuan' => $request->jenis_pengajuan,
-                    'sistem_tujuan' => $request->sistem_tujuan,
-                    'nip_terkait' => $request->nip_terkait,
+            } elseif ($validated['layanan'] === 'akun') {
+                ReqDetailAkun::create([
+                    'request_id' => $serviceRequest->id,
+                    'jenis_pengajuan' => $validated['jenis_pengajuan'],
+                    'sistem_tujuan' => $validated['sistem_tujuan'],
+                    'nip_terkait' => $validated['nip_terkait'],
                 ]);
-            } elseif ($layanan === 'peminjaman') {
-                $serviceRequest->detailPeminjaman()->create([
-                    'jenis_perangkat' => $request->jenis_perangkat,
-                    'tgl_mulai' => $request->tgl_mulai,
-                    'tgl_kembali' => $request->tgl_kembali,
-                    'keperluan' => $request->keperluan,
-                    'lokasi_penggunaan' => $request->lokasi_penggunaan,
+            } elseif ($validated['layanan'] === 'peminjaman') {
+                ReqDetailPeminjaman::create([
+                    'request_id' => $serviceRequest->id,
+                    'jenis_perangkat' => $validated['jenis_perangkat'],
+                    'tgl_mulai' => $validated['tgl_mulai'],
+                    'tgl_kembali' => $validated['tgl_kembali'],
+                    'keperluan' => $validated['keperluan'],
+                    'lokasi_penggunaan' => $validated['lokasi_penggunaan'],
                 ]);
             }
-            // Jika 'konsultasi' atau 'operator', tidak ada tabel detail khusus, cukup simpan di deskripsi utama.
 
             DB::commit();
-            return redirect()->route('requests.index')->with('success', 'Permintaan layanan berhasil dibuat dengan Nomor: ' . $nomorRequest);
+            return redirect()->route('requests.index')
+                ->with('success', 'Permintaan layanan berhasil diajukan dengan Nomor: ' . $nomorRequest);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal membuat permintaan: ' . $e->getMessage())->withInput();
+            return back()->withInput()->with('error', 'Gagal membuat request: ' . $e->getMessage());
         }
     }
 }

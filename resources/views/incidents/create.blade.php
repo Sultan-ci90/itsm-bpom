@@ -129,7 +129,7 @@
             };
         }
     </script>
-@endsectio
+@endsection
 @push('scripts')
 <script>
     // Safety net non-Alpine: jika JS Alpine error, submit tetap diberi feedback & cegah klik ganda.
