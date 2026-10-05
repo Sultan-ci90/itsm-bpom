@@ -12,3 +12,6 @@ tailadmin_laravel
 *.sqlite~
 backup_db.sqlite*
 *~
+
+mintty*.png
+public/hot
