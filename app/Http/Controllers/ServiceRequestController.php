@@ -9,6 +9,7 @@ use App\Models\ReqDetailPeminjaman;
 use App\Models\Bidang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class ServiceRequestController extends Controller
@@ -71,42 +72,49 @@ class ServiceRequestController extends Controller
      */
     public function store(Request $request)
     {
+        // Nama tabel diambil dari model supaya aturan exists selalu cocok
+        // (kalau hardcode 'bidang' padahal tabelnya 'bidangs', validasi akan error).
+        $bidangTable = (new Bidang)->getTable();
+
         // 1. Validasi Bersyarat
         $validated = $request->validate([
             'layanan' => 'required|in:zoom,akun,peminjaman,konsultasi,operator',
             'lokasi' => 'required|string|max:100',
             'deskripsi' => 'nullable|string',
-            
+
             // Validasi khusus Zoom
-            'bidang_id' => 'required_if:layanan,zoom|exists:bidang,id',
-            'nama_acara' => 'required_if:layanan,zoom|string|max:255',
-            'jam_mulai' => 'required_if:layanan,zoom|date_format:H:i',
-            'jam_selesai' => 'required_if:layanan,zoom|date_format:H:i|after:jam_mulai',
-            'jenis_acara' => 'required_if:layanan,zoom|in:Rapat,Webinar,Hybrid',
-            'butuh_operator' => 'required_if:layanan,zoom|in:Ya,Tidak',
-            'bentuk_ruangan' => 'required_if:layanan,zoom|in:Classroom,Shape U,Theater',
-            'jumlah_kursi' => 'required_if:layanan,zoom|integer|min:1',
+            'bidang_id' => "required_if:layanan,zoom|nullable|exists:{$bidangTable},id",
+            'nama_acara' => 'required_if:layanan,zoom|nullable|string|max:255',
+            'jam_mulai' => 'required_if:layanan,zoom|nullable|date_format:H:i',
+            'jam_selesai' => 'required_if:layanan,zoom|nullable|date_format:H:i|after:jam_mulai',
+            'jenis_acara' => 'required_if:layanan,zoom|nullable|in:Rapat,Webinar,Hybrid',
+            'butuh_operator' => 'required_if:layanan,zoom|nullable|in:Ya,Tidak',
+            'bentuk_ruangan' => 'required_if:layanan,zoom|nullable|in:Classroom,Shape U,Theater',
+            'jumlah_kursi' => 'required_if:layanan,zoom|nullable|integer|min:1',
 
             // Validasi khusus Akun
-            'jenis_pengajuan' => 'required_if:layanan,akun|in:Reset Password,Buat Akun Baru',
-            'sistem_tujuan' => 'required_if:layanan,akun|in:Srikandi,SIPT',
-            'nip_terkait' => 'required_if:layanan,akun|string|max:50',
+            'jenis_pengajuan' => 'required_if:layanan,akun|nullable|in:Reset Password,Buat Akun Baru',
+            'sistem_tujuan' => 'required_if:layanan,akun|nullable|in:Srikandi,SIPT',
+            'nip_terkait' => 'required_if:layanan,akun|nullable|string|max:50',
 
             // Validasi khusus Peminjaman
-            'jenis_perangkat' => 'required_if:layanan,peminjaman|string|max:255',
-            'tgl_mulai' => 'required_if:layanan,peminjaman|date',
-            'tgl_kembali' => 'required_if:layanan,peminjaman|date|after_or_equal:tgl_mulai',
-            'keperluan' => 'required_if:layanan,peminjaman|string',
-            'lokasi_penggunaan' => 'required_if:layanan,peminjaman|string|max:100',
+            'jenis_perangkat' => 'required_if:layanan,peminjaman|nullable|string|max:255',
+            'tgl_mulai' => 'required_if:layanan,peminjaman|nullable|date',
+            'tgl_kembali' => 'required_if:layanan,peminjaman|nullable|date|after_or_equal:tgl_mulai',
+            'keperluan' => 'required_if:layanan,peminjaman|nullable|string',
+            'lokasi_penggunaan' => 'required_if:layanan,peminjaman|nullable|string|max:100',
         ]);
 
         // 2. Database Transaction
         DB::beginTransaction();
         try {
-            // Generate Nomor Request Otomatis
+            // Generate Nomor Request Otomatis (dikunci agar tidak bentrok saat submit bersamaan)
             $date = Carbon::now()->format('Ymd');
-            $lastReq = ServiceRequest::where('nomor_request', 'like', "REQ-{$date}-%")->latest('id')->first();
-            $sequence = $lastReq ? (int) substr($lastReq->nomor_request, -4) + 1 : 1;
+            $lastReq = ServiceRequest::where('nomor_request', 'like', "REQ-{$date}-%")
+                ->orderBy('nomor_request', 'desc')
+                ->lockForUpdate()
+                ->first();
+            $sequence = $lastReq ? ((int) substr($lastReq->nomor_request, -4)) + 1 : 1;
             $nomorRequest = 'REQ-' . $date . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
 
             // Insert ke tabel utama
@@ -116,7 +124,7 @@ class ServiceRequestController extends Controller
                 'layanan' => $validated['layanan'],
                 'tgl_request' => Carbon::now(),
                 'lokasi' => $validated['lokasi'],
-                'deskripsi' => $validated['deskripsi'],
+                'deskripsi' => $validated['deskripsi'] ?? null,
                 'status' => 'Diajukan',
             ]);
 
@@ -155,9 +163,32 @@ class ServiceRequestController extends Controller
             return redirect()->route('requests.index')
                 ->with('success', 'Permintaan layanan berhasil diajukan dengan Nomor: ' . $nomorRequest);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Gagal membuat request layanan', [
+                'user_id' => auth()->id(),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile() . ':' . $e->getLine(),
+            ]);
+
+            // Pesan teknis tetap ditampilkan selama tahap debugging;
+            // ganti ke pesan umum kalau sudah production.
             return back()->withInput()->with('error', 'Gagal membuat request: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Menampilkan detail satu request
+     */
+    public function show($id)
+    {
+        $req = ServiceRequest::with('user')->findOrFail($id);
+
+        // Pelapor hanya boleh melihat request miliknya sendiri
+        if (auth()->user()->isPelapor() && $req->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return view('requests.show', compact('req'));
     }
 }

@@ -37,6 +37,13 @@
                     </div>
                 @endif
 
+                {{-- Error dari controller (mis. gagal simpan ke database) --}}
+                @if (session('error'))
+                    <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-800/40 dark:bg-red-800/15 dark:text-red-400">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
                 <!-- SECTION 1: Data Umum -->
                 <div class="mb-6">
                     <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Informasi Umum</h4>
@@ -153,7 +160,9 @@
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jumlah Kursi <span class="text-meta-1">*</span></label>
-                            <input type="number" name="jumlah_kursi" value="{{ old('jumlah_kursi') }}" min="1" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            {{-- `required` dihapus: input ini tersembunyi untuk layanan non-Zoom sehingga memblokir submit.
+                                 Validasi tetap dilakukan server (required_if:layanan,zoom). --}}
+                            <input type="number" name="jumlah_kursi" value="{{ old('jumlah_kursi') }}" min="1" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             @error('jumlah_kursi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
