@@ -55,11 +55,12 @@ Route::middleware('auth')->group(function () {
     // =========================
     // SERVICE REQUEST (Permintaan Layanan)
     // =========================
-    Route::get('/requests', [ServiceRequestController::class, 'index'])->name('requests.index');
+ Route::get('/requests', [ServiceRequestController::class, 'index'])->name('requests.index');
     Route::get('/requests/create', [ServiceRequestController::class, 'create'])->name('requests.create');
     Route::post('/requests', [ServiceRequestController::class, 'store'])->name('requests.store');
+    Route::get('/requests/{req}', [ServiceRequestController::class, 'show'])->name('requests.show');
+    Route::put('/requests/{req}', [ServiceRequestController::class, 'update'])->name('requests.update');
     Route::get('/requests/all', [ServiceRequestController::class, 'all'])->name('requests.all');
-    Route::get('/requests/{id}', [ServiceRequestController::class, 'show'])->name('requests.show');
 
 });
 
