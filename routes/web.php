@@ -27,20 +27,31 @@ Route::middleware('guest')->group(function () {
 // =========================
 
 Route::middleware('auth')->group(function () {
+    Route::get('/', function () {
+        $user = auth()->user();
 
-    Route::get('/', [DashboardController::class, 'index'])
-    ->middleware('auth')
-    ->name('dashboard');
+        if ($user && $user->isPelapor()) {
+            return view('pages.choice.index');
+        }
+
+        return redirect()->route('dashboard');
+    })->name('home');
+
     Route::post('/logout', [LoginController::class, 'logout'])
         ->name('logout');
 
+    // DASHBOARD KHUSUS TIM IT
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // ... route incidents dan requests lainnya ...
     // =========================
     // INCIDENT (Lapor Kendala)
     // =========================
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
     Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
     Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
-
+    Route::get('/incidents/{ticket}', [IncidentController::class, 'show'])->name('incidents.show');
+    Route::put('/incidents/{ticket}', [IncidentController::class, 'update'])->name('incidents.update');
     // =========================
     // SERVICE REQUEST (Permintaan Layanan)
     // =========================
