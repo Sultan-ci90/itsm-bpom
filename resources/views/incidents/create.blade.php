@@ -30,12 +30,12 @@
                     <div>
                         <label class="mb-3 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
                         <input type="text" value="{{ auth()->user()->nama }} ({{ auth()->user()->nip }})" readonly
-                               class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-form-strokedark dark:bg-form-input dark:text-white dark:disabled:bg-black">
+                               class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black">
                     </div>
                     <div>
                         <label class="mb-3 block text-sm font-medium text-black dark:text-white">Tanggal Pelaporan</label>
                         <input type="text" value="{{ \Carbon\Carbon::now()->format('d/m/Y') }}" readonly
-                               class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-form-strokedark dark:bg-form-input dark:text-white dark:disabled:bg-black">
+                               class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black">
                     </div>
                 </div>
 
@@ -44,7 +44,7 @@
                         Pilih Aset / Barang <span class="text-red-500">*</span>
                     </label>
                     <select id="asset_select" name="asset_id" x-ref="assetSelect" required
-                            class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         <option value="">-- Cari Kode Barang, NUP, atau Nama --</option>
                         @foreach ($assets as $asset)
                             <option value="{{ $asset->id }}" @selected(old('asset_id') == $asset->id)>
@@ -60,7 +60,7 @@
                 <div class="mt-6">
                     <label class="mb-3 block text-sm font-medium text-black dark:text-white">Lokasi Aset</label>
                     <input type="text" x-model="lokasi" readonly placeholder="Terisi otomatis saat aset dipilih"
-                           class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-form-strokedark dark:bg-form-input dark:text-white dark:disabled:bg-black">
+                           class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Lokasi diambil dari data aset; tidak perlu diisi manual.</p>
                 </div>
 
@@ -69,7 +69,7 @@
                         Deskripsi Masalah <span class="text-red-500">*</span>
                     </label>
                     <textarea name="deskripsi_masalah" rows="4" required
-                              class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                              class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                               placeholder="Jelaskan kendala yang dialami...">{{ old('deskripsi_masalah') }}</textarea>
                     @error('deskripsi_masalah')
                     <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -78,10 +78,10 @@
 
                 <div class="mt-6">
                     <label class="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Foto Kendala <span class="text-xs text-gray-500 dark:text-gray-400">(Opsional, Max 2MB)</span>
+                        Foto Kendala <span class="text-xs text-gray-500">(Opsional, Max 2MB)</span>
                     </label>
                     <input type="file" name="foto_kendala" accept="image/jpeg,image/png,image/jpg"
-                           class="w-full rounded-lg border border-stroke dark:border-strokedark bg-transparent py-3 px-4 text-black outline-none transition file:mr-4 file:rounded file:border-0 file:bg-[#E2E8F0] file:px-4 file:py-2 file:text-sm file:font-medium file:text-black dark:border-form-strokedark dark:bg-form-input dark:text-white dark:file:bg-gray-700 dark:file:text-white">
+                           class="w-full rounded-lg border border-stroke bg-transparent py-3 px-4 text-black outline-none transition file:mr-4 file:rounded file:border-0 file:bg-[#E2E8F0] file:px-4 file:py-2 file:text-sm file:font-medium file:text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:file:bg-gray-700 dark:file:text-white">
                     @error('foto_kendala')
                     <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -93,7 +93,7 @@
                         Batal
                     </a>
                     <button type="submit" :disabled="submitting"
-                            class="inline-flex items-center rounded-md border border-transparent bg-[#10B981] px-6 py-3 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-green-700 focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                            class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
                         <span x-show="!submitting">Tambah Laporan</span>
                         <span x-cloak x-show="submitting">Menyimpan...</span>
                     </button>
@@ -109,46 +109,41 @@
                 submitting: false,
                 init() {
                     const select = this.$refs.assetSelect;
-                    if (!select) return;
-
-                    // Peta lokasi sudah di-preload via ASSET_LOKASI (lihat head section).
-                    const applyLokasi = (value) => {
-                        this.lokasi = value ? ((window.ASSET_LOKASI || {})[value] ?? 'Lokasi tidak diketahui') : '';
-                    };
+                    if (typeof TomSelect === 'undefined' || !select) return;
 
                     // Retensi lokasi jika form gagal validasi dan asset_id lama terpilih kembali
-                    if (select.value) applyLokasi(select.value);
-
-                    if (typeof TomSelect === 'undefined') return;
+                    if (select.value) {
+                        this.lokasi = ASSET_LOKASI[select.value] ?? '';
+                    }
 
                     new TomSelect(select, {
                         create: false,
                         sortField: { field: 'text', direction: 'asc' },
                         placeholder: 'Ketik untuk mencari aset...',
                         maxOptions: 200,
-                        onChange: applyLokasi,
+                        onChange: (value) => {
+                            this.lokasi = value ? (ASSET_LOKASI[value] ?? 'Lokasi tidak diketahui') : '';
+                        },
                     });
                 },
             };
         }
-
-        // Safety net non-Alpine: cegah double-submit & beri feedback visual.
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('form[action*="incidents"]');
-            if (!form) return;
-            form.addEventListener('submit', function () {
-                const btn = form.querySelector('button[type="submit"]');
-                if (btn && !btn.dataset.submitting) {
-                    btn.dataset.submitting = '1';
-                    btn.disabled = true;
-                    btn.classList.add('opacity-60', 'cursor-not-allowed');
-                    setTimeout(() => {
-                        btn.disabled = false;
-                        delete btn.dataset.submitting;
-                        btn.classList.remove('opacity-60', 'cursor-not-allowed');
-                    }, 8000);
-                }
-            });
-        });
     </script>
-@endsection
+@endsectio
+@push('scripts')
+<script>
+    // Safety net non-Alpine: jika JS Alpine error, submit tetap diberi feedback & cegah klik ganda.
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form[action*="incidents"]');
+        if (!form) return;
+        form.addEventListener('submit', function () {
+            setTimeout(() => {
+                const btn = form.querySelector('button[type="submit"]');
+                if (btn) { btn.disabled = true; btn.classList.add('opacity-60', 'cursor-not-allowed'); }
+            }, 50);
+        });
+    });
+</script>
+@endpush
+
+n

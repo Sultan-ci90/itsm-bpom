@@ -21,7 +21,7 @@
         @endphp
 
         @foreach($cards as $card)
-        <div class="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div class="rounded-2xl border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
             <h4 class="mb-2 text-sm font-medium text-black dark:text-white">{{ $card['title'] }}</h4>
             <p class="text-3xl font-semibold {{ $card['color'] }}">{{ $card['value'] }}</p>
         </div>

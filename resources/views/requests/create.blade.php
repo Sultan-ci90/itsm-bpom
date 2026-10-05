@@ -8,13 +8,13 @@
         <nav>
             <ol class="flex items-center gap-2">
                 <li><a class="font-medium text-primary" href="{{ route('dashboard') }}">Dashboard /</a></li>
-                <li class="font-medium text-gray-500 dark:text-gray-400">Buat Request</li>
+                <li class="font-medium text-gray-500">Buat Request</li>
             </ol>
         </nav>
     </div>
 
-    <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div class="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
+    <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="border-b border-stroke px-6.5 py-4 dark:border-gray-800">
             <h3 class="font-medium text-black dark:text-white">Formulir Permintaan Layanan</h3>
         </div>
         
@@ -31,19 +31,19 @@
                         <!-- Nama Pelapor -->
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
-                            <input type="text" value="{{ auth()->user()->nama }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-gray-100 py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="text" value="{{ auth()->user()->nama }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         </div>
 
                         <!-- Tanggal -->
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Request</label>
-                            <input type="text" value="{{ \Carbon\Carbon::now()->format('d/m/Y') }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-gray-100 py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="text" value="{{ \Carbon\Carbon::now()->format('d/m/Y') }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         </div>
 
                         <!-- Jenis Layanan -->
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Layanan <span class="text-meta-1">*</span></label>
-                            <select x-model="layanan" name="layanan" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <select x-model="layanan" name="layanan" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="">-- Pilih Layanan --</option>
                                 <option value="zoom" {{ old('layanan') == 'zoom' ? 'selected' : '' }}>Permintaan Link Zoom Meeting</option>
                                 <option value="akun" {{ old('layanan') == 'akun' ? 'selected' : '' }}>Reset Password Aplikasi (Srikandi/SIPT)</option>
@@ -57,8 +57,8 @@
                         <!-- Lokasi -->
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Lokasi <span class="text-meta-1">*</span></label>
-                            <select name="lokasi" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">
-                                <option value="" disabled selected>-- Pilih Lokasi --</option>
+                            <select name="lokasi" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                                <option value="">-- Pilih Lokasi --</option>
                                 @foreach($lokasis as $lokasi)
                                     <option value="{{ $lokasi }}" {{ old('lokasi') == $lokasi ? 'selected' : '' }}>{{ $lokasi }}</option>
                                 @endforeach
@@ -69,20 +69,20 @@
                         <!-- Deskripsi Umum -->
                         <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Deskripsi Tambahan</label>
-                            <textarea name="deskripsi" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white">{{ old('deskripsi') }}</textarea>
+                            <textarea name="deskripsi" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">{{ old('deskripsi') }}</textarea>
                         </div>
                     </div>
                 </div>
 
                 <!-- SECTION 2: Form Dinamis Zoom -->
-                <div x-show="layanan === 'zoom'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-strokedark">
+                <div x-show="layanan === 'zoom'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Zoom Meeting</h4>
                     <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Bidang <span class="text-meta-1">*</span></label>
-                            <select name="bidang_id" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
-                                <option value="" disabled selected>-- Pilih Bidang --</option>
+                            <select name="bidang_id" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                                <option value="">-- Pilih Bidang --</option>
                                 @foreach($bidangs as $bidang)
                                     <option value="{{ $bidang->id }}" {{ old('bidang_id') == $bidang->id ? 'selected' : '' }}>{{ $bidang->nama_bidang }}</option>
                                 @endforeach
@@ -92,25 +92,26 @@
 
                         <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Nama Acara <span class="text-meta-1">*</span></label>
-                            <input type="text" name="nama_acara" value="{{ old('nama_acara') }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="text" name="nama_acara" value="{{ old('nama_acara') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('nama_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jam Mulai <span class="text-meta-1">*</span></label>
-                            <input type="time" name="jam_mulai" value="{{ old('jam_mulai') }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="time" name="jam_mulai" value="{{ old('jam_mulai') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('jam_mulai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jam Selesai <span class="text-meta-1">*</span></label>
-                            <input type="time" name="jam_selesai" value="{{ old('jam_selesai') }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="time" name="jam_selesai" value="{{ old('jam_selesai') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('jam_selesai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Acara <span class="text-meta-1">*</span></label>
-                            <select name="jenis_acara" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <select name="jenis_acara" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                                <option value="" disabled selected>-- Pilih --</option>
                                 <option value="Rapat" {{ old('jenis_acara') == 'Rapat' ? 'selected' : '' }}>Rapat</option>
                                 <option value="Webinar" {{ old('jenis_acara') == 'Webinar' ? 'selected' : '' }}>Webinar</option>
                                 <option value="Hybrid" {{ old('jenis_acara') == 'Hybrid' ? 'selected' : '' }}>Hybrid</option>
@@ -120,7 +121,7 @@
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Butuh Operator? <span class="text-meta-1">*</span></label>
-                            <select name="butuh_operator" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <select name="butuh_operator" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="Tidak" {{ old('butuh_operator') == 'Tidak' ? 'selected' : '' }}>Tidak</option>
                                 <option value="Ya" {{ old('butuh_operator') == 'Ya' ? 'selected' : '' }}>Ya</option>
                             </select>
@@ -129,7 +130,7 @@
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Bentuk Ruangan <span class="text-meta-1">*</span></label>
-                            <select name="bentuk_ruangan" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <select name="bentuk_ruangan" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="Classroom" {{ old('bentuk_ruangan') == 'Classroom' ? 'selected' : '' }}>Classroom</option>
                                 <option value="Shape U" {{ old('bentuk_ruangan') == 'Shape U' ? 'selected' : '' }}>Shape U</option>
                                 <option value="Theater" {{ old('bentuk_ruangan') == 'Theater' ? 'selected' : '' }}>Theater</option>
@@ -139,19 +140,20 @@
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jumlah Kursi <span class="text-meta-1">*</span></label>
-                            <input type="number" name="jumlah_kursi" required value="{{ old('jumlah_kursi') }}" min="1" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="number" name="jumlah_kursi" value="{{ old('jumlah_kursi') }}" min="1" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             @error('jumlah_kursi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- SECTION 3: Form Dinamis Akun (Reset Password) -->
-                <div x-show="layanan === 'akun'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-strokedark">
+                <div x-show="layanan === 'akun'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Reset Password</h4>
                     <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Pengajuan <span class="text-meta-1">*</span></label>
-                            <select name="jenis_pengajuan" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <select name="jenis_pengajuan" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                                <option value="" disabled selected>-- Pilih --</option>
                                 <option value="Reset Password" {{ old('jenis_pengajuan') == 'Reset Password' ? 'selected' : '' }}>Reset Password</option>
                                 <option value="Buat Akun Baru" {{ old('jenis_pengajuan') == 'Buat Akun Baru' ? 'selected' : '' }}>Buat Akun Baru</option>
                             </select>
@@ -160,7 +162,8 @@
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Sistem Tujuan <span class="text-meta-1">*</span></label>
-                            <select name="sistem_tujuan" required class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <select name="sistem_tujuan" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                                <option value="" disabled selected>-- Pilih --</option>
                                 <option value="Srikandi" {{ old('sistem_tujuan') == 'Srikandi' ? 'selected' : '' }}>Srikandi</option>
                                 <option value="SIPT" {{ old('sistem_tujuan') == 'SIPT' ? 'selected' : '' }}>SIPT</option>
                             </select>
@@ -169,51 +172,51 @@
 
                         <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">NIP Terkait <span class="text-meta-1">*</span></label>
-                            <input type="text" name="nip_terkait" required value="{{ old('nip_terkait') }}" placeholder="Masukkan NIP pemilik akun" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="text" name="nip_terkait" value="{{ old('nip_terkait') }}" placeholder="Masukkan NIP pemilik akun" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('nip_terkait') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- SECTION 4: Form Dinamis Peminjaman -->
-                <div x-show="layanan === 'peminjaman'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-strokedark">
+                <div x-show="layanan === 'peminjaman'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Peminjaman Perangkat</h4>
                     <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Perangkat <span class="text-meta-1">*</span></label>
-                            <input type="text" name="jenis_perangkat" required value="{{ old('jenis_perangkat') }}" placeholder="Contoh: Laptop, Proyektor, Sound System" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="text" name="jenis_perangkat" value="{{ old('jenis_perangkat') }}" placeholder="Contoh: Laptop, Proyektor, Sound System" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('jenis_perangkat') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Mulai <span class="text-meta-1">*</span></label>
-                            <input type="date" name="tgl_mulai" required value="{{ old('tgl_mulai') }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="date" name="tgl_mulai" value="{{ old('tgl_mulai') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('tgl_mulai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Kembali <span class="text-meta-1">*</span></label>
-                            <input type="date" name="tgl_kembali" required value="{{ old('tgl_kembali') }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="date" name="tgl_kembali" value="{{ old('tgl_kembali') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('tgl_kembali') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Keperluan <span class="text-meta-1">*</span></label>
-                            <textarea name="keperluan" required rows="2" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">{{ old('keperluan') }}</textarea>
+                            <textarea name="keperluan" rows="2" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>{{ old('keperluan') }}</textarea>
                             @error('keperluan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Lokasi Penggunaan <span class="text-meta-1">*</span></label>
-                            <input type="text" name="lokasi_penggunaan" required value="{{ old('lokasi_penggunaan') }}" class="w-full rounded-lg border-[1.5px] border-stroke dark:border-strokedark bg-transparent py-3 px-5 text-black dark:border-form-strokedark dark:bg-form-input dark:text-white">
+                            <input type="text" name="lokasi_penggunaan" value="{{ old('lokasi_penggunaan') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white" required>
                             @error('lokasi_penggunaan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Tombol Submit -->
-                <div class="flex justify-end border-t border-stroke pt-5 dark:border-strokedark">
-                    <button type="submit" class="inline-flex items-center justify-center gap-2.5 rounded-lg bg-primary py-4 px-10 text-center font-medium text-white hover:bg-opacity-90">
+                <div class="flex justify-end border-t border-stroke pt-5 dark:border-gray-800">
+                    <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition">
                         Tambah Request
                     </button>
                 </div>
@@ -221,22 +224,20 @@
         </div>
     </div>
 </div>
-
+@endsection
 @push('scripts')
 <script>
-    // Safety net: pastikan submit tetap berjalan meski ada JS yang gagal dimuat,
-    // dan cegah klik ganda (double submit) yang membuat form terasa "tidak merespons".
+    // Safety net: cegah klik ganda (double submit) yang membuat form terasa "tidak merespons".
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.querySelector('form[action*="requests"]');
         if (!form) return;
-        form.addEventListener('submit', function (e) {
-            // Jangan blokir submit — ini hanya proteksi dari JS error di tempat lain.
+        form.addEventListener('submit', function () {
             const btn = form.querySelector('button[type="submit"]');
             if (btn && !btn.dataset.submitting) {
                 btn.dataset.submitting = '1';
                 btn.disabled = true;
                 btn.classList.add('opacity-60', 'cursor-not-allowed');
-                setTimeout(() => { // re-enable jika request gagal di jaringan
+                setTimeout(() => {
                     btn.disabled = false;
                     delete btn.dataset.submitting;
                     btn.classList.remove('opacity-60', 'cursor-not-allowed');
@@ -246,4 +247,3 @@
     });
 </script>
 @endpush
-@endsection
