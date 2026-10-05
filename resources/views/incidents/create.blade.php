@@ -93,7 +93,7 @@
                         Batal
                     </a>
                     <button type="submit" :disabled="submitting"
-                            class="inline-flex items-center rounded-md border border-transparent bg-[#10B981] px-6 py-3 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-green-700 focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                            class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
                         <span x-show="!submitting">Tambah Laporan</span>
                         <span x-cloak x-show="submitting">Menyimpan...</span>
                     </button>

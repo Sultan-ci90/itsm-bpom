@@ -213,7 +213,7 @@
 
                 <!-- Tombol Submit -->
                 <div class="flex justify-end border-t border-stroke pt-5 dark:border-gray-800">
-                    <button type="submit" class="inline-flex items-center justify-center gap-2.5 rounded-lg bg-primary py-4 px-10 text-center font-medium text-white hover:bg-opacity-90">
+                    <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition">
                         Tambah Request
                     </button>
                 </div>
