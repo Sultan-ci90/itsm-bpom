@@ -20,8 +20,22 @@
         
         <div class="p-6.5">
             <!-- Alpine.js Data untuk Form Dinamis -->
-            <form action="{{ route('requests.store') }}" method="POST" x-data="{ layanan: '{{ old('layanan') }}' }">
+            {{-- Nilai awal `layanan` dibaca langsung dari elemen select (bukan via string Blade)
+                 agar atribut x-data tidak pernah rusak oleh karakter kutip → Alpine selalu init. --}}
+            <form action="{{ route('requests.store') }}" method="POST"
+                x-data="{ layanan: $el.querySelector('[name=layanan]') ? $el.querySelector('[name=layanan]').value : '' }">
                 @csrf
+
+                @if ($errors->any())
+                    <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-800/40 dark:bg-red-800/15 dark:text-red-400">
+                        <p class="mb-1 font-medium">Perbaiki kesalahan berikut:</p>
+                        <ul class="list-disc pl-5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <!-- SECTION 1: Data Umum -->
                 <div class="mb-6">
@@ -139,7 +153,7 @@
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jumlah Kursi <span class="text-meta-1">*</span></label>
-                            <input type="number" name="jumlah_kursi" value="{{ old('jumlah_kursi') }}" min="1" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            <input type="number" name="jumlah_kursi" value="{{ old('jumlah_kursi') }}" min="1" required class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             @error('jumlah_kursi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
