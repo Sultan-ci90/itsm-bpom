@@ -21,7 +21,13 @@ class IncidentController extends Controller
     {
         $query = Ticket::with(['asset', 'pelapor.bidang']);
 
+        // Pelapor hanya bisa melihat aduannya sendiri
         if (auth()->user()->isPelapor()) {
+            $query->where('pelapor_id', auth()->id());
+        } else {
+            // Admin/Tim IT di halaman 'Aduan Saya' (jika ada form/menu khusus),
+            // sebenarnya 'incidents.index' dibuat untuk user yang login saat ini
+            // Agar membedakan dengan Semua Aduan, kita set agar Admin melihat miliknya saja di sini.
             $query->where('pelapor_id', auth()->id());
         }
 
@@ -44,6 +50,31 @@ class IncidentController extends Controller
         $tickets = $query->latest('created_at')->paginate(15)->withQueryString();
 
         return view('incidents.index', compact('tickets'));
+    }
+
+    public function all(Request $request)
+    {
+        $query = Ticket::with(['asset', 'pelapor.bidang']);
+
+        if ($request->filled('q')) {
+            $term = $request->string('q')->toString();
+            $query->where(function ($q) use ($term) {
+                $q->where('nomor_aduan', 'like', "%{$term}%")
+                  ->orWhere('deskripsi_masalah', 'like', "%{$term}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $validStatuses = ['Belum diperiksa', 'Sedang diproses', 'Selesai', 'Ditolak'];
+            $status = $request->string('status')->toString();
+            if (in_array($status, $validStatuses, true)) {
+                $query->where('status', $status);
+            }
+        }
+
+        $tickets = $query->latest('created_at')->paginate(15)->withQueryString();
+
+        return view('incidents.all', compact('tickets'));
     }
 
     public function create()

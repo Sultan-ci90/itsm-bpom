@@ -8,10 +8,10 @@
     $res     = $ticket->resolution;
 
     $badge = [
-        'Belum diperiksa' => 'bg-danger/10 text-danger',
-        'Sedang diproses' => 'bg-warning/10 text-warning',
-        'Selesai'         => 'bg-success/10 text-success',
-        'Ditolak'         => 'bg-gray-200 text-gray-600 dark:bg-meta-4 dark:text-gray-300',
+        'Belum diperiksa' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800/20 dark:text-yellow-400',
+        'Sedang diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
+        'Selesai'         => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
+        'Ditolak'         => 'bg-red-100 text-red-700 dark:bg-red-800/20 dark:text-red-400',
     ];
 
     $chip = [

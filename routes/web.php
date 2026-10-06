@@ -51,6 +51,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
     Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
     Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
+    
+    // PENTING: route literal /incidents/all HARUS sebelum /incidents/{ticket}
+    Route::get('/incidents/all', [IncidentController::class, 'all'])
+        ->middleware('role:teknisi,admin')
+        ->name('incidents.all');
+        
     Route::get('/incidents/{ticket}', [IncidentController::class, 'show'])->name('incidents.show');
     Route::put('/incidents/{ticket}', [IncidentController::class, 'update'])->name('incidents.update');
     Route::get('/incidents/{ticket}/justifikasi', [IncidentController::class, 'justifikasi'])
@@ -70,12 +76,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/requests', [ServiceRequestController::class, 'index'])->name('requests.index');
     Route::get('/requests/create', [ServiceRequestController::class, 'create'])->name('requests.create');
     Route::post('/requests', [ServiceRequestController::class, 'store'])->name('requests.store');
+    
     // PENTING: route literal /requests/all HARUS sebelum /requests/{req}
     Route::get('/requests/all', [ServiceRequestController::class, 'all'])
         ->middleware('role:teknisi,admin')
         ->name('requests.all');
+        
     Route::get('/requests/{req}', [ServiceRequestController::class, 'show'])->name('requests.show');
     Route::put('/requests/{req}', [ServiceRequestController::class, 'update'])->name('requests.update');
+    Route::delete('/requests/{req}/destroy', [ServiceRequestController::class, 'destroy'])
+        ->middleware('role:teknisi,admin')
+        ->name('requests.destroy');
 });
 
 // =========================

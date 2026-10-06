@@ -21,10 +21,8 @@ class ServiceRequestController extends Controller
     {
         $query = ServiceRequest::with(['user']);
 
-        // Jika user adalah pelapor, hanya tampilkan request miliknya sendiri
-        if (auth()->user()->isPelapor()) {
-            $query->where('user_id', auth()->id());
-        }
+        // 'Request Saya' selalu menampilkan milik user yang sedang login
+        $query->where('user_id', auth()->id());
 
         // Filter berdasarkan status
         if ($request->filled('status')) {
@@ -340,6 +338,31 @@ class ServiceRequestController extends Controller
                 'message' => $e->getMessage(),
             ]);
             return back()->withInput()->with('error', 'Gagal menyimpan tindak lanjut: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Hapus request (soft delete)
+     */
+    public function destroy($id)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        DB::beginTransaction();
+        try {
+            $req = ServiceRequest::findOrFail($id);
+            $req->delete();
+            
+            DB::commit();
+            return redirect()->route('requests.all')
+                             ->with('success', 'Request ' . $req->nomor_request . ' berhasil dihapus.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal menghapus request', ['request_id' => $id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Gagal menghapus request: ' . $e->getMessage());
         }
     }
 }

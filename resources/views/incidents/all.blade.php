@@ -14,7 +14,7 @@
     $statuses = ['Belum diperiksa', 'Sedang diproses', 'Selesai', 'Ditolak'];
 @endphp
 
-    <x-common.page-breadcrumb :pageTitle="$isStaff ? 'Daftar Aduan' : 'Daftar Aduan Saya'" />
+    <x-common.page-breadcrumb pageTitle="Semua Aduan" />
 
     @if (session('success'))
         <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700 dark:border-green-800/40 dark:bg-green-800/15 dark:text-green-400">
@@ -30,7 +30,7 @@
 
     {{-- Filter + tombol tambah --}}
     <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <form method="GET" action="{{ route('incidents.index') }}" class="flex flex-col gap-3 sm:flex-row">
+        <form method="GET" action="{{ route('incidents.all') }}" class="flex flex-col gap-3 sm:flex-row">
             <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nomor / deskripsi..."
                    class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white sm:w-64">
             <select name="status"
@@ -45,7 +45,7 @@
                 Filter
             </button>
             @if(request()->filled('q') || request()->filled('status'))
-                <a href="{{ route('incidents.index') }}"
+                <a href="{{ route('incidents.all') }}"
                    class="inline-flex items-center justify-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4">
                     Reset
                 </a>

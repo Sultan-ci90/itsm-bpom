@@ -4,92 +4,89 @@ namespace App\Helpers;
 
 class MenuHelper
 {
-    public static function getMainNavItems()
+    public static function getMenuGroups()
     {
-        return [
+        $user = auth()->user();
+        $isStaff = $user && ($user->isTeknisi() || $user->isAdmin());
 
-        // =========================
-        // DASHBOARD
-        // =========================
-        [
-            'icon' => 'dashboard',
-            'name' => 'Dashboard',
-            'path' => '/',
-        ],
+        $mainItems = [
+            // =========================
+            // DASHBOARD (Hanya Staff)
+            // =========================
+        ];
+
+        if ($isStaff) {
+            $mainItems[] = [
+                'icon' => 'dashboard',
+                'name' => 'Dashboard',
+                'path' => '/',
+            ];
+        }
 
         // =========================
         // SERVICE REQUEST (ITSM)
         // =========================
-        [
+        $requestSubItems = [
+            [
+                'name' => 'Request Baru',
+                'path' => '/requests/create',
+                'pro' => false,
+            ],
+            [
+                'name' => 'Request Saya',
+                'path' => '/requests',
+                'pro' => false,
+            ],
+        ];
+
+        if ($isStaff) {
+            $requestSubItems[] = [
+                'name' => 'Semua Request',
+                'path' => '/requests/all',
+                'pro' => false,
+            ];
+        }
+
+        $mainItems[] = [
             'icon' => 'forms',
             'name' => 'Service Request',
-            'subItems' => [
-                [
-                    'name' => 'Request Baru',
-                    'path' => '/requests/create',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Request Saya',
-                    'path' => '/requests',
-                    'pro' => false,
-                ],
-            ],
-        ],
+            'subItems' => $requestSubItems,
+        ];
 
         // =========================
         // INCIDENT (LAPOR KENDALA)
         // =========================
-        [
+        $incidentSubItems = [
+            [
+                'name' => 'Lapor Kendala',
+                'path' => '/incidents/create',
+                'pro' => false,
+            ],
+            [
+                'name' => 'Aduan Saya',
+                'path' => '/incidents',
+                'pro' => false,
+            ],
+        ];
+
+        if ($isStaff) {
+            $incidentSubItems[] = [
+                'name' => 'Semua Aduan',
+                'path' => '/incidents/all',
+                'pro' => false,
+            ];
+        }
+
+        $mainItems[] = [
             'icon' => 'support-ticket',
             'name' => 'Insiden',
-            'subItems' => [
-                [
-                    'name' => 'Lapor Kendala',
-                    'path' => '/incidents/create',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Daftar Aduan',
-                    'path' => '/incidents',
-                    'pro' => false,
-                ],
-            ],
-        ],
-    ];
-    }
+            'subItems' => $incidentSubItems,
+        ];
 
-    public static function getOthersItems()
-    {
-         return [
-
-        // =========================
-        // ADMINISTRATION
-        // =========================
-        [
-            'icon' => 'user-profile',
-            'name' => 'Administration',
-            'subItems' => [
-                [
-                    'name' => 'Semua Request',
-                    'path' => '/requests/all',
-                    'pro' => false,
-                ],
-            ],
-        ],
-    ];
-    }
-
-    public static function getMenuGroups()
-    {
         return [
             [
                 'title' => 'Menu',
-                'items' => self::getMainNavItems()
-            ],
-            [
-                'title' => 'Others',
-                'items' => self::getOthersItems()
+                'items' => $mainItems
             ]
         ];
     }
