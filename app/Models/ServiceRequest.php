@@ -45,4 +45,9 @@ class ServiceRequest extends Model
     {
         return $this->hasOne(ReqDetailPeminjaman::class, 'request_id');
     }
+
+    public function resolution(): HasOne
+    {
+        return $this->hasOne(ServiceRequestResolution::class, 'request_id');
+    }
 }

@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ticket extends Model
 {
-    // KRITIK: Tabel tickets hanya punya created_at
+    use SoftDeletes;
+
+    // Tabel tickets hanya punya created_at (tanpa updated_at)
     const UPDATED_AT = null;
 
     protected $fillable = [

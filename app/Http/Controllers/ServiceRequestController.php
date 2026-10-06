@@ -83,16 +83,41 @@ class ServiceRequestController extends Controller
     public function create()
     {
         $bidangs = Bidang::all();
-        $lokasis = [
+
+        // 1. Integrasi lokasi otomatis berdasarkan bidang pegawai yang sedang login
+        $user = auth()->user()->load('bidang');
+        $bidangUser = $user->bidang?->nama_bidang;
+
+        $defaultLokasi = match (true) {
+            str_contains(strtolower($bidangUser ?? ''), 'tata usaha') || str_contains(strtolower($bidangUser ?? ''), 'umum') => 'Ruang Staff Tata Usaha',
+            str_contains(strtolower($bidangUser ?? ''), 'pengawasan') => 'Ruang Staff Pengawasan',
+            str_contains(strtolower($bidangUser ?? ''), 'regulasi') => 'Ruang Staff Regulasi',
+            str_contains(strtolower($bidangUser ?? ''), 'sumber daya') || str_contains(strtolower($bidangUser ?? ''), 'sdm') => 'Ruang Staff SDM',
+            !empty($bidangUser) => 'Ruang Staff ' . $bidangUser,
+            default => 'Ruang Staff Tata Usaha',
+        };
+
+        // 2. Daftar seluruh ruangan staff dan fasilitas bersama
+        $lokasiStaff = [
+            'Ruang Staff Tata Usaha',
+            'Ruang Staff Pengawasan',
+            'Ruang Staff Regulasi',
+            'Ruang Staff SDM',
+        ];
+
+        $lokasiUmum = [
             'Ruang Rapat Utama',
             'Ruang Rapat Bidang Pengawasan',
             'Ruang Rapat Bidang Regulasi',
             'Aula BPOM',
-            'Ruang Tata Usaha',
-            'Luar Kantor'
+            'Luar Kantor',
         ];
 
-        return view('requests.create', compact('bidangs', 'lokasis'));
+        // Gabungkan dan pastikan lokasi default pegawai ada di urutan teratas
+        $allLokasi = array_merge([$defaultLokasi], $lokasiStaff, $lokasiUmum);
+        $lokasis = array_values(array_unique($allLokasi));
+
+        return view('requests.create', compact('bidangs', 'lokasis', 'defaultLokasi'));
     }
 
     /**
@@ -101,14 +126,13 @@ class ServiceRequestController extends Controller
     public function store(Request $request)
     {
         // Nama tabel diambil dari model supaya aturan exists selalu cocok
-        // (kalau hardcode 'bidang' padahal tabelnya 'bidangs', validasi akan error).
         $bidangTable = (new Bidang)->getTable();
 
-        // 1. Validasi Bersyarat
+        // 1. Validasi Bersyarat ('lainnya' adalah default layanan)
         $validated = $request->validate([
-            'layanan' => 'required|in:zoom,akun,peminjaman,konsultasi,operator',
+            'layanan' => 'required|in:lainnya,zoom,akun,peminjaman,konsultasi,operator',
             'lokasi' => 'required|string|max:100',
-            'deskripsi' => 'nullable|string',
+            'deskripsi' => 'required_if:layanan,lainnya|nullable|string',
 
             // Validasi khusus Zoom
             'bidang_id' => "required_if:layanan,zoom|nullable|exists:{$bidangTable},id",
@@ -131,6 +155,10 @@ class ServiceRequestController extends Controller
             'tgl_kembali' => 'required_if:layanan,peminjaman|nullable|date|after_or_equal:tgl_mulai',
             'keperluan' => 'required_if:layanan,peminjaman|nullable|string',
             'lokasi_penggunaan' => 'required_if:layanan,peminjaman|nullable|string|max:100',
+        ], [
+            'deskripsi.required_if' => 'Mohon jelaskan rincian permintaan atau kebutuhan Anda pada kolom deskripsi.',
+            'lokasi.required' => 'Lokasi wajib dipilih.',
+            'layanan.required' => 'Jenis layanan wajib dipilih.',
         ]);
 
         // 2. Database Transaction
@@ -210,18 +238,29 @@ class ServiceRequestController extends Controller
      */
     public function show($id)
     {
-        $req = ServiceRequest::with('user')->findOrFail($id);
+        $req = ServiceRequest::with([
+            'user.bidang',
+            'detailZoom.bidang',
+            'detailAkun',
+            'detailPeminjaman',
+            'resolution.petugas'
+        ])->findOrFail($id);
 
         // Pelapor hanya boleh melihat request miliknya sendiri
         if (auth()->user()->isPelapor() && $req->user_id !== auth()->id()) {
-            abort(403);
+            abort(403, 'Anda tidak memiliki akses ke request ini.');
         }
 
-        return view('requests.show', compact('req'));
+        // Daftar teknisi/admin untuk dropdown petugas
+        $petugasList = (auth()->user()->isTeknisi() || auth()->user()->isAdmin())
+            ? \App\Models\User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama'])
+            : collect();
+
+        return view('requests.show', compact('req', 'petugasList'));
     }
 
     /**
-     * Update status service request (hanya teknisi/admin)
+     * Update status dan simpan data tindak lanjut service request (hanya teknisi/admin)
      */
     public function update(Request $request, $id)
     {
@@ -233,20 +272,74 @@ class ServiceRequestController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:Diproses,Selesai,Ditolak',
+            'petugas_id' => 'required|exists:users,id',
+            'tgl_tindak_lanjut' => 'required|date',
+            'tindak_lanjut' => 'required_unless:status,Ditolak|nullable|string',
+            'alasan_penolakan' => 'required_if:status,Ditolak|nullable|string',
+
+            // Layanan Zoom (opsional/kondisional)
+            'zoom_link' => 'nullable|string|max:500',
+            'zoom_meeting_id' => 'nullable|string|max:100',
+            'zoom_passcode' => 'nullable|string|max:100',
+
+            // Layanan Akun (2 field sesuai request user)
+            'akun_password_baru' => 'nullable|string|max:255',
+            'akun_instruksi_login' => 'nullable|string',
+
+            // Layanan Peminjaman
+            'pinjam_perangkat_diserahkan' => 'nullable|string|max:255',
+            'pinjam_catatan_pengembalian' => 'nullable|string',
+        ], [
+            'petugas_id.required' => 'Petugas penindak lanjut wajib dipilih.',
+            'tgl_tindak_lanjut.required' => 'Tanggal tindak lanjut wajib diisi.',
+            'tindak_lanjut.required_unless' => 'Catatan tindakan tim IT wajib diisi jika tidak ditolak.',
+            'alasan_penolakan.required_if' => 'Alasan penolakan wajib diisi jika status Ditolak.',
         ]);
 
-        $oldStatus = $req->status;
-        $req->update(['status' => $validated['status']]);
+        DB::beginTransaction();
+        try {
+            // 1. Simpan atau perbarui data resolusi tindak lanjut
+            $req->resolution()->updateOrCreate(
+                ['request_id' => $req->id],
+                [
+                    'petugas_id' => $validated['petugas_id'],
+                    'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
+                    'tindak_lanjut' => $validated['tindak_lanjut'] ?? null,
+                    'alasan_penolakan' => $validated['alasan_penolakan'] ?? null,
+                    'zoom_link' => $validated['zoom_link'] ?? null,
+                    'zoom_meeting_id' => $validated['zoom_meeting_id'] ?? null,
+                    'zoom_passcode' => $validated['zoom_passcode'] ?? null,
+                    'akun_password_baru' => $validated['akun_password_baru'] ?? null,
+                    'akun_instruksi_login' => $validated['akun_instruksi_login'] ?? null,
+                    'pinjam_perangkat_diserahkan' => $validated['pinjam_perangkat_diserahkan'] ?? null,
+                    'pinjam_catatan_pengembalian' => $validated['pinjam_catatan_pengembalian'] ?? null,
+                ]
+            );
 
-        Log::info('Service request diperbarui', [
-            'request_id' => $req->id,
-            'nomor_request' => $req->nomor_request,
-            'old_status' => $oldStatus,
-            'new_status' => $validated['status'],
-            'updated_by' => auth()->user()->nama,
-        ]);
+            // 2. Perbarui status request
+            $oldStatus = $req->status;
+            $req->update(['status' => $validated['status']]);
 
-        return redirect()->route('requests.show', $req->id)
-            ->with('success', 'Status request berhasil diubah menjadi "' . $validated['status'] . '".');
+            DB::commit();
+
+            Log::info('Service request ditindaklanjuti', [
+                'request_id' => $req->id,
+                'nomor_request' => $req->nomor_request,
+                'old_status' => $oldStatus,
+                'new_status' => $validated['status'],
+                'petugas' => auth()->user()->nama,
+            ]);
+
+            return redirect()->route('requests.show', $req->id)
+                ->with('success', 'Tindak lanjut request berhasil disimpan dengan status "' . $validated['status'] . '".');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal menyimpan tindak lanjut request', [
+                'request_id' => $req->id,
+                'message' => $e->getMessage(),
+            ]);
+            return back()->withInput()->with('error', 'Gagal menyimpan tindak lanjut: ' . $e->getMessage());
+        }
     }
 }

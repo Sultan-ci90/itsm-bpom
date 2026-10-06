@@ -60,7 +60,7 @@ class IncidentController extends Controller
         DB::beginTransaction();
         try {
             $date = Carbon::now()->format('Ymd');
-            $lastTicket = Ticket::where('nomor_aduan', 'like', "TIK-{$date}-%")
+            $lastTicket = Ticket::withTrashed()->where('nomor_aduan', 'like', "TIK-{$date}-%")
                                 ->lockForUpdate()
                                 ->latest('id')
                                 ->first();
@@ -194,6 +194,103 @@ class IncidentController extends Controller
             DB::rollBack();
             Log::error('Gagal memproses tiket', ['ticket_id' => $ticket->id, 'message' => $e->getMessage()]);
             return back()->withInput()->with('error', 'Gagal memproses tiket: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Form edit data aduan (hanya teknisi/admin).
+     */
+    public function edit(Ticket $ticket)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $ticket->load(['asset', 'pelapor']);
+
+        $assets = Asset::select('id', 'kode_barang', 'nama_barang', 'nup', 'lokasi')
+                       ->orderBy('nama_barang')
+                       ->get();
+
+        return view('incidents.edit', compact('ticket', 'assets'));
+    }
+
+    /**
+     * Simpan perubahan data aduan (aset, deskripsi, foto).
+     * Berbeda dengan update() yang dipakai untuk memproses/tindak lanjut.
+     */
+    public function updateData(Request $request, Ticket $ticket)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'asset_id' => 'required|exists:assets,id',
+            'deskripsi_masalah' => 'required|string|min:10',
+            'foto_kendala' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $fotoPath = $ticket->foto_kendala;
+            if ($request->hasFile('foto_kendala')) {
+                if ($fotoPath && Storage::disk('public')->exists($fotoPath)) {
+                    Storage::disk('public')->delete($fotoPath);
+                }
+                $fotoPath = $request->file('foto_kendala')->store('kendala_photos', 'public');
+            }
+
+            $ticket->update([
+                'asset_id' => $validated['asset_id'],
+                'deskripsi_masalah' => $validated['deskripsi_masalah'],
+                'foto_kendala' => $fotoPath,
+            ]);
+
+            TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'status_label' => 'data diperbarui',
+                'keterangan' => 'Data aduan diperbarui oleh ' . auth()->user()->nama . '.',
+            ]);
+
+            DB::commit();
+            return redirect()->route('incidents.show', $ticket)
+                             ->with('success', 'Data aduan berhasil diperbarui.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal memperbarui data aduan', ['ticket_id' => $ticket->id, 'message' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Hapus aduan (soft delete: data tetap ada di database sebagai arsip).
+     */
+    public function destroy(Ticket $ticket)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        DB::beginTransaction();
+        try {
+            TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'status_label' => 'tiket dihapus',
+                'keterangan' => 'Tiket dihapus oleh ' . auth()->user()->nama . '.',
+            ]);
+
+            $ticket->delete();
+
+            DB::commit();
+            return redirect()->route('incidents.index')
+                             ->with('success', 'Aduan ' . $ticket->nomor_aduan . ' berhasil dihapus.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal menghapus aduan', ['ticket_id' => $ticket->id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Gagal menghapus aduan: ' . $e->getMessage());
         }
     }
 

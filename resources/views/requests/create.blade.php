@@ -23,7 +23,7 @@
             {{-- Nilai awal `layanan` dibaca langsung dari elemen select (bukan via string Blade)
                  agar atribut x-data tidak pernah rusak oleh karakter kutip → Alpine selalu init. --}}
             <form action="{{ route('requests.store') }}" method="POST"
-                x-data="{ layanan: $el.querySelector('[name=layanan]') ? $el.querySelector('[name=layanan]').value : '' }">
+                x-data="{ layanan: $el.querySelector('[name=layanan]') ? $el.querySelector('[name=layanan]').value : 'lainnya' }">
                 @csrf
 
                 @if ($errors->any())
@@ -52,7 +52,7 @@
                         <!-- Nama Pelapor -->
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
-                            <input type="text" value="{{ auth()->user()->nama }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            <input type="text" value="{{ auth()->user()->nama }} ({{ auth()->user()->bidang->nama_bidang ?? 'Umum' }})" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         </div>
 
                         <!-- Tanggal -->
@@ -61,11 +61,11 @@
                             <input type="text" value="{{ \Carbon\Carbon::now()->format('d/m/Y') }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         </div>
 
-                        <!-- Jenis Layanan -->
+                        <!-- Jenis Layanan (Default: Lainnya) -->
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Layanan <span class="text-meta-1">*</span></label>
                             <select x-model="layanan" name="layanan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                                <option value="">-- Pilih Layanan --</option>
+                                <option value="lainnya" {{ old('layanan', 'lainnya') == 'lainnya' ? 'selected' : '' }}>Lainnya (Permintaan Layanan Umum)</option>
                                 <option value="zoom" {{ old('layanan') == 'zoom' ? 'selected' : '' }}>Permintaan Link Zoom Meeting</option>
                                 <option value="akun" {{ old('layanan') == 'akun' ? 'selected' : '' }}>Reset Password Aplikasi (Srikandi/SIPT)</option>
                                 <option value="peminjaman" {{ old('layanan') == 'peminjaman' ? 'selected' : '' }}>Peminjaman Perangkat IT</option>
@@ -75,22 +75,36 @@
                             @error('layanan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <!-- Lokasi -->
+                        <!-- Lokasi (Terintegrasi Otomatis dengan Bidang Pegawai) -->
                         <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Lokasi <span class="text-meta-1">*</span></label>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
+                                Lokasi <span class="text-meta-1">*</span>
+                                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(Otomatis sesuai bidang Anda)</span>
+                            </label>
                             <select name="lokasi" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                                <option value="">-- Pilih Lokasi --</option>
                                 @foreach($lokasis as $lokasi)
-                                    <option value="{{ $lokasi }}" {{ old('lokasi') == $lokasi ? 'selected' : '' }}>{{ $lokasi }}</option>
+                                    <option value="{{ $lokasi }}" {{ old('lokasi', $defaultLokasi) == $lokasi ? 'selected' : '' }}>
+                                        {{ $lokasi }} {{ $lokasi === $defaultLokasi ? '★ (Ruang Anda)' : '' }}
+                                    </option>
                                 @endforeach
                             </select>
                             @error('lokasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <!-- Deskripsi Umum -->
+                        <!-- Deskripsi / Penjelasan Permintaan -->
                         <div class="sm:col-span-2">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Deskripsi Tambahan</label>
-                            <textarea name="deskripsi" rows="3" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">{{ old('deskripsi') }}</textarea>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
+                                Deskripsi / Penjelasan Permintaan
+                                <span class="text-meta-1" x-show="layanan === 'lainnya'">*</span>
+                            </label>
+                            <textarea name="deskripsi" rows="4"
+                                :required="layanan === 'lainnya'"
+                                placeholder="Jelaskan kebutuhan atau permintaan layanan Anda secara rinci (contoh: bantuan instalasi software, perbaikan printer di ruangan, setting email, pengecekan koneksi, dll)..."
+                                class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">{{ old('deskripsi') }}</textarea>
+                            @error('deskripsi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" x-show="layanan === 'lainnya'">
+                                💡 Cukup jelaskan apa yang Anda perlukan di kolom ini, lalu klik tombol <strong>Tambah Request</strong> di bawah.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -105,7 +119,7 @@
                             <select name="bidang_id" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="">-- Pilih Bidang --</option>
                                 @foreach($bidangs as $bidang)
-                                    <option value="{{ $bidang->id }}" {{ old('bidang_id') == $bidang->id ? 'selected' : '' }}>{{ $bidang->nama_bidang }}</option>
+                                    <option value="{{ $bidang->id }}" {{ old('bidang_id', auth()->user()->bidang_id) == $bidang->id ? 'selected' : '' }}>{{ $bidang->nama_bidang }}</option>
                                 @endforeach
                             </select>
                             @error('bidang_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror

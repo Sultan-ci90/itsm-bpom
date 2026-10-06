@@ -1314,24 +1314,79 @@ pre[class*='language-'] {
   box-shadow: 0px 1px 3px rgba(16, 24, 40, 0.1), 0px 1px 2px rgba(16, 24, 40, 0.06);
 }
 
+/* ---- TomSelect & Native Select styling (Dark Mode fix) ---- */
+.dark .ts-wrapper .ts-control,
 .dark .ts-control,
-.dark .ts-dropdown {
-  background-color: var(--color-form-input);
-  border-color: var(--color-strokedark);
-  color: rgb(255 255 255 / 0.9);
+html.dark .ts-wrapper.single .ts-control,
+html.dark .ts-control {
+  background-color: var(--color-form-input) !important;
+  background: var(--color-form-input) !important;
+  border-color: var(--color-strokedark) !important;
+  color: rgb(255 255 255 / 0.9) !important;
+  border-radius: 0.5rem;
 }
-.dark .ts-control > input {
-  color: #fff;
+
+.dark .ts-wrapper.single .ts-control .item,
+.dark .ts-control .item,
+html.dark .ts-control .item {
+  color: #ffffff !important;
+  background-color: transparent !important;
 }
+
+.dark .ts-control > input,
+html.dark .ts-control > input {
+  color: #ffffff !important;
+}
+
+.dark .ts-control > input::placeholder,
+html.dark .ts-control > input::placeholder {
+  color: #98a2b3 !important;
+}
+
+.dark .ts-dropdown,
+html.dark .ts-dropdown {
+  background-color: var(--color-form-input) !important;
+  background: var(--color-form-input) !important;
+  border-color: var(--color-strokedark) !important;
+  color: rgb(255 255 255 / 0.9) !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .ts-dropdown .option,
+html.dark .ts-dropdown .option {
+  color: rgb(255 255 255 / 0.85) !important;
+  background-color: transparent !important;
+}
+
 .dark .ts-dropdown .active,
-.dark .ts-dropdown .highlighted {
-  background-color: rgb(255 255 255 / 0.06);
-  color: #fff;
+.dark .ts-dropdown .highlighted,
+.dark .ts-dropdown .option:hover,
+html.dark .ts-dropdown .active,
+html.dark .ts-dropdown .highlighted,
+html.dark .ts-dropdown .option:hover {
+  background-color: var(--color-boxdark) !important;
+  color: #ffffff !important;
 }
-.dark .ts-wrapper.single .ts-control .ts-dropdown,
-.dark .ts-wrapper.multi .ts-control div {
-  background-color: var(--color-boxdark);
-  color: #fff;
+
+.dark .ts-dropdown .selected,
+html.dark .ts-dropdown .selected {
+  background-color: var(--color-brand-600) !important;
+  color: #ffffff !important;
+}
+
+.dark .ts-wrapper.multi .ts-control > div,
+html.dark .ts-wrapper.multi .ts-control > div {
+  background-color: var(--color-boxdark) !important;
+  color: #ffffff !important;
+  border-radius: 0.25rem;
+}
+
+/* Native select option fix for Windows browser dark mode */
+.dark select option,
+html.dark select option {
+  background-color: #101828 !important;
+  color: #ffffff !important;
 }
 
 /* Force code blocks and syntax highlighting to always remain LTR */

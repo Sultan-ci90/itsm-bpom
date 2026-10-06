@@ -90,18 +90,50 @@
                                     {{ $ticket->status }}
                                 </span>
                             </td>
-                            <td class="px-5 py-4 text-center">
-                                @if($isStaff && !$final)
-                                    <a href="{{ route('incidents.show', $ticket) }}"
-                                       class="inline-flex items-center rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-white transition hover:bg-opacity-90">
-                                        Proses
+                            <td class="px-5 py-4">
+                                <div class="flex items-center justify-center gap-2">
+
+                                    {{-- Detail (semua role) --}}
+                                    <a href="{{ route('incidents.show', $ticket) }}" title="Detail" aria-label="Detail"
+                                       class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-primary hover:text-primary dark:border-gray-800 dark:text-gray-400">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                        </svg>
                                     </a>
-                                @else
-                                    <a href="{{ route('incidents.show', $ticket) }}"
-                                       class="inline-flex items-center rounded-lg border border-stroke px-4 py-1.5 text-xs font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4">
-                                        Detail
-                                    </a>
-                                @endif
+
+                                    @if($isStaff)
+                                        {{-- Proses / tindak lanjut (hanya tiket belum final) --}}
+                                        @if(!$final)
+                                            <a href="{{ route('incidents.show', $ticket) }}#proses" title="Proses / Tindak Lanjut" aria-label="Proses"
+                                               class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-success hover:text-success dark:border-gray-800 dark:text-gray-400">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
+                                                </svg>
+                                            </a>
+                                        @endif
+
+                                        {{-- Edit data aduan --}}
+                                        <a href="{{ route('incidents.edit', $ticket) }}" title="Edit" aria-label="Edit"
+                                           class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                            </svg>
+                                        </a>
+
+                                        {{-- Hapus (soft delete) --}}
+                                        <form action="{{ route('incidents.destroy', $ticket) }}" method="POST"
+                                              onsubmit="return confirm('Hapus aduan {{ $ticket->nomor_aduan }}? Data tetap tersimpan sebagai arsip.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" title="Hapus" aria-label="Hapus"
+                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-danger hover:text-danger dark:border-gray-800 dark:text-gray-400">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

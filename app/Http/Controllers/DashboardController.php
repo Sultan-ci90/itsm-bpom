@@ -45,15 +45,16 @@ class DashboardController extends Controller
         ];
 
         // Hitung status incident, default 0 jika tidak ada
-        $incidentStatusCounts = Ticket::selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
+        $resolutionStats = TicketResolution::whereHas('ticket')
+            ->selectRaw('jenis_penyelesaian, COUNT(*) as total')
+            ->groupBy('jenis_penyelesaian')
+            ->pluck('total', 'jenis_penyelesaian');
             
         $statusIncident = [
-            'Belum diperiksa' => $incidentStatusCounts['Belum diperiksa'] ?? 0,
-            'Sedang diproses' => $incidentStatusCounts['Sedang diproses'] ?? 0,
-            'Selesai'         => $incidentStatusCounts['Selesai'] ?? 0,
-            'Ditolak'         => $incidentStatusCounts['Ditolak'] ?? 0,
+            'Belum diperiksa' => $resolutionStats['Belum diperiksa'] ?? 0,
+            'Sedang diproses' => $resolutionStats['Sedang diproses'] ?? 0,
+            'Selesai'         => $resolutionStats['Selesai'] ?? 0,
+            'Ditolak'         => $resolutionStats['Ditolak'] ?? 0,
         ];
 
         // 2. DATA CHART

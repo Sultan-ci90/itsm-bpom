@@ -18,6 +18,7 @@
         'aduan dibuat'            => 'bg-primary/10 text-primary',
         'status diubah'           => 'bg-warning/10 text-warning',
         'tindak lanjut diperbarui'=> 'bg-success/10 text-success',
+        'data diperbarui'         => 'bg-primary/10 text-primary',
     ];
 
     $input = 'w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white';
@@ -110,7 +111,7 @@
 
         {{-- 2. FORM PROSES TIKET (teknisi/admin, tiket belum final) --}}
         @if($isStaff && !$isFinal)
-        <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+        <div id="proses" class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-stroke px-6.5 py-4 dark:border-gray-800">
                 <h3 class="font-medium text-black dark:text-white">Proses Tiket</h3>
             </div>

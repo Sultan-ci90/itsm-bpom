@@ -65,7 +65,7 @@
             @click="toggleDropdown()"
         >
             <span class="mr-3 overflow-hidden rounded-full h-11 w-11 rtl:mr-0 rtl:ml-3">
-                <img src="/images/user/owner.png" alt="User" />
+                <img src="{{ $user->foto_profil ? asset('storage/' . $user->foto_profil) : asset('images/user/owner.png') }}" alt="User" class="w-full h-full object-cover" />
             </span>
 
             <span class="block mr-1 font-medium text-theme-sm rtl:mr-0 rtl:ml-1">{{ $user->nama }}</span>
@@ -104,8 +104,8 @@
         >
             <!-- User Info -->
             <div>
-                <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">Musharof Chowdhury</span>
-                <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">randomuser@pimjo.com</span>
+                <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">{{ $user->nama }}</span>
+                <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ $user->email }}</span>
             </div>
 
             <!-- Menu Items -->
@@ -224,9 +224,9 @@
             </ul>
 
             <!-- Sign Out -->
-            <form action="{{ route('logout') }}" method="POST">
+            <form action="{{ route('logout') }}" method="POST" class="mt-3 ml-1">
             @csrf
-            <button type="submit" class="dropdown-item"          
+            <button type="submit" class="dropdown-item flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-red-600 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"          
             
                     class="flex items-center w-full gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
                     @click="closeDropdown()"

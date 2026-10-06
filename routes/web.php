@@ -56,7 +56,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/incidents/{ticket}/justifikasi', [IncidentController::class, 'justifikasi'])
         ->middleware('role:teknisi,admin')
         ->name('incidents.justifikasi');
+    Route::get('/incidents/{ticket}/edit', [IncidentController::class, 'edit'])
+        ->middleware('role:teknisi,admin')
+        ->name('incidents.edit');
+    Route::delete('/incidents/{ticket}/destroy', [IncidentController::class, 'destroy'])
+        ->middleware('role:teknisi,admin')
+        ->name('incidents.destroy');
 
+    
     // =========================
     // SERVICE REQUEST (Permintaan Layanan)
     // =========================
@@ -95,11 +102,8 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('calendar');
 
-    Route::get('/profile', function () {
-        return view('pages.profile', [
-            'title' => 'Profile'
-        ]);
-    })->name('profile');
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
+    Route::post('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/form-elements', function () {
         return view('pages.form.form-elements', [
