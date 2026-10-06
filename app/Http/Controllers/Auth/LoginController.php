@@ -40,7 +40,7 @@ class LoginController extends Controller
         )) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(route('home'));
         }
 
         return back()
@@ -48,6 +48,7 @@ class LoginController extends Controller
                 'email' => 'Email atau password salah.',
             ])
             ->onlyInput('email');
+            
     }
 
     public function logout(Request $request)
@@ -61,4 +62,6 @@ class LoginController extends Controller
         ->route('signin')
         ->with('success', 'Berhasil logout.');
     }
+
+    
 }

@@ -42,7 +42,7 @@ Route::middleware('auth')->group(function () {
 
     // DASHBOARD KHUSUS TIM IT
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
+    
     // ... route incidents dan requests lainnya ...
     // =========================
     // INCIDENT (Lapor Kendala)
@@ -52,6 +52,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
     Route::get('/incidents/{ticket}', [IncidentController::class, 'show'])->name('incidents.show');
     Route::put('/incidents/{ticket}', [IncidentController::class, 'update'])->name('incidents.update');
+    Route::get('/incidents/{ticket}/justifikasi', [IncidentController::class, 'justifikasi'])
+    ->middleware('role:teknisi,admin')
+    ->name('incidents.justifikasi');
     // =========================
     // SERVICE REQUEST (Permintaan Layanan)
     // =========================
@@ -71,7 +74,10 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/assets/{id}', [IncidentController::class, 'getAssetDetail']);
 });
 
-
+Route::middleware('role:teknisi,admin')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/requests/all', [ServiceRequestController::class, 'all'])->name('requests.all');
+});
 // =========================
 // OTHER PAGES
 // =========================

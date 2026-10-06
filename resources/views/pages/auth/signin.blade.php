@@ -122,11 +122,11 @@
                     <!-- ===== Common Grid Shape Start ===== -->
                     <x-common.common-grid-shape/>
                     <div class="flex max-w-xs flex-col items-center">
-                        <a href="/" class="mb-4 block">
-                            <img src="./images/logo/auth-logo.svg" alt="Logo" />
+                        <a href="https://www.pom.go.id/" target="_blank" class="mb-4 block">
+                            <img src="{{ asset('images/logo/itsmfaviconlight.svg') }}" alt="Logo" class="h-30 w-auto" />
                         </a>
                         <p class="text-center text-gray-400 dark:text-white/60">
-                            Free and Open-Source Tailwind CSS Admin Dashboard Template
+                            Aplikasi IT Service Management (ITSM) Badan Pengawas Obat dan Makanan Republik Indonesia
                         </p>
                     </div>
                 </div>

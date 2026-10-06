@@ -50,6 +50,34 @@ class ServiceRequestController extends Controller
     }
 
     /**
+     * Daftar semua request (untuk teknisi/admin)
+     */
+    public function all(Request $request)
+    {
+        $query = ServiceRequest::with(['user']);
+
+        if ($request->filled('status')) {
+            $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
+            $status = $request->string('status')->toString();
+            if (in_array($status, $validStatuses, true)) {
+                $query->where('status', $status);
+            }
+        }
+
+        if ($request->filled('q')) {
+            $term = $request->string('q')->toString();
+            $query->where(function ($q) use ($term) {
+                $q->where('nomor_request', 'like', "%{$term}%")
+                  ->orWhere('layanan', 'like', "%{$term}%");
+            });
+        }
+
+        $requests = $query->latest('created_at')->paginate(15)->withQueryString();
+
+        return view('requests.all', compact('requests'));
+    }
+
+    /**
      * Menampilkan form create request
      */
     public function create()
@@ -190,41 +218,5 @@ class ServiceRequestController extends Controller
         }
 
         return view('requests.show', compact('req'));
-    }
-
-        /**
-     * Memperbarui status permintaan layanan (Khusus Teknisi/Admin)
-     */
-    public function update(Request $request, ServiceRequest $req)
-    {
-        // 1. Otorisasi: Hanya Teknisi dan Admin yang boleh memproses
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
-            abort(403, 'Akses ditolak.');
-        }
-
-        // 2. Validasi
-        $validated = $request->validate([
-            'status' => 'required|in:Diajukan,Diproses,Selesai,Ditolak',
-        ]);
-
-        try {
-            // 3. Update Status
-            // PENTING: Pastikan Model ServiceRequest memiliki `const UPDATED_AT = null;`
-            // karena tabel service_requests di itsm.sql tidak memiliki kolom updated_at.
-            $oldStatus = $req->status;
-            $req->update([
-                'status' => $validated['status']
-            ]);
-
-            return redirect()->route('requests.show', $req)
-                ->with('success', "Status permintaan berhasil diperbarui dari '{$oldStatus}' menjadi '{$validated['status']}'.");
-
-        } catch (\Throwable $e) {
-            Log::error('Gagal memperbarui status request', [
-                'request_id' => $req->id,
-                'message' => $e->getMessage(),
-            ]);
-            return back()->with('error', 'Gagal memperbarui status: ' . $e->getMessage());
-        }
     }
 }
