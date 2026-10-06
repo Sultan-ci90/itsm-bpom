@@ -219,4 +219,34 @@ class ServiceRequestController extends Controller
 
         return view('requests.show', compact('req'));
     }
+
+    /**
+     * Update status service request (hanya teknisi/admin)
+     */
+    public function update(Request $request, $id)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403, 'Anda tidak memiliki akses untuk memproses request ini.');
+        }
+
+        $req = ServiceRequest::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => 'required|in:Diproses,Selesai,Ditolak',
+        ]);
+
+        $oldStatus = $req->status;
+        $req->update(['status' => $validated['status']]);
+
+        Log::info('Service request diperbarui', [
+            'request_id' => $req->id,
+            'nomor_request' => $req->nomor_request,
+            'old_status' => $oldStatus,
+            'new_status' => $validated['status'],
+            'updated_by' => auth()->user()->nama,
+        ]);
+
+        return redirect()->route('requests.show', $req->id)
+            ->with('success', 'Status request berhasil diubah menjadi "' . $validated['status'] . '".');
+    }
 }

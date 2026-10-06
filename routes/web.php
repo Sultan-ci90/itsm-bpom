@@ -40,10 +40,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])
         ->name('logout');
 
-    // DASHBOARD KHUSUS TIM IT
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // ... route incidents dan requests lainnya ...
+    // DASHBOARD KHUSUS TIM IT (hanya teknisi/admin)
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('role:teknisi,admin')
+        ->name('dashboard');
+
     // =========================
     // INCIDENT (Lapor Kendala)
     // =========================
@@ -53,18 +54,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/incidents/{ticket}', [IncidentController::class, 'show'])->name('incidents.show');
     Route::put('/incidents/{ticket}', [IncidentController::class, 'update'])->name('incidents.update');
     Route::get('/incidents/{ticket}/justifikasi', [IncidentController::class, 'justifikasi'])
-    ->middleware('role:teknisi,admin')
-    ->name('incidents.justifikasi');
+        ->middleware('role:teknisi,admin')
+        ->name('incidents.justifikasi');
+
     // =========================
     // SERVICE REQUEST (Permintaan Layanan)
     // =========================
- Route::get('/requests', [ServiceRequestController::class, 'index'])->name('requests.index');
+    Route::get('/requests', [ServiceRequestController::class, 'index'])->name('requests.index');
     Route::get('/requests/create', [ServiceRequestController::class, 'create'])->name('requests.create');
     Route::post('/requests', [ServiceRequestController::class, 'store'])->name('requests.store');
+    // PENTING: route literal /requests/all HARUS sebelum /requests/{req}
+    Route::get('/requests/all', [ServiceRequestController::class, 'all'])
+        ->middleware('role:teknisi,admin')
+        ->name('requests.all');
     Route::get('/requests/{req}', [ServiceRequestController::class, 'show'])->name('requests.show');
     Route::put('/requests/{req}', [ServiceRequestController::class, 'update'])->name('requests.update');
-    Route::get('/requests/all', [ServiceRequestController::class, 'all'])->name('requests.all');
-
 });
 
 // =========================
@@ -74,43 +78,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/assets/{id}', [IncidentController::class, 'getAssetDetail']);
 });
 
-Route::middleware('role:teknisi,admin')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/requests/all', [ServiceRequestController::class, 'all'])->name('requests.all');
-});
 // =========================
-// OTHER PAGES
+// OTHER PAGES (template demo)
 // =========================
-
-Route::get('/calendar', function () {
-    return view('pages.calender', [
-        'title' => 'Calendar'
-    ]);
-})->name('calendar');
-
-Route::get('/profile', function () {
-    return view('pages.profile', [
-        'title' => 'Profile'
-    ]);
-})->name('profile');
-
-Route::get('/form-elements', function () {
-    return view('pages.form.form-elements', [
-        'title' => 'Form Elements'
-    ]);
-})->name('form-elements');
-
-Route::get('/basic-tables', function () {
-    return view('pages.tables.basic-tables', [
-        'title' => 'Basic Tables'
-    ]);
-})->name('basic-tables');
-
-Route::get('/blank', function () {
-    return view('pages.blank', [
-        'title' => 'Blank'
-    ]);
-})->name('blank');
 
 Route::get('/error-404', function () {
     return view('pages.errors.error-404', [
@@ -118,55 +88,86 @@ Route::get('/error-404', function () {
     ]);
 })->name('error-404');
 
-Route::get('/line-chart', function () {
-    return view('pages.chart.line-chart', [
-        'title' => 'Line Chart'
-    ]);
-})->name('line-chart');
+Route::middleware('auth')->group(function () {
+    Route::get('/calendar', function () {
+        return view('pages.calender', [
+            'title' => 'Calendar'
+        ]);
+    })->name('calendar');
 
-Route::get('/bar-chart', function () {
-    return view('pages.chart.bar-chart', [
-        'title' => 'Bar Chart'
-    ]);
-})->name('bar-chart');
+    Route::get('/profile', function () {
+        return view('pages.profile', [
+            'title' => 'Profile'
+        ]);
+    })->name('profile');
 
+    Route::get('/form-elements', function () {
+        return view('pages.form.form-elements', [
+            'title' => 'Form Elements'
+        ]);
+    })->name('form-elements');
 
-// =========================
-// UI ELEMENTS
-// =========================
+    Route::get('/basic-tables', function () {
+        return view('pages.tables.basic-tables', [
+            'title' => 'Basic Tables'
+        ]);
+    })->name('basic-tables');
 
-Route::get('/alerts', function () {
-    return view('pages.ui-elements.alerts', [
-        'title' => 'Alerts'
-    ]);
-})->name('alerts');
+    Route::get('/blank', function () {
+        return view('pages.blank', [
+            'title' => 'Blank'
+        ]);
+    })->name('blank');
 
-Route::get('/avatars', function () {
-    return view('pages.ui-elements.avatars', [
-        'title' => 'Avatars'
-    ]);
-})->name('avatars');
+    Route::get('/line-chart', function () {
+        return view('pages.chart.line-chart', [
+            'title' => 'Line Chart'
+        ]);
+    })->name('line-chart');
 
-Route::get('/badge', function () {
-    return view('pages.ui-elements.badges', [
-        'title' => 'Badges'
-    ]);
-})->name('badges');
+    Route::get('/bar-chart', function () {
+        return view('pages.chart.bar-chart', [
+            'title' => 'Bar Chart'
+        ]);
+    })->name('bar-chart');
 
-Route::get('/buttons', function () {
-    return view('pages.ui-elements.buttons', [
-        'title' => 'Buttons'
-    ]);
-})->name('buttons');
+    // =========================
+    // UI ELEMENTS
+    // =========================
 
-Route::get('/image', function () {
-    return view('pages.ui-elements.images', [
-        'title' => 'Images'
-    ]);
-})->name('images');
+    Route::get('/alerts', function () {
+        return view('pages.ui-elements.alerts', [
+            'title' => 'Alerts'
+        ]);
+    })->name('alerts');
 
-Route::get('/videos', function () {
-    return view('pages.ui-elements.videos', [
-        'title' => 'Videos'
-    ]);
-})->name('videos');
+    Route::get('/avatars', function () {
+        return view('pages.ui-elements.avatars', [
+            'title' => 'Avatars'
+        ]);
+    })->name('avatars');
+
+    Route::get('/badge', function () {
+        return view('pages.ui-elements.badges', [
+            'title' => 'Badges'
+        ]);
+    })->name('badges');
+
+    Route::get('/buttons', function () {
+        return view('pages.ui-elements.buttons', [
+            'title' => 'Buttons'
+        ]);
+    })->name('buttons');
+
+    Route::get('/image', function () {
+        return view('pages.ui-elements.images', [
+            'title' => 'Images'
+        ]);
+    })->name('images');
+
+    Route::get('/videos', function () {
+        return view('pages.ui-elements.videos', [
+            'title' => 'Videos'
+        ]);
+    })->name('videos');
+});

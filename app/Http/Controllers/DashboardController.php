@@ -16,10 +16,15 @@ class DashboardController extends Controller
         $bulanIni  = Carbon::now()->format('Y-m');
         $bulanLalu = Carbon::now()->subMonth()->format('Y-m');
 
-        $hitungPerBulan = function ($query) use ($bulanIni, $bulanLalu) {
+        $hitungPerBulan = function ($query) {
+            $awalBulanIni  = Carbon::now()->startOfMonth();
+            $akhirBulanIni = Carbon::now()->endOfMonth();
+            $awalBulanLalu = Carbon::now()->subMonth()->startOfMonth();
+            $akhirBulanLalu = Carbon::now()->subMonth()->endOfMonth();
+
             return [
-                'ini'  => (clone $query)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanIni])->count(),
-                'lalu' => (clone $query)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanLalu])->count(),
+                'ini'  => (clone $query)->whereBetween('created_at', [$awalBulanIni, $akhirBulanIni])->count(),
+                'lalu' => (clone $query)->whereBetween('created_at', [$awalBulanLalu, $akhirBulanLalu])->count(),
             ];
         };
 
