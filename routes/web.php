@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\CaptchaController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\ServiceRequestController;
 
@@ -13,11 +14,13 @@ use App\Http\Controllers\ServiceRequestController;
 
 Route::middleware('guest')->group(function () {
 
-    Route::get('/signin', [LoginController::class, 'showLoginForm'])
-        ->name('signin');
+    Route::get('/signin', [LoginController::class, 'showLoginForm'])->name('signin');
+
+    Route::get('/captcha', [CaptchaController::class, 'image'])
+        ->middleware('throttle:30,1')->name('captcha.image');
 
     Route::post('/signin', [LoginController::class, 'login'])
-        ->name('login');
+        ->middleware('throttle:10,1')->name('login');
 
 });
 
@@ -27,6 +30,11 @@ Route::middleware('guest')->group(function () {
 // =========================
 
 Route::middleware('auth')->group(function () {
+    Route::post('/notifications/read-all', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.readAll');
+
     Route::get('/', function () {
         $user = auth()->user();
 
@@ -65,6 +73,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/incidents/{ticket}/edit', [IncidentController::class, 'edit'])
         ->middleware('role:teknisi,admin')
         ->name('incidents.edit');
+    Route::put('/incidents/{ticket}/data', [IncidentController::class, 'updateData'])
+        ->middleware('role:teknisi,admin')
+        ->name('incidents.updateData');
     Route::delete('/incidents/{ticket}/destroy', [IncidentController::class, 'destroy'])
         ->middleware('role:teknisi,admin')
         ->name('incidents.destroy');
@@ -84,6 +95,12 @@ Route::middleware('auth')->group(function () {
         
     Route::get('/requests/{req}', [ServiceRequestController::class, 'show'])->name('requests.show');
     Route::put('/requests/{req}', [ServiceRequestController::class, 'update'])->name('requests.update');
+    Route::get('/requests/{req}/edit', [ServiceRequestController::class, 'edit'])
+        ->middleware('role:teknisi,admin')
+        ->name('requests.edit');
+    Route::put('/requests/{req}/data', [ServiceRequestController::class, 'updateData'])
+        ->middleware('role:teknisi,admin')
+        ->name('requests.updateData');
     Route::delete('/requests/{req}/destroy', [ServiceRequestController::class, 'destroy'])
         ->middleware('role:teknisi,admin')
         ->name('requests.destroy');

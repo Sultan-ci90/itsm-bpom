@@ -15,9 +15,9 @@
     ];
 
     $chip = [
-        'aduan dibuat'            => 'bg-primary/10 text-primary',
-        'status diubah'           => 'bg-warning/10 text-warning',
-        'tindak lanjut diperbarui'=> 'bg-success/10 text-success',
+        'aduan dibuat'            => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
+        'status diubah'           => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
+        'tindak lanjut diperbarui'=> 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400  ',
         'data diperbarui'         => 'bg-primary/10 text-primary',
     ];
 
@@ -143,10 +143,10 @@
                             <input type="hidden" name="jenis_penyelesaian" :value="jenis">
                             <div class="inline-flex rounded-lg border border-stroke p-1 dark:border-gray-800">
                                 <button type="button" @click="jenis = 'Internal'"
-                                        :class="jenis === 'Internal' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
+                                        :class="jenis === 'Internal' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
                                         class="rounded-md px-6 py-2 text-sm font-medium transition">Internal</button>
                                 <button type="button" @click="jenis = 'Pihak ke-3'"
-                                        :class="jenis === 'Pihak ke-3' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
+                                        :class="jenis === 'Pihak ke-3' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
                                         class="rounded-md px-6 py-2 text-sm font-medium transition">Pihak ke-3</button>
                             </div>
                             @error('jenis_penyelesaian') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
@@ -249,7 +249,7 @@
                             @endif
                         </template>
                         <button type="submit"
-                                class="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
+                                class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
                             Simpan
                         </button>
                     </div>

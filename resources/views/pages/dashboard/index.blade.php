@@ -22,10 +22,10 @@
             'delta' => null, 'period' => 'Menunggu penanganan tim IT',
         ],
         [
-            'title' => 'Incident Selesai', 'value' => $statusIncident['Selesai'],
+            'title' => 'Sudah Selesai', 'value' => $totalSelesai,
             'bg' => 'rgba(77, 168, 99, 0.1)', 'icon' => '#4DA863',
             'svg' => '<path d="M12 1a11 11 0 1 0 11 11A11 11 0 0 0 12 1zm5.4 8.2-6 6a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4l2.3 2.3 5.3-5.3a1 1 0 0 1 1.4 1.4z"/>',
-            'delta' => null, 'period' => 'Ditolak: ' . $statusIncident['Ditolak'],
+            'delta' => null, 'period' => 'Incident: ' . $selesaiIncident . ' · Request: ' . $selesaiRequest,
         ],
     ];
 
@@ -37,10 +37,13 @@
     ];
 
     $badge = [
-        'Belum diperiksa' => 'bg-danger/10 text-danger',
-        'Sedang diproses' => 'bg-warning/10 text-warning',
-        'Selesai'         => 'bg-success/10 text-success',
-        'Ditolak'         => 'bg-gray-200 text-gray-600 dark:bg-meta-4 dark:text-gray-300',
+        'Selesai' => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
+        'Diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
+        'Diajukan' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800/20 dark:text-yellow-400',
+        'Belum diperiksa' => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+        'Ditolak' => 'bg-red-200 text-red-600 dark:bg-red-800/20 dark:text-red-300',
+        
+     
     ];
 @endphp
 

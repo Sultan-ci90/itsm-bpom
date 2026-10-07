@@ -26,14 +26,6 @@
                         </div>
                         <div>
                             
-                            <div class="relative py-3 sm:py-5">
-                                <div class="absolute inset-0 flex items-center">
-                                    <div class="w-full border-t border-gray-200 dark:border-gray-800"></div>
-                                </div>
-                                <div class="relative flex justify-center text-sm">
-                                    <span class="bg-white p-2 text-gray-400 sm:px-5 sm:py-2 dark:bg-gray-900">Or</span>
-                                </div>
-                            </div>
                             <form action="{{ route('login') }}" method="POST" >
                                 @csrf
                                 <div class="space-y-5">
@@ -66,6 +58,41 @@
                                                 </svg>
                                             </span>
                                         </div>
+                                    </div>
+                                    <!-- Captcha Banjar -->
+                                    <div x-data="{
+                                            failed: false,
+                                            refresh() {
+                                                this.failed = false;
+                                                this.$refs.captchaImg.src = @js(route('captcha.image')) + '?t=' + Date.now();
+                                                this.$refs.captchaInput.value = '';
+                                                this.$refs.captchaInput.focus();
+                                            }
+                                        }">
+                                        <label for="captcha" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                            Ketik kata pada gambar<span class="text-error-500">*</span>
+                                        </label>
+                                        <div class="mb-2 flex items-center gap-3">
+                                            {{-- src diisi langsung dari server (tidak bergantung pada Alpine) --}}
+                                            <img src="{{ route('captcha.image') }}?t={{ time() }}" x-ref="captchaImg"
+                                                x-on:error="failed = true" x-on:load="failed = false"
+                                                alt="Captcha" width="240" height="80" draggable="false"
+                                                class="h-20 w-60 max-w-full rounded-lg border border-gray-200 select-none dark:border-gray-700">
+                                            <button type="button" @click="refresh()" title="Ganti gambar" aria-label="Ganti gambar"
+                                                class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.03]">
+                                                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0 0 20 12M18.4 9A8 8 0 0 0 4 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <p x-show="failed" x-cloak class="mb-2 text-sm text-error-500">Gambar captcha gagal dimuat. Klik tombol refresh di samping gambar.</p>
+                                        <input type="text" id="captcha" name="captcha" x-ref="captchaInput" required
+                                            autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="50"
+                                            placeholder="Ketik kata di atas"
+                                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30">
+                                        @error('captcha')
+                                            <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                                        @enderror
                                     </div>
                                     <!-- Checkbox -->
                                     <div class="flex items-center justify-between">

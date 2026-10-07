@@ -11,6 +11,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Notifications\NewTicketNotification;
+use App\Notifications\TicketStatusUpdatedNotification;
+use Illuminate\Support\Facades\Notification;
+use App\Models\User;
 
 class ServiceRequestController extends Controller
 {
@@ -24,9 +28,10 @@ class ServiceRequestController extends Controller
         // 'Request Saya' selalu menampilkan milik user yang sedang login
         $query->where('user_id', auth()->id());
 
+        $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
+
         // Filter berdasarkan status
         if ($request->filled('status')) {
-            $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
             $status = $request->string('status')->toString();
             if (in_array($status, $validStatuses, true)) {
                 $query->where('status', $status);
@@ -44,7 +49,10 @@ class ServiceRequestController extends Controller
 
         $requests = $query->latest('created_at')->paginate(10)->withQueryString();
 
-        return view('requests.index', compact('requests'));
+        return view('requests.index', [
+            'requests' => $requests,
+            'statuses' => $validStatuses
+        ]);
     }
 
     /**
@@ -54,8 +62,9 @@ class ServiceRequestController extends Controller
     {
         $query = ServiceRequest::with(['user']);
 
+        $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
+
         if ($request->filled('status')) {
-            $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
             $status = $request->string('status')->toString();
             if (in_array($status, $validStatuses, true)) {
                 $query->where('status', $status);
@@ -72,7 +81,10 @@ class ServiceRequestController extends Controller
 
         $requests = $query->latest('created_at')->paginate(15)->withQueryString();
 
-        return view('requests.all', compact('requests'));
+        return view('requests.all', [
+            'requests' => $requests,
+            'statuses' => $validStatuses
+        ]);
     }
 
     /**
@@ -213,6 +225,17 @@ class ServiceRequestController extends Controller
                 ]);
             }
 
+            // Notify Admin & Teknisi
+            $staffs = User::whereIn('role', ['teknisi', 'admin'])->get();
+            $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+            Notification::send($staffs, new NewTicketNotification(
+                'Permintaan Layanan Baru',
+                auth()->user()->nama . ' mengajukan layanan baru (' . $nomorRequest . ').',
+                route('requests.show', $serviceRequest->id),
+                auth()->user()->nama,
+                $avatar
+            ));
+
             DB::commit();
             return redirect()->route('requests.index')
                 ->with('success', 'Permintaan layanan berhasil diajukan dengan Nomor: ' . $nomorRequest);
@@ -228,6 +251,102 @@ class ServiceRequestController extends Controller
             // Pesan teknis tetap ditampilkan selama tahap debugging;
             // ganti ke pesan umum kalau sudah production.
             return back()->withInput()->with('error', 'Gagal membuat request: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Tampilkan form edit request
+     */
+    public function edit(ServiceRequest $req)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $bidangs = \App\Models\Bidang::all();
+        $lokasis = [
+            'Ruang Server / Data Center',
+            'Ruang Rapat Utama',
+            'Ruang Kepala Balai',
+            'Ruang Tata Usaha',
+            'Ruang Laboratorium',
+            'Ruang Pemeriksaan',
+            'Ruang Infokom',
+            'Layanan Publik / PTSP',
+            'Lainnya'
+        ];
+        return view('requests.edit', compact('req', 'bidangs', 'lokasis'));
+    }
+
+    /**
+     * Proses update data request (oleh admin)
+     */
+    public function updateData(Request $request, ServiceRequest $req)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'layanan' => 'required|string',
+            'lokasi' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update tabel utama
+            $req->update($validated);
+
+            // Update tabel relasi sesuai jenis layanan
+            if ($validated['layanan'] === 'zoom') {
+                $zoomData = $request->validate([
+                    'nama_acara' => 'required|string|max:255',
+                    'bidang_id' => 'required|exists:bidangs,id',
+                    'jenis_acara' => 'required|string',
+                    'jam_mulai' => 'required',
+                    'jam_selesai' => 'required',
+                    'butuh_operator' => 'required|string',
+                    'bentuk_ruangan' => 'nullable|string',
+                    'jumlah_kursi' => 'nullable|integer',
+                ]);
+                if ($req->detailZoom) {
+                    $req->detailZoom->update($zoomData);
+                } else {
+                    $req->detailZoom()->create($zoomData);
+                }
+            } elseif ($validated['layanan'] === 'akun') {
+                $akunData = $request->validate([
+                    'jenis_pengajuan' => 'required|string',
+                    'sistem_tujuan' => 'required|string',
+                    'nip_terkait' => 'required|string',
+                ]);
+                if ($req->detailAkun) {
+                    $req->detailAkun->update($akunData);
+                } else {
+                    $req->detailAkun()->create($akunData);
+                }
+            } elseif ($validated['layanan'] === 'peminjaman') {
+                $pinjamData = $request->validate([
+                    'jenis_perangkat' => 'required|string',
+                    'tgl_mulai' => 'required|date',
+                    'tgl_kembali' => 'required|date|after_or_equal:tgl_mulai',
+                    'keperluan' => 'required|string',
+                    'lokasi_penggunaan' => 'nullable|string',
+                ]);
+                if ($req->detailPeminjaman) {
+                    $req->detailPeminjaman->update($pinjamData);
+                } else {
+                    $req->detailPeminjaman()->create($pinjamData);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('requests.show', $req->id)->with('success', 'Data request berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal update request', ['request_id' => $req->id, 'message' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Gagal memperbarui request: ' . $e->getMessage());
         }
     }
 
@@ -317,6 +436,18 @@ class ServiceRequestController extends Controller
             // 2. Perbarui status request
             $oldStatus = $req->status;
             $req->update(['status' => $validated['status']]);
+
+            // Notify Pelapor
+            if ($oldStatus !== $validated['status'] && $req->user) {
+                $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+                $req->user->notify(new TicketStatusUpdatedNotification(
+                    'Status Request Diperbarui',
+                    'Request Anda (' . $req->nomor_request . ') kini berstatus: ' . $validated['status'],
+                    route('requests.show', $req->id),
+                    auth()->user()->nama,
+                    $avatar
+                ));
+            }
 
             DB::commit();
 

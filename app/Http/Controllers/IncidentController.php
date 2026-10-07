@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Notifications\NewTicketNotification;
+use App\Notifications\TicketStatusUpdatedNotification;
+use Illuminate\Support\Facades\Notification;
 
 class IncidentController extends Controller
 {
@@ -119,6 +122,17 @@ class IncidentController extends Controller
                 'keterangan' => 'Tiket dibuat oleh ' . auth()->user()->nama . '.',
             ]);
 
+            // Notify Admin & Teknisi
+            $staffs = User::whereIn('role', ['teknisi', 'admin'])->get();
+            $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+            Notification::send($staffs, new NewTicketNotification(
+                'Laporan Kendala Baru',
+                auth()->user()->nama . ' membuat laporan kendala baru (' . $nomorAduan . ').',
+                route('incidents.show', $ticket->id),
+                auth()->user()->nama,
+                $avatar
+            ));
+
             DB::commit();
             return redirect()
                 ->route('incidents.index')
@@ -209,6 +223,18 @@ class IncidentController extends Controller
                     'status_label' => 'status diubah',
                     'keterangan' => 'Status diubah dari "' . $oldStatus . '" menjadi "' . $request->status . '" oleh ' . auth()->user()->nama . '.',
                 ]);
+
+                // Notify Pelapor
+                if ($ticket->pelapor) {
+                    $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+                    $ticket->pelapor->notify(new TicketStatusUpdatedNotification(
+                        'Status Aduan Diperbarui',
+                        'Aduan Anda (' . $ticket->nomor_aduan . ') kini berstatus: ' . $request->status,
+                        route('incidents.show', $ticket->id),
+                        auth()->user()->nama,
+                        $avatar
+                    ));
+                }
             } else {
                 TicketHistory::create([
                     'ticket_id' => $ticket->id,
@@ -324,6 +350,7 @@ class IncidentController extends Controller
             return back()->with('error', 'Gagal menghapus aduan: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Halaman cetak Surat Justifikasi (hanya untuk penyelesaian Pihak ke-3).

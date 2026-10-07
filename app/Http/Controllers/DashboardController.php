@@ -5,98 +5,106 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\TicketResolution;
 use App\Models\ServiceRequest;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    /** Label layanan request (urutan tetap, 0 jika belum ada data). */
+    private const LAYANAN_LABELS = [
+        'zoom'       => 'Zoom Meeting',
+        'akun'       => 'Reset Password',
+        'peminjaman' => 'Peminjaman Perangkat',
+        'konsultasi' => 'Konsultasi IT',
+        'operator'   => 'Operator Kegiatan',
+    ];
+
+    /** Urutan tetap supaya warna di chart selalu cocok dengan labelnya. */
+    private const JENIS_PENYELESAIAN = ['Internal', 'Pihak ke-3'];
+    private const STATUS_REQUEST     = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
+
     public function index()
     {
-        // 1. STATISTIK KARTU (Cards) — dengan perbandingan bulan ini vs bulan lalu
-        $bulanIni  = Carbon::now()->format('Y-m');
-        $bulanLalu = Carbon::now()->subMonth()->format('Y-m');
-
-        $hitungPerBulan = function ($query) {
-            $awalBulanIni  = Carbon::now()->startOfMonth();
-            $akhirBulanIni = Carbon::now()->endOfMonth();
-            $awalBulanLalu = Carbon::now()->subMonth()->startOfMonth();
-            $akhirBulanLalu = Carbon::now()->subMonth()->endOfMonth();
-
-            return [
-                'ini'  => (clone $query)->whereBetween('created_at', [$awalBulanIni, $akhirBulanIni])->count(),
-                'lalu' => (clone $query)->whereBetween('created_at', [$awalBulanLalu, $akhirBulanLalu])->count(),
-            ];
-        };
-
-        $persen = function ($ini, $lalu) {
-            if ($lalu == 0) return $ini > 0 ? 100 : 0;
-            return round((($ini - $lalu) / $lalu) * 100);
-        };
-
+        // 1. STATISTIK KARTU
         $totalIncident = Ticket::count();
-        $totalRequest = ServiceRequest::count();
-
-        $incBulanan = $hitungPerBulan(Ticket::query());
-        $reqBulanan = $hitungPerBulan(ServiceRequest::query());
+        $totalRequest  = ServiceRequest::count();
 
         $statsDelta = [
-            'incident' => ['value' => $incBulanan['ini'], 'delta' => $persen($incBulanan['ini'], $incBulanan['lalu'])],
-            'request'  => ['value' => $reqBulanan['ini'],  'delta' => $persen($reqBulanan['ini'], $reqBulanan['lalu'])],
+            'incident' => $this->monthDelta(Ticket::query()),
+            'request'  => $this->monthDelta(ServiceRequest::query()),
         ];
 
-        // Hitung status incident, default 0 jika tidak ada
+        $incidentStatusCounts = Ticket::selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $statusIncident = [
+            'Belum diperiksa' => $incidentStatusCounts['Belum diperiksa'] ?? 0,
+            'Sedang diproses' => $incidentStatusCounts['Sedang diproses'] ?? 0,
+            'Selesai'         => $incidentStatusCounts['Selesai'] ?? 0,
+            'Ditolak'         => $incidentStatusCounts['Ditolak'] ?? 0,
+        ];
+
+        // 2. DATA CHART
+        // Chart 1: Tren incident 6 bulan terakhir (nama bulan bahasa Indonesia)
+        $last6Months   = [];
+        $incidentTrend = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::now()->startOfMonth()->subMonths($i);
+            $last6Months[]   = $date->copy()->locale('id')->translatedFormat('M Y');
+            $incidentTrend[] = Ticket::whereBetween('created_at', [
+                $date->copy()->startOfMonth(),
+                $date->copy()->endOfMonth(),
+            ])->count();
+        }
+
+        // Chart 2: Metode penyelesaian — hanya tiket yang belum dihapus (soft delete),
+        // urutan label tetap agar warna Internal/Pihak ke-3 tidak tertukar.
         $resolutionStats = TicketResolution::whereHas('ticket')
             ->selectRaw('jenis_penyelesaian, COUNT(*) as total')
             ->groupBy('jenis_penyelesaian')
             ->pluck('total', 'jenis_penyelesaian');
-            
-        $statusIncident = [
-            'Belum diperiksa' => $resolutionStats['Belum diperiksa'] ?? 0,
-            'Sedang diproses' => $resolutionStats['Sedang diproses'] ?? 0,
-            'Selesai'         => $resolutionStats['Selesai'] ?? 0,
-            'Ditolak'         => $resolutionStats['Ditolak'] ?? 0,
-        ];
 
-        // 2. DATA CHART
-        // Chart 1: Tren Incident 6 Bulan Terakhir
-        $last6Months = [];
-        $incidentTrend = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $last6Months[] = $date->format('M Y');
-            $incidentTrend[] = Ticket::whereMonth('created_at', $date->month)
-                                     ->whereYear('created_at', $date->year)
-                                     ->count();
-        }
-
-        // Chart 2: Penyelesaian Incident (Internal vs Pihak ke-3)
-        $resolutionStats = TicketResolution::selectRaw('jenis_penyelesaian, COUNT(*) as total')
-            ->groupBy('jenis_penyelesaian')
-            ->pluck('total', 'jenis_penyelesaian');
         $resolutionData = [
-            'labels' => array_keys($resolutionStats->toArray()),
-            'data'   => array_values($resolutionStats->toArray()),
+            'labels' => self::JENIS_PENYELESAIAN,
+            'data'   => array_map(fn ($j) => (int) ($resolutionStats[$j] ?? 0), self::JENIS_PENYELESAIAN),
         ];
 
-        // Chart 3: Request Berdasarkan Jenis Layanan
+        // Chart 3: Request per jenis layanan (label ramah dibaca)
         $requestByLayanan = ServiceRequest::selectRaw('layanan, COUNT(*) as total')
             ->groupBy('layanan')
             ->pluck('total', 'layanan');
-        $layananData = [
-            'labels' => array_keys($requestByLayanan->toArray()),
-            'data'   => array_values($requestByLayanan->toArray()),
-        ];
 
-        // Chart 4: Request Berdasarkan Status
+        $layananLabels = [];
+        $layananValues = [];
+        foreach (self::LAYANAN_LABELS as $key => $label) {
+            $layananLabels[] = $label;
+            $layananValues[] = (int) ($requestByLayanan[$key] ?? 0);
+        }
+        // Layanan di luar daftar (jika suatu saat ditambah) tetap ikut tampil
+        foreach ($requestByLayanan as $key => $total) {
+            if (!array_key_exists($key, self::LAYANAN_LABELS)) {
+                $layananLabels[] = ucfirst($key);
+                $layananValues[] = (int) $total;
+            }
+        }
+        $layananData = ['labels' => $layananLabels, 'data' => $layananValues];
+
+        // Chart 4: Status request — urutan tetap agar warna cocok dengan status
         $requestByStatus = ServiceRequest::selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
+
         $requestStatusData = [
-            'labels' => array_keys($requestByStatus->toArray()),
-            'data'   => array_values($requestByStatus->toArray()),
+            'labels' => self::STATUS_REQUEST,
+            'data'   => array_map(fn ($s) => (int) ($requestByStatus[$s] ?? 0), self::STATUS_REQUEST),
         ];
 
-        // 3. DATA TABEL (Hanya 5 Terbaru untuk performa)
+        // Kartu "Sudah Selesai": incident + request yang berstatus Selesai
+        $selesaiIncident = (int) $statusIncident['Selesai'];
+        $selesaiRequest  = (int) ($requestByStatus['Selesai'] ?? 0);
+        $totalSelesai    = $selesaiIncident + $selesaiRequest;
+
+        // 3. DATA TABEL (5 terbaru)
         $recentIncidents = Ticket::with(['asset', 'pelapor'])
             ->latest('created_at')
             ->take(5)
@@ -109,9 +117,41 @@ class DashboardController extends Controller
 
         return view('pages.dashboard.index', compact(
             'totalIncident', 'totalRequest', 'statusIncident', 'statsDelta',
+            'totalSelesai', 'selesaiIncident', 'selesaiRequest',
             'last6Months', 'incidentTrend',
             'resolutionData', 'layananData', 'requestStatusData',
             'recentIncidents', 'recentRequests'
         ));
+    }
+
+    /**
+     * Jumlah bulan ini vs PERIODE YANG SAMA bulan lalu.
+     * Contoh: hari ini tgl 7 → tgl 1-7 bulan ini dibanding tgl 1-7 bulan lalu.
+     * (Dibanding satu bulan penuh, awal bulan hampir selalu tampak turun.)
+     */
+    private function monthDelta($query): array
+    {
+        $now = Carbon::now();
+
+        $curStart  = $now->copy()->startOfMonth();
+        $curEnd    = $now->copy()->endOfDay();
+
+        $prevStart = $now->copy()->subMonthNoOverflow()->startOfMonth();
+        $prevEnd      = $prevStart->copy()->addDays($now->day - 1)->endOfDay();
+        $prevMonthEnd = $prevStart->copy()->endOfMonth();
+        if ($prevEnd->gt($prevMonthEnd)) {   // mis. hari ini tgl 31, bulan lalu hanya 28/30 hari
+            $prevEnd = $prevMonthEnd;
+        }
+
+        $current  = (clone $query)->whereBetween('created_at', [$curStart, $curEnd])->count();
+        $previous = (clone $query)->whereBetween('created_at', [$prevStart, $prevEnd])->count();
+
+        if ($previous === 0) {
+            $delta = $current > 0 ? 100.0 : 0.0;
+        } else {
+            $delta = round((($current - $previous) / $previous) * 100, 1);
+        }
+
+        return ['value' => $current, 'delta' => $delta];
     }
 }

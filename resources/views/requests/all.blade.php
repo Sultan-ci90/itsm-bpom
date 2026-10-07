@@ -3,6 +3,35 @@
 @section('content')
     <x-common.page-breadcrumb pageTitle="Semua Request" />
 
+    <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <form method="GET" action="{{ route('requests.all') }}" class="flex flex-col gap-3 sm:flex-row">
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nomor / layanan..."
+                   class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white sm:w-64">
+            <select name="status"
+                    class="rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                <option value="">Semua Status</option>
+                @foreach($statuses as $s)
+                    <option value="{{ $s }}" @selected(request('status') === $s)>{{ $s }}</option>
+                @endforeach
+            </select>
+            <button type="submit"
+                    class="inline-flex items-center justify-center rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm font-medium text-black dark:text-white transition hover:bg-opacity-90">
+                Filter
+            </button>
+            @if(request()->filled('q') || request()->filled('status'))
+                <a href="{{ route('requests.all') }}"
+                   class="inline-flex items-center justify-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4">
+                    Reset
+                </a>
+            @endif
+        </form>
+
+        <a href="{{ route('requests.create') }}"
+           class="inline-flex items-center justify-center rounded-lg bg-[#10B981] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-700">
+            + Buat Request Baru
+        </a>
+    </div>
+
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <table class="w-full text-left">
             <thead>
@@ -30,7 +59,7 @@
                                     'Selesai' => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
                                     'Diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
                                     'Diajukan' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800/20 dark:text-yellow-400',
-                                    'Ditolak' => 'bg-gray-200 text-gray-600 dark:bg-meta-4 dark:text-gray-300',
+                                    'Ditolak' => 'bg-red-200 text-red-600 dark:bg-red-800/20 dark:text-red-300',
                                     default => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
                                 };
                             @endphp
@@ -42,6 +71,13 @@
                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-primary hover:text-primary dark:border-gray-800 dark:text-gray-400">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </a>
+
+                                <a href="{{ route('requests.edit', $req->id) }}" title="Edit Data" aria-label="Edit"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                     </svg>
                                 </a>
 

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\CaptchaImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
 
 class LoginController extends Controller
 {
@@ -19,15 +19,23 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => [
-                'required',
-                'email',
-            ],
-            'password' => [
-                'required',
-                'string',
-            ],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+            'captcha' => ['required', 'string', 'max:50'],
+        ], [
+            'captcha.required' => 'Ketik kata yang tampil pada gambar.',
         ]);
+
+        // Captcha sekali pakai: jawaban langsung dihapus dari session begitu dicek,
+        // jadi setiap percobaan login (benar/salah) butuh gambar baru.
+        $expected = $request->session()->pull('captcha_answer');
+        $given    = CaptchaImage::normalize($credentials['captcha']);
+
+        if (!$expected || !hash_equals($expected, $given)) {
+            return back()
+                ->withErrors(['captcha' => 'Kata pada gambar salah. Silakan coba lagi.'])
+                ->onlyInput('email');
+        }
 
         $remember = $request->boolean('remember');
 
@@ -48,7 +56,6 @@ class LoginController extends Controller
                 'email' => 'Email atau password salah.',
             ])
             ->onlyInput('email');
-            
     }
 
     public function logout(Request $request)
@@ -59,9 +66,7 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()
-        ->route('signin')
-        ->with('success', 'Berhasil logout.');
+            ->route('signin')
+            ->with('success', 'Berhasil logout.');
     }
-
-    
 }

@@ -8,10 +8,11 @@
     $res      = $req->resolution;
 
     $badge = [
-        'Diajukan' => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-        'Diproses' => 'bg-warning/10 text-warning',
-        'Selesai'  => 'bg-success/10 text-success',
-        'Ditolak'  => 'bg-danger/10 text-danger',
+        'Selesai' => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
+        'Diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
+        'Diajukan' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800/20 dark:text-yellow-400',
+        'Ditolak' => 'bg-red-200 text-red-600 dark:bg-red-800/20 dark:text-red-300',
+        'Belum diperiksa' => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     ];
 
     $layananLabel = [
@@ -502,7 +503,7 @@
                 {{-- Tombol Submit --}}
                 <div class="flex justify-end border-t border-stroke pt-5 dark:border-gray-800">
                     <button type="submit" 
-                            class="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
+                            class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
                         {{ $res ? 'Simpan Perubahan' : 'Simpan Tindak Lanjut' }}
                     </button>
                 </div>

@@ -1,7 +1,6 @@
-{{-- Notification Dropdown Component --}}
 <div class="relative" x-data="{
     dropdownOpen: false,
-    notifying: true,
+    notifying: {{ auth()->user() && auth()->user()->unreadNotifications->count() > 0 ? 'true' : 'false' }},
     toggleDropdown() {
         this.dropdownOpen = !this.dropdownOpen;
         this.notifying = false;
@@ -88,135 +87,64 @@
         </div>
 
         <!-- Notification List -->
-        <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
+        <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar max-h-96">
             @php
-                $notifications = [
-                    [
-                        'id' => 1,
-                        'userName' => 'Terry Franci',
-                        'userImage' => '/images/user/user-02.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - Nganter App',
-                        'type' => 'Project',
-                        'time' => '5 min ago',
-                        'status' => 'online',
-                    ],
-                    [
-                        'id' => 2,
-                        'userName' => 'Alex Johnson',
-                        'userImage' => '/images/user/user-03.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - Nganter App',
-                        'type' => 'Project',
-                        'time' => '10 min ago',
-                        'status' => 'offline',
-                    ],
-                    [
-                        'id' => 3,
-                        'userName' => 'Sarah Williams',
-                        'userImage' => '/images/user/user-04.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - Dashboard UI',
-                        'type' => 'Project',
-                        'time' => '15 min ago',
-                        'status' => 'online',
-                    ],
-                    [
-                        'id' => 4,
-                        'userName' => 'Mike Brown',
-                        'userImage' => '/images/user/user-05.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - E-commerce',
-                        'type' => 'Project',
-                        'time' => '20 min ago',
-                        'status' => 'online',
-                    ],
-                    [
-                        'id' => 5,
-                        'userName' => 'Emma Davis',
-                        'userImage' => '/images/user/user-06.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - Mobile App',
-                        'type' => 'Project',
-                        'time' => '25 min ago',
-                        'status' => 'offline',
-                    ],
-                    [
-                        'id' => 6,
-                        'userName' => 'John Smith',
-                        'userImage' => '/images/user/user-07.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - Landing Page',
-                        'type' => 'Project',
-                        'time' => '30 min ago',
-                        'status' => 'online',
-                    ],
-                    [
-                        'id' => 7,
-                        'userName' => 'Lisa Anderson',
-                        'userImage' => '/images/user/user-08.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - Blog System',
-                        'type' => 'Project',
-                        'time' => '35 min ago',
-                        'status' => 'online',
-                    ],
-                    [
-                        'id' => 8,
-                        'userName' => 'David Wilson',
-                        'userImage' => '/images/user/user-09.jpg',
-                        'action' => 'requests permission to change',
-                        'project' => 'Project - CRM Dashboard',
-                        'type' => 'Project',
-                        'time' => '40 min ago',
-                        'status' => 'online',
-                    ],
-                ];
+                $notifications = auth()->user() ? auth()->user()->unreadNotifications : collect();
             @endphp
 
-            @foreach ($notifications as $notification)
-                <li @click="handleItemClick()">
+            @forelse ($notifications as $notification)
+                <li>
                     <a
                         class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
-                        href="#"
+                        href="{{ $notification->data['url'] ?? '#' }}"
                     >
-                        <span class="relative block w-full h-10 rounded-full z-1 max-w-10">
-                            <img src="{{ $notification['userImage'] }}" alt="User" class="overflow-hidden rounded-full" />
-                            <span
-                                class="absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900 {{ $notification['status'] === 'online' ? 'bg-success-500' : 'bg-error-500' }}"
-                            ></span>
-                        </span>
+                        @if(isset($notification->data['user_avatar']) && $notification->data['user_avatar'])
+                            <span class="relative block w-full h-10 rounded-full z-1 max-w-10 shrink-0">
+                                <img src="{{ $notification->data['user_avatar'] }}" alt="User" class="overflow-hidden rounded-full h-10 w-10 object-cover" />
+                                <span class="absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900 bg-brand-500"></span>
+                            </span>
+                        @else
+                            <span class="relative flex items-center justify-center w-10 h-10 rounded-full bg-brand-100 text-brand-600 dark:bg-gray-800 dark:text-brand-400 shrink-0">
+                                @if(($notification->data['type'] ?? '') == 'new_ticket')
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                @else
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                @endif
+                            </span>
+                        @endif
 
                         <span class="block">
-                            <span class="mb-1.5 block text-theme-sm text-gray-500 dark:text-gray-400">
-                                <span class="font-medium text-gray-800 dark:text-white/90">
-                                    {{ $notification['userName'] }}
-                                </span>
-                                {{ $notification['action'] }}
-                                <span class="font-medium text-gray-800 dark:text-white/90">
-                                    {{ $notification['project'] }}
-                                </span>
+                            <span class="mb-1 block text-theme-sm text-gray-800 dark:text-white/90">
+                                <span class="font-medium">{{ $notification->data['title'] ?? 'Notifikasi Baru' }}</span>
                             </span>
-
-                            <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                                <span>{{ $notification['type'] }}</span>
-                                <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-                                <span>{{ $notification['time'] }}</span>
+                            <span class="mb-1.5 block text-theme-xs text-gray-500 dark:text-gray-400">
+                                {{ $notification->data['message'] ?? '' }}
+                            </span>
+                            <span class="flex items-center gap-2 text-gray-400 text-theme-xs dark:text-gray-500">
+                                <span>{{ $notification->created_at->diffForHumans() }}</span>
                             </span>
                         </span>
                     </a>
                 </li>
-            @endforeach
+            @empty
+                <li class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Tidak ada notifikasi baru
+                </li>
+            @endforelse
         </ul>
 
+        @if($notifications->count() > 0)
         <!-- View All Button -->
-        <a
-            href="#"
-            class="mt-3 flex justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-            @click.prevent="handleViewAllClick()"
-        >
-            View All Notification
-        </a>
+        <form action="{{ route('notifications.readAll') }}" method="POST" class="mt-3">
+            @csrf
+            <button
+                type="submit"
+                class="flex w-full justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+            >
+                Tandai Semua Dibaca
+            </button>
+        </form>
+        @endif
     </div>
     <!-- Dropdown End -->
 </div>
