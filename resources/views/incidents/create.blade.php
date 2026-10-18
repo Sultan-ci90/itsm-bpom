@@ -1,7 +1,57 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-common.page-breadcrumb pageTitle="Lapor Kendala (Incident)"/>
+    {{-- Header, Breadcrumb & Back Navigation --}}
+    <div class="mx-auto w-full max-w-3xl mb-6 space-y-3">
+        {{-- Breadcrumb di Atas --}}
+        <nav class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <ol class="flex flex-wrap items-center gap-1.5">
+                <li>
+                    <a href="{{ auth()->user()->isPelapor() ? route('home') : route('dashboard') }}" class="inline-flex items-center gap-1 transition hover:text-primary">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li>
+                    <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Daftar Aduan' : 'Daftar Aduan Saya' }}
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li class="font-medium text-gray-800 dark:text-white/90">
+                    Lapor Kendala
+                </li>
+            </ol>
+        </nav>
+
+        {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
+        <div class="flex items-center gap-3">
+            <a href="{{ route('incidents.index') }}"
+               title="Kembali ke Daftar Incident"
+               class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
+                <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </a>
+            <div>
+                <h2 class="text-title-md2 font-semibold text-black dark:text-white">
+                    Lapor Kendala (Incident)
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Buat laporan kerusakan atau kendala perangkat IT</p>
+            </div>
+        </div>
+    </div>
 
     {{-- Preload peta lokasi aset sekali saja; hindari fetch API setiap ganti pilihan --}}
     <script>
@@ -27,11 +77,33 @@
                 @csrf
 
                 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    @if($isStaff)
+                    <div>
+                        <label class="mb-3 block text-sm font-medium text-black dark:text-white">
+                            Nama Pelapor <span class="text-red-500">*</span>
+                        </label>
+                        <select id="pelapor_select" name="pelapor_id" x-ref="pelaporSelect" required
+                                class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            @foreach($users as $userItem)
+                                <option value="{{ $userItem->id }}" class="bg-white text-black dark:bg-gray-900 dark:text-white" @selected(old('pelapor_id', auth()->id()) == $userItem->id)>
+                                    {{ $userItem->nama }} (NIP: {{ $userItem->nip ?? '-' }} • {{ $userItem->bidang->nama_bidang ?? 'Umum' }}){{ $userItem->id === auth()->id() ? ' ★ (Anda)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Pilih atau ketik Nama / NIP pegawai yang bersangkutan, atau biarkan default (Anda sendiri).
+                        </p>
+                        @error('pelapor_id')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    @else
                     <div>
                         <label class="mb-3 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
                         <input type="text" value="{{ auth()->user()->nama }} ({{ auth()->user()->nip }})" readonly
                                class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black">
                     </div>
+                    @endif
                     <div>
                         <label class="mb-3 block text-sm font-medium text-black dark:text-white">Tanggal Pelaporan</label>
                         <input type="text" value="{{ \Carbon\Carbon::now()->format('d/m/Y') }}" readonly
@@ -118,17 +190,31 @@
                     }
 
                     const setupTomSelect = () => {
-                        if (typeof TomSelect === 'undefined' || !select || select.tomselect) return;
+                        if (typeof TomSelect === 'undefined') return;
 
-                        new TomSelect(select, {
-                            create: false,
-                            sortField: { field: 'text', direction: 'asc' },
-                            placeholder: 'Ketik untuk mencari aset...',
-                            maxOptions: 200,
-                            onChange: (value) => {
-                                this.lokasi = value ? (ASSET_LOKASI[value] ?? 'Lokasi tidak diketahui') : '';
-                            },
-                        });
+                        // Setup Asset Select
+                        if (select && !select.tomselect) {
+                            new TomSelect(select, {
+                                create: false,
+                                sortField: { field: 'text', direction: 'asc' },
+                                placeholder: 'Ketik untuk mencari aset...',
+                                maxOptions: 200,
+                                onChange: (value) => {
+                                    this.lokasi = value ? (ASSET_LOKASI[value] ?? 'Lokasi tidak diketahui') : '';
+                                },
+                            });
+                        }
+
+                        // Setup Pelapor Select (Khusus Staff) — sama persis seperti asset_select
+                        const pelaporSelect = this.$refs.pelaporSelect;
+                        if (pelaporSelect && !pelaporSelect.tomselect) {
+                            new TomSelect(pelaporSelect, {
+                                create: false,
+                                sortField: { field: 'text', direction: 'asc' },
+                                placeholder: 'Ketik Nama atau NIP pegawai...',
+                                maxOptions: 500,
+                            });
+                        }
                     };
 
                     if (typeof TomSelect !== 'undefined') {

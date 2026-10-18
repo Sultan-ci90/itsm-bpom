@@ -86,13 +86,35 @@ class IncidentController extends Controller
                        ->orderBy('nama_barang')
                        ->get();
 
-        return view('incidents.create', compact('assets'));
+        $user = auth()->user();
+        $isStaff = $user->isTeknisi() || $user->isAdmin();
+
+        $users = $isStaff
+            ? User::with('bidang')->select('id', 'nama', 'nip', 'bidang_id')->orderBy('nama')->get()
+            : collect();
+
+        return view('incidents.create', compact('assets', 'isStaff', 'users'));
     }
 
     public function store(StoreIncidentRequest $request)
     {
         DB::beginTransaction();
         try {
+            $currentUser = auth()->user();
+            $isStaff = $currentUser->isTeknisi() || $currentUser->isAdmin();
+
+            // Tentukan siapa pemilik laporan (pelapor_id) dan siapa yang men-submit (reported_by)
+            $targetPelaporId = $currentUser->id;
+            $reportedById = null;
+
+            if ($isStaff && $request->filled('pelapor_id')) {
+                $inputPelaporId = (int) $request->pelapor_id;
+                if ($inputPelaporId !== $currentUser->id) {
+                    $targetPelaporId = $inputPelaporId;
+                    $reportedById = $currentUser->id;
+                }
+            }
+
             $date = Carbon::now()->format('Ymd');
             $lastTicket = Ticket::withTrashed()->where('nomor_aduan', 'like', "TIK-{$date}-%")
                                 ->lockForUpdate()
@@ -109,17 +131,23 @@ class IncidentController extends Controller
             $ticket = Ticket::create([
                 'nomor_aduan' => $nomorAduan,
                 'asset_id' => $request->asset_id,
-                'pelapor_id' => auth()->id(),
+                'pelapor_id' => $targetPelaporId,
+                'reported_by' => $reportedById,
                 'tgl_pelaporan' => Carbon::now(),
                 'deskripsi_masalah' => $request->deskripsi_masalah,
                 'foto_kendala' => $fotoPath,
                 'status' => 'Belum diperiksa',
             ]);
 
+            $pelaporUser = User::find($targetPelaporId);
+            $keteranganHistory = $reportedById
+                ? 'Tiket dibuat oleh ' . $currentUser->nama . ' atas nama ' . ($pelaporUser->nama ?? 'Pegawai lain') . '.'
+                : 'Tiket dibuat oleh ' . $currentUser->nama . '.';
+
             TicketHistory::create([
                 'ticket_id' => $ticket->id,
                 'status_label' => 'aduan dibuat',
-                'keterangan' => 'Tiket dibuat oleh ' . auth()->user()->nama . '.',
+                'keterangan' => $keteranganHistory,
             ]);
 
             // Notify Admin & Teknisi
@@ -174,7 +202,7 @@ class IncidentController extends Controller
         return view('incidents.show', compact('ticket', 'pemeriksas'));
     }
 
-    public function update(UpdateTicketRequest $request, Ticket $ticket)
+        public function update(UpdateTicketRequest $request, Ticket $ticket)
     {
         if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
             abort(403);
@@ -182,46 +210,36 @@ class IncidentController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Upload surat justifikasi (jika ada)
-            $filePath = $ticket->resolution?->file_surat_justifikasi;
-            if ($request->hasFile('file_surat_justifikasi')) {
-                if ($filePath && Storage::disk('public')->exists($filePath)) {
-                    Storage::disk('public')->delete($filePath);
-                }
-                $filePath = $request->file('file_surat_justifikasi')->store('justifikasi', 'public');
-            }
-
-            // Jika internal, data vendor tidak relevan
-            $isPihak3 = $request->jenis_penyelesaian === 'Pihak ke-3';
-
-            // 2. Simpan resolusi (one-to-one)
+            // 1. Simpan resolusi (one-to-one)
+            // (Data vendor, estimasi_biaya tidak digunakan, Pihak ke-3 generate surat)
             $ticket->resolution()->updateOrCreate(
                 ['ticket_id' => $ticket->id],
                 [
                     'pemeriksa_id' => $request->pemeriksa_id ?? auth()->id(),
                     'jenis_penyelesaian' => $request->jenis_penyelesaian,
-                    'vendor' => $isPihak3 ? $request->vendor : null,
-                    'estimasi_biaya' => $isPihak3 ? $request->estimasi_biaya : null,
+                    'vendor' => null,
+                    'estimasi_biaya' => null,
                     'tgl_analisa' => $request->tgl_analisa,
                     'analisa_teknis' => $request->analisa_teknis,
                     'tgl_tindak_lanjut' => $request->tgl_tindak_lanjut,
                     'tindak_lanjut_teknis' => $request->tindak_lanjut_teknis,
                     'tgl_hasil' => $request->tgl_hasil,
                     'hasil' => $request->hasil,
-                    'file_surat_justifikasi' => $filePath,
+                    'file_surat_justifikasi' => null,
                 ]
             );
 
-            // 3. Update status
+            // 2. Update status sesuai pilihan
             $oldStatus = $ticket->status;
-            $ticket->update(['status' => $request->status]);
+            $newStatus = $request->status;
+            $ticket->update(['status' => $newStatus]);
 
-            // 4. Catat history
-            if ($oldStatus !== $request->status) {
+            // 3. Catat history
+            if ($oldStatus !== $newStatus) {
                 TicketHistory::create([
                     'ticket_id' => $ticket->id,
                     'status_label' => 'status diubah',
-                    'keterangan' => 'Status diubah dari "' . $oldStatus . '" menjadi "' . $request->status . '" oleh ' . auth()->user()->nama . '.',
+                    'keterangan' => 'Status diubah dari "' . $oldStatus . '" menjadi "' . $newStatus . '" oleh ' . auth()->user()->nama . '.',
                 ]);
 
                 // Notify Pelapor
@@ -229,7 +247,7 @@ class IncidentController extends Controller
                     $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
                     $ticket->pelapor->notify(new TicketStatusUpdatedNotification(
                         'Status Aduan Diperbarui',
-                        'Aduan Anda (' . $ticket->nomor_aduan . ') kini berstatus: ' . $request->status,
+                        'Aduan Anda (' . $ticket->nomor_aduan . ') kini berstatus: ' . $newStatus,
                         route('incidents.show', $ticket->id),
                         auth()->user()->nama,
                         $avatar
@@ -245,7 +263,7 @@ class IncidentController extends Controller
 
             DB::commit();
             return redirect()->route('incidents.show', $ticket)
-                             ->with('success', 'Tiket berhasil diproses dan diperbarui.');
+                             ->with('success', 'Aduan berhasil diproses.');
 
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -254,13 +272,18 @@ class IncidentController extends Controller
         }
     }
 
-    /**
-     * Form edit data aduan (hanya teknisi/admin).
-     */
     public function edit(Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (!$user->isTeknisi() && !$user->isAdmin()) {
+            if ($ticket->pelapor_id !== $user->id) {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit tiket ini.');
+            }
+            if ($ticket->status !== 'Belum diperiksa') {
+                return redirect()->route('incidents.show', $ticket)
+                                 ->with('error', 'Maaf, laporan sudah diproses dan tidak dapat diubah lagi.');
+            }
         }
 
         $ticket->load(['asset', 'pelapor']);
@@ -272,14 +295,18 @@ class IncidentController extends Controller
         return view('incidents.edit', compact('ticket', 'assets'));
     }
 
-    /**
-     * Simpan perubahan data aduan (aset, deskripsi, foto).
-     * Berbeda dengan update() yang dipakai untuk memproses/tindak lanjut.
-     */
     public function updateData(Request $request, Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (!$user->isTeknisi() && !$user->isAdmin()) {
+            if ($ticket->pelapor_id !== $user->id) {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit tiket ini.');
+            }
+            if ($ticket->status !== 'Belum diperiksa') {
+                return redirect()->route('incidents.show', $ticket)
+                                 ->with('error', 'Maaf, laporan sudah diproses dan tidak dapat diubah lagi.');
+            }
         }
 
         $validated = $request->validate([
@@ -351,6 +378,108 @@ class IncidentController extends Controller
         }
     }
 
+
+    /**
+     * Halaman edit tindak lanjut (khusus admin, tiket status Selesai).
+     */
+    public function editResolution(Ticket $ticket)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($ticket->status !== 'Selesai') {
+            return redirect()->route('incidents.show', $ticket)
+                ->with('error', 'Hanya tiket dengan status Selesai yang tindak lanjutnya dapat diedit melalui rute ini.');
+        }
+
+        $ticket->load(['asset.penanggungJawab', 'pelapor.bidang', 'resolution.pemeriksa']);
+        
+        $pemeriksas = User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama']);
+
+        return view('incidents.edit-resolution', compact('ticket', 'pemeriksas'));
+    }
+
+    /**
+     * Proses update data resolusi (tindak lanjut).
+     */
+    public function updateResolution(Request $request, Ticket $ticket)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($ticket->status !== 'Selesai') {
+            return redirect()->route('incidents.show', $ticket)
+                ->with('error', 'Tindak lanjut hanya dapat diedit saat status Selesai.');
+        }
+
+        $validated = $request->validate([
+            'pemeriksa_id' => 'required|exists:users,id',
+            'jenis_penyelesaian' => 'required|in:Internal,Pihak ke-3',
+            'vendor' => 'nullable|string|max:255',
+            'tgl_analisa' => 'nullable|date',
+            'analisa_teknis' => 'nullable|string',
+            'tgl_tindak_lanjut' => 'required|date',
+            'tindak_lanjut_teknis' => 'required|string|min:5',
+            'tgl_hasil' => 'nullable|date',
+            'hasil' => 'nullable|string|min:10',
+            'file_surat_justifikasi' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
+        ], [
+            'pemeriksa_id.required' => 'Petugas pemeriksa wajib dipilih.',
+            'jenis_penyelesaian.required' => 'Jenis penyelesaian wajib dipilih.',
+            'estimasi_biaya.numeric' => 'Estimasi biaya harus berupa angka nominal yang valid.',
+            'estimasi_biaya.min' => 'Estimasi biaya tidak boleh bernilai negatif.',
+            'tgl_tindak_lanjut.required' => 'Tanggal tindak lanjut wajib diisi.',
+            'tindak_lanjut_teknis.required' => 'Tindak lanjut teknis wajib diisi.',
+            'tindak_lanjut_teknis.min' => 'Tindak lanjut teknis minimal 5 karakter.',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $filePath = $ticket->resolution?->file_surat_justifikasi;
+            if ($request->hasFile('file_surat_justifikasi')) {
+                if ($filePath && Storage::disk('public')->exists($filePath)) {
+                    Storage::disk('public')->delete($filePath);
+                }
+                $filePath = $request->file('file_surat_justifikasi')->store('justifikasi', 'public');
+            }
+
+            $isPihak3 = $validated['jenis_penyelesaian'] === 'Pihak ke-3';
+
+            $ticket->resolution()->updateOrCreate(
+                ['ticket_id' => $ticket->id],
+                [
+                    'pemeriksa_id' => $validated['pemeriksa_id'] ?? auth()->id(),
+                    'jenis_penyelesaian' => $validated['jenis_penyelesaian'],
+                    'vendor' => $isPihak3 ? ($validated['vendor'] ?? null) : null,
+                    'estimasi_biaya' => $isPihak3 ? ($validated['estimasi_biaya'] ?? null) : null,
+                    'tgl_analisa' => $validated['tgl_analisa'],
+                    'analisa_teknis' => $validated['analisa_teknis'],
+                    'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
+                    'tindak_lanjut_teknis' => $validated['tindak_lanjut_teknis'],
+                    'tgl_hasil' => $validated['tgl_hasil'] ?? null,
+                    'hasil' => $validated['hasil'] ?? null,
+                    'file_surat_justifikasi' => $filePath,
+                ]
+            );
+
+            TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'status_label' => 'tindak lanjut direvisi',
+                'keterangan' => 'Catatan tindak lanjut direvisi oleh ' . auth()->user()->nama . '.',
+            ]);
+
+            DB::commit();
+            return redirect()->route('incidents.show', $ticket)
+                             ->with('success', 'Catatan tindak lanjut berhasil direvisi.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal merevisi tindak lanjut tiket', ['ticket_id' => $ticket->id, 'message' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Gagal merevisi tindak lanjut: ' . $e->getMessage());
+        }
+    }
 
     /**
      * Halaman cetak Surat Justifikasi (hanya untuk penyelesaian Pihak ke-3).

@@ -11,11 +11,13 @@ class DashboardController extends Controller
 {
     /** Label layanan request (urutan tetap, 0 jika belum ada data). */
     private const LAYANAN_LABELS = [
-        'zoom'       => 'Zoom Meeting',
-        'akun'       => 'Reset Password',
-        'peminjaman' => 'Peminjaman Perangkat',
-        'konsultasi' => 'Konsultasi IT',
-        'operator'   => 'Operator Kegiatan',
+        'zoom'           => 'Zoom Meeting',
+        'reset_password' => 'Reset Password',
+        'tambah_akun'    => 'Tambah Akun',
+        'akun'           => 'Akun Aplikasi',
+        'peminjaman'     => 'Peminjaman Perangkat',
+        'konsultasi'     => 'Konsultasi IT',
+        'operator'       => 'Operator Kegiatan',
     ];
 
     /** Urutan tetap supaya warna di chart selalu cocok dengan labelnya. */
@@ -24,6 +26,10 @@ class DashboardController extends Controller
 
     public function index()
     {
+        if (auth()->user()?->isPelapor()) {
+            return redirect()->route('home');
+        }
+
         // 1. STATISTIK KARTU
         $totalIncident = Ticket::count();
         $totalRequest  = ServiceRequest::count();

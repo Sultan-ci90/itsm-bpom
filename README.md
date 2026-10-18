@@ -1,530 +1,241 @@
-# TailAdmin Laravel - Tailwind CSS Free Laravel Dashboard
+# 🏛️ ITSM BPOM — Sistem Manajemen Layanan Teknologi Informasi
 
-**TailAdmin Laravel** is a modern, production-ready admin dashboard template powered by **Laravel 12**, **Tailwind CSS v4**, **Alpine.js**, and a clean, modular architecture. TailAdmin is one of the most popular Tailwind CSS dashboard now also available for Larvael. It’s designed for building fast, scalable admin panels, CRM dashboards, SaaS backends, and any data-driven application where clarity and performance matter.
-![TailAdmin - Next.js Dashboard Preview](./tailadmin-laravel.png)
-
-
-## Quick Links
-
-* [✨ Get TailAdmin Laravel](https://tailadmin.com/laravel)
-* [📄 Documentation](https://tailadmin.com/docs)
-* [⬇️ Download](https://tailadmin.com/download)
-* [🌐 Live Demo](https://laravel-demo.tailadmin.com)
-
-Here’s a tighter, more search-friendly version that highlights value and avoids fluff while keeping your structure intact.
-
-## ✨ Key Features
-
-* 🚀 **Laravel 12 Core** - Built on the latest Laravel release with improved routing, security, and Blade templating
-* 🎨 **Tailwind CSS v4** - Utility-first styling for rapid, consistent UI development
-* ⚡ **Alpine.js Interactivity** - Lightweight reactivity without a heavy JavaScript framework
-* 📦 **Vite Build System** - Fast dev server, instant HMR, and optimized production builds
-* 📱 **Fully Responsive Layouts** - Smooth, mobile-first design that adapts across all screen sizes
-* 🌙 **Built-in Dark Mode** - Ready-to-use modern dark theme for better usability and aesthetics
-* 📊 **Advanced UI Components** - Charts, data tables, forms, calendars, modals, and reusable blocks for complex dashboards
-* 🎯 **Production-Ready Dashboard UI** - Clean, modern interface crafted for real apps, not placeholder demos
-
-### Other Versions
-
-- [Next.js Version](https://github.com/TailAdmin/free-nextjs-admin-dashboard)
-- [React.js Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
-- [Angular Version](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
-- [Laravel Version](https://github.com/TailAdmin/tailadmin-laravel)
-
-## 📋 Requirements
-To set up TailAdmin Laravel, make sure your environment includes:
-
-* **PHP 8.2+**
-* **Composer** (PHP dependency manager)
-* **Node.js 18+** and **npm** (for compiling frontend assets)
-* **Database** - Works with SQLite (default), MySQL, or PostgreSQL
-
-### Tailwind CSS Laravel Dashboard
-
-TailAdmin delivers a refined Tailwind CSS Laravel Dashboard experience, combining Laravel’s robust backend with Tailwind’s flexible utility classes. The result is a clean, fast, and customizable dashboard that helps developers build modern admin interfaces without the usual front-end complexity. It’s ideal for teams looking for a Tailwind-powered Laravel starter that stays lightweight and easy to scale.
-
-### Laravel Admin Dashboard
-
-If you’re searching for a dependable Laravel Admin Dashboard template that’s easy to set up and ready for production, TailAdmin fits the job. It offers a polished UI, reusable components, optimized performance, and all the essentials needed to launch dashboards, CRM systems, and internal tools quickly. It gives developers a solid foundation, so projects move faster with fewer decisions to worry about.
-
-### Check Your Environment
-
-Verify your installations:
-
-```bash
-php -v
-composer -V
-node -v
-npm -v
-```
-
-## 🐳 Docker & Laravel Sail Setup (Official)
-
-TailAdmin Laravel includes pre-configured, official support for **Docker** powered by **Laravel Sail** (PHP 8.4, MySQL 8.0, Redis, and Mailpit).
-
-### Prerequisites
-Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is installed and running on your machine.
-
-### Quick Start with Docker & Sail
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/TailAdmin/tailadmin-laravel.git
-   cd tailadmin-laravel
-   ```
-
-2. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   ```
-   In your `.env` file, ensure container networking is set:
-   ```env
-   DB_HOST=mysql
-   DB_USERNAME=sail
-   DB_PASSWORD=password
-   REDIS_HOST=redis
-   ```
-
-3. **Install Composer dependencies (if PHP is not installed locally):**
-   ```bash
-   docker run --rm \
-       -u "$(id -u):$(id -g)" \
-       -v "$(pwd):/var/www/html" \
-       -w /var/www/html \
-       laravelsail/php84-composer:latest \
-       composer install --ignore-platform-reqs
-   ```
-   *(Or simply run `composer install` if you have PHP and Composer locally).*
-
-4. **Start Docker containers:**
-   ```bash
-   ./vendor/bin/sail up -d
-   ```
-
-5. **Generate application key & run migrations:**
-   ```bash
-   ./vendor/bin/sail artisan key:generate
-   ./vendor/bin/sail artisan migrate
-   ```
-
-6. **Install frontend dependencies & start Vite dev server:**
-   ```bash
-   ./vendor/bin/sail npm install
-   ./vendor/bin/sail npm run dev
-   ```
-
-7. **Access the application:**
-   - **TailAdmin Dashboard:** [http://localhost](http://localhost) (or [http://localhost:8000](http://localhost:8000) if `APP_PORT=8000`)
-   - **Vite Dev Server:** [http://localhost:5173](http://localhost:5173) (auto-proxied with HMR)
-   - **Mailpit Web UI:** [http://localhost:8025](http://localhost:8025)
-
-### Convenient Sail Shell Alias
-To avoid typing `./vendor/bin/sail` repeatedly, add an alias to your shell profile (`~/.zshrc` or `~/.bashrc`):
-```bash
-alias sail='[ -f sail ] && sh sail || sh vendor/bin/sail'
-```
-Now you can run:
-```bash
-sail up -d
-sail artisan migrate
-sail npm run dev
-sail down
-```
-
-### Container Networking & Vite Architecture
-- **Vite Dev Server (Port 5173)**: Pre-configured in `vite.config.js` with `server.host: "0.0.0.0"` and `server.hmr.host: "localhost"`. This ensures the host browser can access assets directly without `ERR_EMPTY_RESPONSE` connection errors.
-- **Volume File Watcher**: File polling (`usePolling: true`) is enabled in `vite.config.js` to guarantee instant hot reload when editing code on macOS, Windows, or Linux host filesystems.
-- **Container Database Host**: Inside the Docker bridge network, services communicate via container names. Set `DB_HOST=mysql` and `REDIS_HOST=redis` inside Docker.
-- **Tailwind CSS v4**: Seamlessly compiled inside containers via `@tailwindcss/vite` without legacy v3 config conflicts.
+> **Aplikasi IT Service Management (ITSM)** berbasis standar praktik terbaik ITIL untuk pengelolaan gangguan teknis (*Incident Management*) dan permohonan fasilitas TI (*Service Request Management*) di lingkungan **Balai Besar POM**.
 
 ---
 
-## 🚀 Quick Start Installation (Local / Native)
+## 📌 1. Tentang Proyek
 
-### Step 1: Clone the Repository
+**ITSM BPOM** adalah platform berbasis web yang dikembangkan khusus untuk memfasilitasi komunikasi dan tata kelola layanan teknologi informasi antara **seluruh pegawai BPOM (sebagai Pelapor)** dan **Tim IT / Subbagian Tata Usaha (sebagai Teknisi & Administrator)**.
 
-```bash
-git clone https://github.com/TailAdmin/tailadmin-laravel.git
-cd tailadmin-laravel
+### Masalah yang Diselesaikan:
+- ❌ **Pelaporan manual & tercecer**: Sebelumnya pelaporan sering melalui chat personal WhatsApp atau nota fisik sehingga tidak ada rekam jejak formal.
+- ❌ **Status tidak terpantau**: Pegawai sulit mengetahui progres perbaikan perangkat atau pembuatan akun.
+- ❌ **Tidak ada rekapitulasi data**: Pimpinan dan tim IT kesulitan mengukur beban kerja teknisi dan menyusun evaluasi pemeliharaan berkala.
+
+### Solusi yang Diberikan:
+- ✅ **One-Stop Service Portal**: Satu pintu untuk melaporkan insiden kerusakan alat/sistem serta mengajukan layanan TI.
+- ✅ **Transparansi Alur & Status**: Alur tiket transparan dari *Diajukan*, *Diproses*, *Selesai*, hingga *Ditolak*.
+- ✅ **Audit Trail & Akuntabilitas**: Setiap tindakan tercatat lengkap (analisa akar masalah, tindakan perbaikan, petugas penanggung jawab, hingga waktu resolusi).
+- ✅ **Laporan Terstruktur**: Rekapitulasi otomatis yang dapat diekspor langsung ke format Excel/Spreadsheet.
+
+---
+
+## 👥 2. Peran & Hak Akses Pengguna (RBAC)
+
+Sistem membedakan hak akses dan tampilan secara dinamis berdasarkan 3 tingkatan peran (*role*):
+
+```mermaid
+graph TD
+    A[Login Pengguna] --> B{Pengecekan Role}
+    B -->|Pelapor / Pegawai| C[Portal Layanan Utama]
+    B -->|Teknisi IT| D[ITSM Operations Dashboard]
+    B -->|Admin IT| E[Full Access & Master Data]
+
+    C --> C1[Lapor Kendala / Gangguan]
+    C --> C2[Pengajuan Layanan TI]
+    C --> C3[Tracking Tiket & Live Chat]
+
+    D --> D1[Kelola & Tangani Tiket]
+    D --> D2[Analisa & Tindakan Perbaikan]
+    D --> D3[Form Resolusi & Diskusi]
+
+    E --> D1
+    E --> E1[Setup Ruangan & Lokasi]
+    E --> E2[Manajemen Akun Petugas]
+    E --> E3[Ekspor Laporan & Rekapitulasi]
 ```
 
-### Step 2: Install PHP Dependencies
-
-```bash
-composer install
-```
-
-This command will install all Laravel dependencies defined in `composer.json`.
-
-### Step 3: Install Node.js Dependencies
-
-```bash
-npm install
-```
-
-Or if you prefer yarn or pnpm:
-
-```bash
-# Using yarn
-yarn install
-
-# Using pnpm
-pnpm install
-```
-
-### Step 4: Environment Configuration
-
-Copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-**For Windows users:**
-
-```bash
-copy .env.example .env
-```
-
-**Or create it programmatically:**
-
-```bash
-php -r "file_exists('.env') || copy('.env.example', '.env');"
-```
-
-### Step 5: Generate Application Key
-
-```bash
-php artisan key:generate
-```
-
-This creates a unique encryption key for your application.
-
-### Step 6: Configure Database
-
-#### Option A: Using MySQL/PostgreSQL
-
-Update your `.env` file with your database credentials:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=tailadmin_db
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-```
-
-Create the database:
-
-```bash
-# MySQL
-mysql -u root -p -e "CREATE DATABASE tailadmin_db;"
-
-# PostgreSQL
-createdb tailadmin_db
-```
-
-Run migrations:
-
-```bash
-php artisan migrate
-```
-
-### Step 7: (Optional) Seed the Database
-
-If you want sample data:
-
-```bash
-php artisan db:seed
-```
-
-### Step 8: Storage Link
-
-Create a symbolic link for file storage:
-
-```bash
-php artisan storage:link
-```
-
-## 🏃 Running the Application
-
-### Development Mode (Recommended)
-
-The easiest way to start development is using the built-in script:
-
-```bash
-composer run dev
-```
-
-This single command starts:
-- ✅ Laravel development server (http://localhost:8000)
-- ✅ Vite dev server for hot module reloading
-- ✅ Queue worker for background jobs
-- ✅ Log monitoring
-
-**Access your application at:** [http://localhost:8000](http://localhost:8000)
-
-### Manual Development Setup
-
-If you prefer to run services individually in separate terminal windows:
-
-**Terminal 1 - Laravel Server:**
-```bash
-php artisan serve
-```
-
-**Terminal 2 - Frontend Assets:**
-```bash
-npm run dev
-```
-
-### Building for Production
-
-#### Build Frontend Assets
-
-```bash
-npm run build
-```
-
-#### Optimize Laravel
-
-```bash
-# Clear and cache configuration
-php artisan config:cache
-
-# Cache routes
-php artisan route:cache
-
-# Cache views
-php artisan view:cache
-
-# Optimize autoloader
-composer install --optimize-autoloader --no-dev
-```
-
-#### Production Environment
-
-Update your `.env` for production:
-
-```env
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://yourdomain.com
-```
-
-
-## 🧪 Testing
-
-Run the test suite using Pest:
-
-```bash
-composer run test
-```
-
-Or manually:
-
-```bash
-php artisan test
-```
-
-Run with coverage:
-
-```bash
-php artisan test --coverage
-```
-
-Run specific tests:
-
-```bash
-php artisan test --filter=ExampleTest
-```
-
-## 📜 Available Commands
-
-### Composer Scripts
-
-```bash
-# Start development environment
-composer run dev
-
-# Run tests
-composer run test
-
-# Code formatting (if configured)
-composer run format
-
-# Static analysis (if configured)
-composer run analyze
-```
-
-### NPM Scripts
-
-```bash
-# Start Vite dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint JavaScript/TypeScript
-npm run lint
-
-# Format code
-npm run format
-```
-
-### Artisan Commands
-
-```bash
-# Start development server
-php artisan serve
-
-# Run migrations
-php artisan migrate
-
-# Rollback migrations
-php artisan migrate:rollback
-
-# Fresh migrations with seeding
-php artisan migrate:fresh --seed
-
-# Generate application key
-php artisan key:generate
-
-# Clear all caches
-php artisan optimize:clear
-
-# Cache everything for production
-php artisan optimize
-
-# Create symbolic link for storage
-php artisan storage:link
-
-# Start queue worker
-php artisan queue:work
-
-# List all routes
-php artisan route:list
-
-# Create a new controller
-php artisan make:controller YourController
-
-# Create a new model
-php artisan make:model YourModel -m
-
-# Create a new migration
-php artisan make:migration create_your_table
-```
-
-## 📁 Project Structure
+| Peran (*Role*) | Akses & Wewenang Utama |
+| :--- | :--- |
+| **Pegawai (Pelapor)** | • Tampilan khusus portal ramah pengguna (*Choice Portal*).<br>• Membuat laporan gangguan perangkat keras/jaringan/software.<br>• Mengajukan permohonan akun, akun Zoom, atau peminjaman laptop/proyektor.<br>• Melacak tiket pribadi dan berdiskusi dengan teknisi melalui fitur chat interaktif. |
+| **Teknisi IT** | • Mengakses Dashboard Operasional dengan metrik & grafik tiket.<br>• Mengelola antrean tiket, mengubah status penanganan, dan memberikan justifikasi penolakan.<br>• Mengisi rincian teknis penanganan (analisa akar masalah, tindakan perbaikan, form resolusi).<br>• Membuka/menutup ruang chat untuk klarifikasi kendala ke pelapor. |
+| **Administrator** | • Memiliki seluruh hak akses teknisi.<br>• Manajemen **Master Data Lokasi** (pemetaan ruangan per bidang).<br>• Manajemen **Data Petugas** (tambah/ubah akun teknisi & peran).<br>• Mengakses modul **Laporan & Rekapitulasi** (filter periode & export data ke Excel). |
+
+---
+
+## 🚀 3. Fitur yang Telah Selesai Dibangun (Status Progres)
+
+Proyek ini telah melalui berbagai tahapan pengembangan fitur fungsional inti dan penyesuaian kebutuhan operasional:
+
+### 🔐 A. Autentikasi & Keamanan Lokal
+- [x] **Branding Khusus BPOM**: Desain login modern dengan logo resmi dan identitas instansi.
+- [x] **Captcha Bahasa Banjar**: Fitur verifikasi bot unik berbasis kearifan lokal menggunakan kamus **>130 kosa kata bahasa Banjar** asli beserta terjemahannya. Mencegah serangan *brute-force* sekaligus memberikan sentuhan budaya lokal.
+- [x] **Role Redirection**: Pengguna diarahkan secara otomatis ke portal layanan (untuk pelapor) atau ke dashboard operasional (untuk tim IT).
+
+### 🛠️ B. Manajemen Insiden (Incident Management)
+- [x] **Formulir Lapor Kendala**: Input nama kendala, deskripsi, pemilihan aset TI (terhubung database aset), dan foto bukti pendukung.
+- [x] **Auto-Detect & Auto-Fill Lokasi**: Lokasi ruangan otomatis terisi cerdas sesuai data bidang pelapor, namun tetap fleksibel jika kendala terjadi di ruangan lain.
+- [x] **Pelacakan Siklus Hidup Tiket**: Status `Diajukan` ➔ `Diproses` ➔ `Selesai` / `Ditolak`.
+- [x] **Form Tindakan & Resolusi Petugas**: Pencatatan tanggal analisa, analisa akar masalah, tanggal tindak lanjut, langkah perbaikan, dan hasil akhir.
+- [x] **Fitur Justifikasi**: Catatan resmi alasan jika ada tiket yang dibatalkan atau ditolak.
+- [x] **Pencarian & Filter Cepat**: Filter berdasarkan status dan pencarian kata kunci nomor tiket/deskripsi.
+
+### 📋 C. Permohonan Layanan TI (Service Request Management)
+- [x] **3 Kategori Layanan Terintegrasi**:
+  1. **Permohonan Akun**: Pengajuan pembuatan/reset akun dinas (Email, SIM, dll.). Dilengkapi form serah-terima kredensial (*generated email & password*) yang aman dari teknisi.
+  2. **Permohonan Akun Zoom Meeting**: Pengajuan fasilitas *virtual meeting* dinas beserta tanggal mulai dan selesai.
+  3. **Peminjaman Perangkat / Aset TI**: Peminjaman laptop, LCD proyektor, kabel ekstensi, dsb., lengkap dengan tanggal pinjam dan tanggal pengembalian.
+- [x] **Live Chat / Diskusi Dua Arah**: Fitur obrolan langsung di dalam halaman tiket permohonan antara pelapor dan teknisi tanpa perlu berpindah aplikasi, dilengkapi tombol kontrol status chat oleh petugas.
+- [x] **Fitur Edit Permohonan**: Kemampuan pelapor untuk merevisi data permohonan selama belum selesai diproses.
+
+### 📊 D. Dashboard, Analitik, & Notifikasi
+- [x] **Dashboard Metrik Tim IT**: Ringkasan jumlah tiket aktif, insiden selesai, permohonan pending, dan total beban kerja.
+- [x] **Grafik Visualisasi Tren**: Statistik tren tiket mingguan/bulanan menggunakan library **ApexCharts**.
+- [x] **In-App Notification**: Lonceng notifikasi pada header navbar. Teknisi menerima notifikasi saat ada tiket masuk, dan pelapor menerima notifikasi saat status tiketnya diperbarui.
+- [x] **Mark All as Read**: Fitur pembersihan notifikasi yang sudah dibaca dalam satu klik.
+
+### 🏢 E. Master Data & Pelaporan
+- [x] **Master Lokasi Ruangan**: Manajemen data ruangan kerja yang terhubung dengan unit kerja / bidang di BPOM.
+- [x] **Master Data Petugas**: Tambah dan atur hak akses pegawai IT.
+- [x] **Export Laporan Excel**: Filter rentang tanggal awal - akhir serta status untuk mengekspor rekapitulasi data insiden maupun permohonan layanan ke format spreadsheet.
+
+### 🎨 F. Desain & Antarmuka Modern
+- [x] **Tailwind CSS v4 & Alpine.js**: Desain ringan, responsif di layar ponsel maupun desktop.
+- [x] **Flatpickr Datepicker**: Input tanggal interaktif berupa kalender pop-up (bukan pengetikan manual).
+- [x] **Dark Mode & Light Mode**: Dukungan mode gelap bawaan dengan peralihan instan.
+
+---
+
+## 💻 4. Teknologi yang Digunakan (Tech Stack)
+
+| Lapisan (*Layer*) | Teknologi / Pustaka |
+| :--- | :--- |
+| **Backend Core** | [Laravel 12](https://laravel.com/) (PHP >= 8.2) |
+| **Database & ORM** | MySQL / MariaDB via Laravel Eloquent ORM |
+| **Frontend Templating**| Blade Components modular (`<x-component />`) |
+| **CSS Framework** | [Tailwind CSS v4](https://tailwindcss.com/) JIT Engine |
+| **Interaktivitas UI** | [Alpine.js v3](https://alpinejs.dev/) |
+| **Pemilihan Tanggal** | [Flatpickr](https://flatpickr.js.org/) |
+| **Visualisasi Data** | [ApexCharts](https://apexcharts.com/) |
+| **Realtime Engine** | Laravel Reverb & Echo (Broadcast Architecture) |
+| **Build & Bundler** | [Vite 7](https://vitejs.dev/) |
+
+---
+
+## 📁 5. Arsitektur & Struktur Folder Utama
 
 ```
-tailadmin-laravel/
-├── app/                    # Application logic
-│   ├── Http/              # Controllers, Middleware, Requests
-│   ├── Models/            # Eloquent models
-│   └── Providers/         # Service providers
-├── bootstrap/             # Framework bootstrap files
-├── config/                # Configuration files
-├── database/              # Migrations, seeders, factories
-│   ├── migrations/
-│   ├── seeders/
-│   └── factories/
-├── public/                # Public assets (entry point)
-│   ├── build/            # Compiled assets (generated)
-│   └── index.php         # Application entry point
-├── resources/             # Views and raw assets
-│   ├── css/              # Stylesheets (Tailwind)
-│   ├── js/               # JavaScript files (Alpine.js)
-│   └── views/            # Blade templates
-├── routes/                # Route definitions
-│   ├── web.php           # Web routes
-│   ├── api.php           # API routes
-│   └── console.php       # Console routes
-├── storage/               # Logs, cache, uploads
-│   ├── app/
-│   ├── framework/
-│   └── logs/
-├── tests/                 # Pest test files
-│   ├── Feature/
-│   └── Unit/
-├── docker-compose.yml     # Docker & Laravel Sail configuration
-├── .env.example           # Example environment file
-├── artisan                # Artisan CLI
-├── composer.json          # PHP dependencies
-├── package.json           # Node dependencies
-├── vite.config.js         # Vite configuration with container networking
-└── resources/css/app.css  # Tailwind CSS v4 configuration (@theme)
+itsm-bpom/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Auth/              # LoginController, CaptchaController (Kamus Banjar)
+│   │   │   ├── IncidentController.php        # Logika siklus hidup penanganan insiden
+│   │   │   ├── ServiceRequestController.php  # Logika permohonan layanan & chat
+│   │   │   ├── DashboardController.php       # Agregasi data & grafik tim IT
+│   │   │   ├── LokasiController.php          # CRUD Master data ruangan
+│   │   │   ├── PetugasController.php         # CRUD Akun teknisi & hak akses
+│   │   │   └── ReportController.php          # Filter & export rekap data
+│   │   └── Requests/              # Validasi form request
+│   ├── Models/                    # Ticket, ServiceRequest, User, BanjarCaptcha, Lokasi, dsb.
+│   ├── Notifications/             # Notifikasi in-app untuk tiket baru & status update
+│   └── Support/                   # Generator gambar captcha
+├── database/
+│   ├── migrations/                # Struktur skema tabel database
+│   └── seeders/                   # Seeder data awal (User, Bidang, Captcha Banjar, Lokasi)
+├── resources/
+│   ├── css/app.css                # Konfigurasi tema Tailwind v4 (@theme tokens)
+│   ├── js/                        # Alpine init, Echo setup, Flatpickr
+│   └── views/
+│       ├── components/            # Komponen Blade (header, sidebar, date-picker, modal)
+│       ├── incidents/             # Halaman Lapor Kendala (index, create, show, edit, all)
+│       ├── requests/              # Halaman Permohonan (index, create, show, edit, all)
+│       ├── master/                # Halaman manajemen lokasi & petugas
+│       ├── reports/               # Halaman export laporan
+│       └── pages/                 # Halaman Choice (Pelapor), Dashboard, Profile, Auth
+└── routes/
+    └── web.php                    # Konfigurasi routing & proteksi middleware RBAC
 ```
 
-## 🐛 Troubleshooting
+---
 
-### Common Issues
+## ⚙️ 6. Panduan Instalasi & Menjalankan Proyek
 
-#### "Class not found" errors
-```bash
-composer dump-autoload
-```
+Bagi rekan pengembang atau pengguna yang ingin menjalankan proyek ini di lingkungan lokal:
 
-#### Permission errors on storage/bootstrap/cache
-```bash
-chmod -R 775 storage bootstrap/cache
-```
+### Prasyarat Sistem:
+- **PHP** >= 8.2 (dengan ekstensi `pdo`, `mbstring`, `openssl`, `gd`)
+- **Composer** (Dependency manager PHP)
+- **Node.js** (versi 18+) & **NPM**
+- **MySQL** / MariaDB (melalui Laragon, XAMPP, atau Docker)
 
-#### NPM build errors
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
+### Langkah-langkah:
 
-#### Clear all caches
-```bash
-php artisan optimize:clear
-```
+1. **Clone atau Buka Direktori Proyek**:
+   ```bash
+   cd c:/laragon/www/itsm-bpom
+   ```
 
-#### Database connection errors
-- Check `.env` database credentials
-- Ensure database server is running
-- Verify database exists
+2. **Pasang Dependensi Backend & Frontend**:
+   ```bash
+   composer install
+   npm install
+   ```
 
-## 🔄 Update Log
+3. **Konfigurasi Environment (`.env`)**:
+   Salin file `.env.example` ke `.env` jika belum ada:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   Pastikan pengaturan basis data pada `.env` sudah sesuai:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=itsm_bpom
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
 
-### [1.1.2] - 2026-09-02
+4. **Migrasi Database & Seeding Data Awal**:
+   Jalankan migrasi untuk membuat tabel beserta data referensi, akun pengujian, dan kamus Captcha:
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
 
-- **Dependency updates**: FullCalendar upgraded to v7 and ApexCharts / Swiper bumped to latest versions.
-- **RTL layout support**: Added right-to-left (RTL) direction support with automatic layout flipping and toggle.
-- **Language / RTL switcher**: Added switcher in user dropdown with persistent direction state in `localStorage`.
-- **Keyboard & dropdown improvements**: Enhanced dropdown behavior and click-outside handling.
-- **Tailwind CSS v4 optimizations**: Applied CSS logical properties across sidebar, tables, header, and components.
+5. **Jalankan Aplikasi**:
+   Jalankan server aplikasi dan Vite asset bundler:
+   ```bash
+   # Terminal 1 (PHP Server)
+   php artisan serve
 
+   # Terminal 2 (Vite JIT Bundler)
+   npm run dev
+   ```
+   *Atau langsung gunakan perintah terpadu:*
+   ```bash
+   composer run dev
+   ```
 
-### [2026-05-23]
+6. **Buka di Peramban Web**:
+   Akses `http://127.0.0.1:8000` melalui browser pilihan Anda.
 
-- Added **AI Settings** page to configure models, keys, and token limits.
-- Added **Maps** page with MapLibre GL, Leaflet, and iframe styles.
-- Added **Vector Maps** page powered by AmCharts 5 geodata (World & USA).
-- Added **Radar Charts** page with 3 unique formats.
-- Added **Radial Progress Charts** page featuring 4 custom layout templates.
-- Introduced new **Bar Charts Five & Six** and **Pie Charts Four & Five**.
+---
 
-### [April 28, 2026]
-- Added **AI Dashboard** with token usage and revenue tracking.
-- Added **Sales Dashboard** with retention and multi-channel analytics.
-- Added **Finance Dashboard** with cashflow and balance management.
-- Introduced **6 New Layout variations** for improved UI flexibility.
-- Integrated **Advanced Data Visualization** with 7+ new chart types.
+## 🔑 7. Akun Pengujian Default (Credentials)
 
-### [2026-03-15]
-- Fixed PHP 8.5 deprecation warning
+Setelah proses `php artisan migrate:fresh --seed` selesai, akun berikut siap digunakan untuk uji coba:
 
-### [2025-12-29]
-- Added Date Picker in Statistics Chart
+| Role / Peran | Alamat Email | Password | Kegunaan Uji Coba |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin@bpom.test` | `password` | Menguji dashboard utama, manajemen petugas, setup lokasi, dan export laporan. |
+| **Teknisi IT** | `teknisi@bpom.test` | `password` | Menguji alur penanganan tiket, update analisa/tindakan, dan merespons permohonan. |
+| **Pegawai (Pelapor)** | `pelapor@bpom.test` | `password` | Menguji alur portal pelapor, pengajuan kendala, permohonan akun/zoom/alat, dan chat. |
 
-## License
+---
 
-Refer to our [LICENSE](https://tailadmin.com/license) page for more information.
+## 🗺️ 8. Rencana Pengembangan Selanjutnya (*Next Roadmap*)
+
+- [ ] **SLA Countdown Timer**: Penghitungan otomatis sisa waktu penyelesaian tiket berdasarkan tingkat urgensi insiden.
+- [ ] **Survei Kepuasan Layanan (CSAT)**: Formulir penilaian bintang dan ulasan oleh pelapor setelah tiket dinyatakan `Selesai`.
+- [ ] **Notifikasi Multi-Channel**: Integrasi pengiriman notifikasi otomatis via WhatsApp Gateway atau Email resmi dinas.
+- [ ] **Aplikasi Mobile / PWA**: Kemudahan pelaporan langsung dengan memindai QR Code pada stiker aset perangkat keras.
+
+---
+
+<p align="center">
+  <b>Balai Besar Pengawas Obat dan Makanan (BBPOM)</b><br>
+  <i>Subbagian Tata Usaha / Tim Teknologi Informasi & Komunikasi</i>
+</p>

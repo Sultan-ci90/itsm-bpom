@@ -15,3 +15,10 @@ backup_db.sqlite*
 
 mintty*.png
 public/hot
+
+# Local development & tool outputs
+graphify-out/
+scratch/
+.commandcode/
+.agents/
+untitled-project/

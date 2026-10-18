@@ -14,6 +14,7 @@ class StoreIncidentRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'pelapor_id' => 'nullable|exists:users,id',
             'asset_id' => 'required|exists:assets,id',
             'deskripsi_masalah' => 'required|string|min:10',
             'foto_kendala' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB

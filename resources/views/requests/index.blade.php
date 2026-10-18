@@ -56,7 +56,7 @@
                     <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer"
                         onclick="window.location='{{ route('requests.show', $req->id) }}'">
                         <td class="px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ $req->layanan ? ucfirst($req->layanan) : "-" }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ match($req->layanan) { 'reset_password' => 'Reset Password', 'tambah_akun' => 'Tambah Akun', default => ucwords(str_replace('_', ' ', $req->layanan ?? '-')) } }}</td>
                         <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->lokasi ?? "-" }}</td>
                         <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->tgl_request?->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-5 py-4">
@@ -80,17 +80,27 @@
                                     </svg>
                                 </a>
 
-                                @if(auth()->user()->isTeknisi() || auth()->user()->isAdmin())
-                                    <a href="{{ route('requests.edit', $req->id) }}" title="Edit Data" aria-label="Edit"
+                                @php $isStaff = auth()->user()->isTeknisi() || auth()->user()->isAdmin(); @endphp
+                                
+                                @if($isStaff || (!$isStaff && $req->status === 'Diajukan'))
+                                    @php
+                                        // Jika staff dan status Selesai, arahkan ke form edit tindak lanjut.
+                                        $editLink = ($isStaff && $req->status === 'Selesai') 
+                                            ? route('requests.editResolution', $req->id) 
+                                            : route('requests.edit', $req->id);
+                                    @endphp
+                                    <a href="{{ $editLink }}" title="Edit Data" aria-label="Edit"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                         </svg>
                                     </a>
+                                @endif
 
+                                @if($isStaff)
                                     @php $final = in_array($req->status, ['Selesai', 'Ditolak']); @endphp
                                     @if(!$final)
-                                        <a href="{{ route('requests.show', $req->id) }}#tindak-lanjut" title="Proses / Tindak Lanjut" aria-label="Proses"
+                                        <a href="{{ route('requests.show', $req->id) }}?proses=1#proses" title="Proses / Tindak Lanjut" aria-label="Proses"
                                             class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-success hover:text-success dark:border-gray-800 dark:text-gray-400">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
@@ -124,3 +134,8 @@
         </table>
     </div>
 @endsection
+
+
+
+
+

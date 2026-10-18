@@ -19,6 +19,7 @@ class Ticket extends Model
         'nomor_aduan',
         'asset_id',
         'pelapor_id',
+        'reported_by',
         'tgl_pelaporan',
         'deskripsi_masalah',
         'foto_kendala',
@@ -38,6 +39,11 @@ class Ticket extends Model
     public function pelapor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pelapor_id');
+    }
+
+    public function reportedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reported_by');
     }
 
     public function histories(): HasMany

@@ -3,14 +3,66 @@
 @section('content')
 <div class="mx-auto max-w-4xl">
     
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-title-md2 font-semibold text-black dark:text-white">Edit Request (Layanan IT)</h2>
-        <nav>
-            <ol class="flex items-center gap-2">
-                <li><a class="font-medium text-primary" href="{{ route('dashboard') }}">Dashboard /</a></li>
-                <li class="font-medium text-gray-500">Edit Request</li>
+    {{-- Header, Breadcrumb & Back Navigation --}}
+    <div class="mb-6 space-y-3">
+        {{-- Breadcrumb di Atas --}}
+        <nav class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <ol class="flex flex-wrap items-center gap-1.5">
+                <li>
+                    <a href="{{ auth()->user()->isPelapor() ? route('home') : route('dashboard') }}" class="inline-flex items-center gap-1 transition hover:text-primary">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li>
+                    <a href="{{ route('requests.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Permintaan Layanan' : 'Request Saya' }}
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li>
+                    <a href="{{ route('requests.show', $req->id) }}" class="transition hover:text-primary">
+                        {{ $req->nomor_request }}
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li class="font-medium text-gray-800 dark:text-white/90">
+                    Edit Request
+                </li>
             </ol>
         </nav>
+
+        {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
+        <div class="flex items-center gap-3">
+            <a href="{{ route('requests.show', $req->id) }}"
+               title="Kembali ke Detail Request"
+               class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
+                <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </a>
+            <div>
+                <h2 class="text-title-md2 font-semibold text-black dark:text-white">
+                    Edit Request (Layanan IT)
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Nomor: {{ $req->nomor_request }}</p>
+            </div>
+        </div>
     </div>
 
     <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
@@ -68,7 +120,8 @@
                             <select x-model="layanan" name="layanan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="lainnya" {{ old('layanan', $req->layanan ?? 'lainnya') == 'lainnya' ? 'selected' : '' }}>Lainnya (Permintaan Layanan Umum)</option>
                                 <option value="zoom" {{ old('layanan', $req->layanan) == 'zoom' ? 'selected' : '' }}>Permintaan Link Zoom Meeting</option>
-                                <option value="akun" {{ old('layanan', $req->layanan) == 'akun' ? 'selected' : '' }}>Reset Password Aplikasi (Srikandi/SIPT)</option>
+                                <option value="reset_password" {{ old('layanan', $req->layanan) == 'reset_password' ? 'selected' : '' }}>Reset Password Akun Aplikasi</option>
+                                <option value="tambah_akun" {{ old('layanan', $req->layanan) == 'tambah_akun' ? 'selected' : '' }}>Tambah / Pembuatan Akun Baru</option>
                                 <option value="peminjaman" {{ old('layanan', $req->layanan) == 'peminjaman' ? 'selected' : '' }}>Peminjaman Perangkat IT</option>
                                 <option value="konsultasi" {{ old('layanan', $req->layanan) == 'konsultasi' ? 'selected' : '' }}>Konsultasi / Asistensi IT</option>
                                 <option value="operator" {{ old('layanan', $req->layanan) == 'operator' ? 'selected' : '' }}>Permintaan Operator Kegiatan</option>
@@ -76,11 +129,10 @@
                             @error('layanan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <!-- Lokasi (Terintegrasi Otomatis dengan Bidang Pegawai) -->
+                        <!-- Lokasi Ruangan -->
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
-                                Lokasi <span class="text-meta-1">*</span>
-                                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(Otomatis sesuai bidang Anda)</span>
+                                Lokasi Ruangan <span class="text-meta-1">*</span>
                             </label>
                             <select name="lokasi" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 @foreach($lokasis as $lokasi)
@@ -132,16 +184,13 @@
                             @error('nama_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jam Mulai <span class="text-meta-1">*</span></label>
-                            <input type="time" name="jam_mulai" value="{{ old('jam_mulai', $req->detailZoom->jam_mulai ?? '') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                            @error('jam_mulai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jam Selesai <span class="text-meta-1">*</span></label>
-                            <input type="time" name="jam_selesai" value="{{ old('jam_selesai', $req->detailZoom->jam_selesai ?? '') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                            @error('jam_selesai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        <div class="sm:col-span-2">
+                            <x-form.time-range-picker 
+                                startName="jam_mulai" 
+                                endName="jam_selesai" 
+                                :startValue="old('jam_mulai', $req->detailZoom->jam_mulai ?? '')" 
+                                :endValue="old('jam_selesai', $req->detailZoom->jam_selesai ?? '')" 
+                                :required="true" />
                         </div>
 
                         <div>
@@ -163,50 +212,50 @@
                             @error('butuh_operator') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Bentuk Ruangan <span class="text-meta-1">*</span></label>
-                            <select name="bentuk_ruangan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                                <option value="Classroom" {{ old('bentuk_ruangan', $req->detailZoom->bentuk_ruangan ?? '') == 'Classroom' ? 'selected' : '' }}>Classroom</option>
-                                <option value="Shape U" {{ old('bentuk_ruangan', $req->detailZoom->bentuk_ruangan ?? '') == 'Shape U' ? 'selected' : '' }}>Shape U</option>
-                                <option value="Theater" {{ old('bentuk_ruangan', $req->detailZoom->bentuk_ruangan ?? '') == 'Theater' ? 'selected' : '' }}>Theater</option>
-                            </select>
-                            @error('bentuk_ruangan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jumlah Kursi <span class="text-meta-1">*</span></label>
-                            <input type="number" name="jumlah_kursi" value="{{ old('jumlah_kursi', $req->detailZoom->jumlah_kursi ?? '') }}" min="1" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                            @error('jumlah_kursi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
                     </div>
                 </div>
 
                 <!-- SECTION 3: Form Dinamis Akun (Reset Password) -->
-                <div x-show="layanan === 'akun'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
-                    <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Reset Password</h4>
+                <!-- SECTION 3: Form Dinamis Akun (Reset Password / Tambah Akun) -->
+                <div x-show="layanan === 'reset_password' || layanan === 'tambah_akun' || layanan === 'akun'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
+                    <h4 class="mb-4 text-lg font-semibold text-black dark:text-white" x-text="layanan === 'tambah_akun' ? 'Detail Tambah Akun Baru' : 'Detail Reset Password Akun'">Detail Akun</h4>
                     <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Pengajuan <span class="text-meta-1">*</span></label>
-                            <select name="jenis_pengajuan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                                <option value="Reset Password" {{ old('jenis_pengajuan', $req->detailAkun->jenis_pengajuan ?? '') == 'Reset Password' ? 'selected' : '' }}>Reset Password</option>
-                                <option value="Buat Akun Baru" {{ old('jenis_pengajuan', $req->detailAkun->jenis_pengajuan ?? '') == 'Buat Akun Baru' ? 'selected' : '' }}>Buat Akun Baru</option>
-                            </select>
-                            @error('jenis_pengajuan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Sistem Tujuan <span class="text-meta-1">*</span></label>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Sistem / Aplikasi Tujuan <span class="text-meta-1">*</span></label>
                             <select name="sistem_tujuan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="Srikandi" {{ old('sistem_tujuan', $req->detailAkun->sistem_tujuan ?? '') == 'Srikandi' ? 'selected' : '' }}>Srikandi</option>
                                 <option value="SIPT" {{ old('sistem_tujuan', $req->detailAkun->sistem_tujuan ?? '') == 'SIPT' ? 'selected' : '' }}>SIPT</option>
+                                <option value="Email BPOM" {{ old('sistem_tujuan', $req->detailAkun->sistem_tujuan ?? '') == 'Email BPOM' ? 'selected' : '' }}>Email BPOM (@pom.go.id)</option>
+                                <option value="Lainnya" {{ old('sistem_tujuan', $req->detailAkun->sistem_tujuan ?? '') == 'Lainnya' ? 'selected' : '' }}>Aplikasi Lainnya</option>
                             </select>
                             @error('sistem_tujuan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <div class="sm:col-span-2">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">NIP Terkait <span class="text-meta-1">*</span></label>
-                            <input type="text" name="nip_terkait" value="{{ old('nip_terkait', $req->detailAkun->nip_terkait ?? '') }}" placeholder="Masukkan NIP pemilik akun" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
+                                NIP Pemilik Akun <span class="text-meta-1">*</span>
+                                <span class="text-xs font-normal text-gray-500">(hanya angka)</span>
+                            </label>
+                            <input type="text" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" name="nip_terkait" value="{{ old('nip_terkait', $req->detailAkun->nip_terkait ?? '') }}" placeholder="Masukkan NIP pemilik akun" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             @error('nip_terkait') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Email Akun <span class="text-meta-1">*</span></label>
+                            <input type="email" name="email" value="{{ old('email', $req->detailAkun->email ?? '') }}" placeholder="contoh: user@pom.go.id" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            @error('email') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div x-data="{ showPass: false }">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Password yang Diinginkan <span class="text-meta-1">*</span></label>
+                            <div class="relative">
+                                <input :type="showPass ? 'text' : 'password'" name="password" value="{{ old('password', $req->detailAkun->password ?? '') }}" placeholder="Masukkan password yang diinginkan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 pl-5 pr-12 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                                <button type="button" @click="showPass = !showPass" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black dark:hover:text-white">
+                                    <svg x-show="!showPass" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showPass" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                </button>
+                            </div>
+                            @error('password') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
@@ -223,13 +272,13 @@
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Mulai <span class="text-meta-1">*</span></label>
-                            <input type="date" name="tgl_mulai" value="{{ old('tgl_mulai', $req->detailPeminjaman->tgl_mulai ?? '') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            <x-form.date-picker id="tgl_mulai" name="tgl_mulai" :defaultDate="old('tgl_mulai', $req->detailPeminjaman->tgl_mulai ?? '')" placeholder="Pilih Tanggal Mulai" />
                             @error('tgl_mulai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Kembali <span class="text-meta-1">*</span></label>
-                            <input type="date" name="tgl_kembali" value="{{ old('tgl_kembali', $req->detailPeminjaman->tgl_kembali ?? '') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            <x-form.date-picker id="tgl_kembali" name="tgl_kembali" :defaultDate="old('tgl_kembali', $req->detailPeminjaman->tgl_kembali ?? '')" placeholder="Pilih Tanggal Kembali" />
                             @error('tgl_kembali') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 

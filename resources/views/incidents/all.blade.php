@@ -105,7 +105,7 @@
                                     @if($isStaff)
                                         {{-- Proses / tindak lanjut (hanya tiket belum final) --}}
                                         @if(!$final)
-                                            <a href="{{ route('incidents.show', $ticket) }}#proses" title="Proses / Tindak Lanjut" aria-label="Proses"
+                                            <a href="{{ route('incidents.show', $ticket) }}?proses=1#proses" title="Proses / Tindak Lanjut" aria-label="Proses"
                                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-success hover:text-success dark:border-gray-800 dark:text-gray-400">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
@@ -113,8 +113,13 @@
                                             </a>
                                         @endif
 
-                                        {{-- Edit data aduan --}}
-                                        <a href="{{ route('incidents.edit', $ticket) }}" title="Edit" aria-label="Edit"
+                                        {{-- Edit data aduan / resolusi --}}
+                                        @php
+                                            $editLink = ($isStaff && $ticket->status === 'Selesai') 
+                                                ? route('incidents.editResolution', $ticket) 
+                                                : route('incidents.edit', $ticket);
+                                        @endphp
+                                        <a href="{{ $editLink }}" title="Edit" aria-label="Edit"
                                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -157,3 +162,5 @@
         {{ $tickets->links() }}
     </div>
 @endsection
+
+

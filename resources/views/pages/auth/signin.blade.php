@@ -21,7 +21,7 @@
                                 Sign In
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
-                                Enter your email and password to sign in!
+                                Masukkan Email dan Password anda
                             </p>
                         </div>
                         <div>

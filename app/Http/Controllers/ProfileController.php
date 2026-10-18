@@ -31,11 +31,13 @@ class ProfileController extends Controller
             'tanggal_lahir'      => 'required|date|before:today',
             'jenkel'             => 'required|in:L,P',
             'status_pernikahan'  => 'required|in:Belum Menikah,Menikah,Janda,Duda', // sesuai enum database
-            'no_telp'            => 'required|string|max:20',
+            'no_telp'            => ['required', 'string', 'regex:/^(\+62|62|0)[0-9]{8,13}$/'],
             'alamat'             => 'required|string|max:1000',
             'password'           => 'nullable|string|min:6',
             'foto_profil_base64' => 'nullable|string|max:4000000',
             'hapus_foto'         => 'nullable|in:0,1',
+        ], [
+            'no_telp.regex'      => 'Nomor telepon harus diawali 0, 62, atau +62 dan berisi 10 hingga 15 digit angka.',
         ]);
 
         $user->nama              = $request->nama;

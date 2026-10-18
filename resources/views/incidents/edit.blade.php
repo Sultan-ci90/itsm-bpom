@@ -1,7 +1,67 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-common.page-breadcrumb pageTitle="Edit Aduan {{ $ticket->nomor_aduan }}" />
+    {{-- Header, Breadcrumb & Back Navigation --}}
+    <div class="mx-auto w-full max-w-3xl mb-6 space-y-3">
+        {{-- Breadcrumb di Atas --}}
+        <nav class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <ol class="flex flex-wrap items-center gap-1.5">
+                <li>
+                    <a href="{{ auth()->user()->isPelapor() ? route('home') : route('dashboard') }}" class="inline-flex items-center gap-1 transition hover:text-primary">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li>
+                    <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Daftar Aduan' : 'Daftar Aduan Saya' }}
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li>
+                    <a href="{{ route('incidents.show', $ticket) }}" class="transition hover:text-primary">
+                        {{ $ticket->nomor_aduan }}
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li class="font-medium text-gray-800 dark:text-white/90">
+                    Edit Aduan
+                </li>
+            </ol>
+        </nav>
+
+        {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
+        <div class="flex items-center gap-3">
+            <a href="{{ route('incidents.show', $ticket) }}"
+               title="Kembali ke Detail Incident"
+               class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
+                <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </a>
+            <div>
+                <h2 class="text-title-md2 font-semibold text-black dark:text-white">
+                    Edit Aduan Kendala (Incident)
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Nomor: {{ $ticket->nomor_aduan }}</p>
+            </div>
+        </div>
+    </div>
 
     <script>
         const ASSET_LOKASI = @json($assets->pluck('lokasi', 'id'));
@@ -103,7 +163,7 @@
                         Batal
                     </a>
                     <button type="submit" :disabled="submitting"
-                            class="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                            class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
                         <span x-show="!submitting">Simpan Perubahan</span>
                         <span x-cloak x-show="submitting">Menyimpan...</span>
                     </button>

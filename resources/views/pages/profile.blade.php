@@ -120,7 +120,15 @@
                         </div>
                         <div>
                             <label class="{{ $label }}">No. Telepon / WA</label>
-                            <input type="text" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}" class="{{ $input }}" />
+                            <input type="tel"
+                                   name="no_telp"
+                                   inputmode="tel"
+                                   maxlength="16"
+                                   oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                   value="{{ old('no_telp', $user->no_telp) }}"
+                                   placeholder="Contoh: 08123456789 atau +628123456789"
+                                   class="{{ $input }}"
+                                   required />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="{{ $label }}">Alamat Lengkap</label>

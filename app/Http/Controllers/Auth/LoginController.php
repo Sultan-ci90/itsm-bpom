@@ -47,8 +47,14 @@ class LoginController extends Controller
             $remember
         )) {
             $request->session()->regenerate();
+            $request->session()->forget('url.intended');
 
-            return redirect()->intended(route('home'));
+            $user = Auth::user();
+            if ($user && $user->isPelapor()) {
+                return redirect()->route('home');
+            }
+
+            return redirect()->route('dashboard');
         }
 
         return back()

@@ -144,6 +144,7 @@
   --color-theme-purple-500: #7a5af8;
 
   /* ---- TailAdmin legacy palette (compat) ---- */
+  --color-primary: #465fff;
   --color-boxdark: #1d2939;        /* gray-800: card/box background in dark mode */
   --color-boxdark-2: #101828;      /* gray-900: deeper surface */
   --color-strokedark: #344054;     /* gray-700: border color in dark mode */

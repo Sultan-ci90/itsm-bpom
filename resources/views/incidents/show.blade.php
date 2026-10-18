@@ -36,21 +36,89 @@
     ];
 
     // Detail service (read-only) tampil jika ada resolusi dan tiket sudah final / dilihat pelapor
-    $showDetail = $res && ($isFinal || !$isStaff);
+    // Mode proses (dibuka lewat tombol penindakan)
+    $isProsesMode = request()->boolean('proses') || request('proses') == '1';
+
+    // Detail service (read-only) tampil jika ada resolusi dan (tiket sudah final / dilihat pelapor / sedang mode detail)
+    $showDetail = $res && ($isFinal || !$isStaff || !$isProsesMode);
 @endphp
 
 <div class="mx-auto max-w-4xl">
 
-    {{-- Header --}}
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-title-md2 font-semibold text-black dark:text-white">Detail Aduan</h2>
-        <nav>
-            <ol class="flex items-center gap-2">
-                <li><a class="font-medium text-primary" href="{{ route('dashboard') }}">Dashboard /</a></li>
-                <li><a class="font-medium text-primary" href="{{ route('incidents.index') }}">Incident /</a></li>
-                <li class="font-medium text-gray-500">{{ $ticket->nomor_aduan }}</li>
+    {{-- Header, Breadcrumb & Back Navigation --}}
+    <div class="mb-6 space-y-3">
+        {{-- Breadcrumb di Atas --}}
+        <nav class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <ol class="flex flex-wrap items-center gap-1.5">
+                <li>
+                    <a href="{{ auth()->user()->isPelapor() ? route('home') : route('dashboard') }}" class="inline-flex items-center gap-1 transition hover:text-primary">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li>
+                    <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
+                        {{ $isStaff ? 'Daftar Aduan' : 'Daftar Aduan Saya' }}
+                    </a>
+                </li>
+                <li>
+                    <svg class="h-3.5 w-3.5 text-gray-400 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </li>
+                <li class="font-medium text-gray-800 dark:text-white/90">
+                    {{ $ticket->nomor_aduan }}
+                </li>
             </ol>
         </nav>
+
+        {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-3">
+                <a href="{{ route('incidents.index') }}"
+                   title="Kembali ke Daftar Incident"
+                   class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
+                    <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                </a>
+                <div>
+                    <h2 class="text-title-md2 font-semibold text-black dark:text-white">
+                        Detail Aduan Kendala (Incident)
+                    </h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Nomor: {{ $ticket->nomor_aduan }}</p>
+                </div>
+            </div>
+
+            @if($isStaff && !$isFinal)
+                <div>
+                    @if(!$isProsesMode)
+                        <a href="{{ route('incidents.show', $ticket) }}?proses=1#proses"
+                           class="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
+                            </svg>
+                            Tindak Lanjuti / Proses Tiket
+                        </a>
+                    @else
+                        <a href="{{ route('incidents.show', $ticket) }}"
+                           class="inline-flex items-center gap-2 rounded-lg border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-meta-4">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Sembunyikan Form Penindakan
+                        </a>
+                    @endif
+                </div>
+            @endif
+        </div>
     </div>
 
     {{-- Flash message --}}
@@ -110,86 +178,39 @@
         </div>
 
         {{-- 2. FORM PROSES TIKET (teknisi/admin, tiket belum final) --}}
-        @if($isStaff && !$isFinal)
+        @if($isStaff && !$isFinal && $isProsesMode)
         <div id="proses" class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-stroke px-6.5 py-4 dark:border-gray-800">
                 <h3 class="font-medium text-black dark:text-white">Proses Tiket</h3>
             </div>
 
             <div class="p-6.5">
-                <form action="{{ route('incidents.update', $ticket) }}" method="POST" enctype="multipart/form-data"
+                                <form action="{{ route('incidents.update', $ticket) }}" method="POST"
                       x-data="{
-                          jenis: @js(old('jenis_penyelesaian', $res->jenis_penyelesaian ?? 'Internal')),
-                          status: @js(old('status', $ticket->status === 'Belum diperiksa' ? 'Sedang diproses' : $ticket->status))
+                          status: @js(old('status', $ticket->status === 'Belum diperiksa' ? 'Sedang diproses' : $ticket->status)),
+                          jenis: @js(old('jenis_penyelesaian', $res->jenis_penyelesaian ?? 'Internal'))
                       }">
                     @csrf
                     @method('PUT')
 
-                    <div class="mb-5 grid grid-cols-1 gap-4.5 sm:grid-cols-2">
-                        {{-- Status --}}
-                        <div>
-                            <label class="{{ $label }}">Status</label>
-                            <select name="status" x-model="status" class="{{ $input }}">
-                                <option value="Sedang diproses">Sedang diproses</option>
-                                <option value="Selesai">Selesai</option>
-                                <option value="Ditolak">Ditolak</option>
-                            </select>
-                            @error('status') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        {{-- Jenis penyelesaian (segmented toggle) --}}
-                        <div>
-                            <label class="{{ $label }}">Jenis Penyelesaian</label>
-                            <input type="hidden" name="jenis_penyelesaian" :value="jenis">
-                            <div class="inline-flex rounded-lg border border-stroke p-1 dark:border-gray-800">
-                                <button type="button" @click="jenis = 'Internal'"
-                                        :class="jenis === 'Internal' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
-                                        class="rounded-md px-6 py-2 text-sm font-medium transition">Internal</button>
-                                <button type="button" @click="jenis = 'Pihak ke-3'"
-                                        :class="jenis === 'Pihak ke-3' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
-                                        class="rounded-md px-6 py-2 text-sm font-medium transition">Pihak ke-3</button>
-                            </div>
-                            @error('jenis_penyelesaian') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-
-                    {{-- Pihak ke-3: vendor, biaya, surat --}}
-                    <div x-show="jenis === 'Pihak ke-3'" x-transition class="mb-5 rounded-lg border border-stroke p-5 dark:border-gray-800">
-                        <h4 class="mb-4 text-base font-semibold text-black dark:text-white">Detail Pihak ke-3</h4>
-                        <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
-                            <div>
-                                <label class="{{ $label }}">Nama Vendor</label>
-                                <input type="text" name="vendor" value="{{ old('vendor', $res->vendor ?? '') }}" class="{{ $input }}">
-                                @error('vendor') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="{{ $label }}">Estimasi Biaya (Rp)</label>
-                                <input type="number" name="estimasi_biaya" min="0" step="any" value="{{ old('estimasi_biaya', $res->estimasi_biaya ?? '') }}" class="{{ $input }}">
-                                @error('estimasi_biaya') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="{{ $label }}">Upload Surat Justifikasi (PDF/DOC, maks 5 MB)</label>
-                                <input type="file" name="file_surat_justifikasi" class="{{ $input }} !py-2">
-                                @if($res?->file_surat_justifikasi)
-                                    <p class="mt-1 text-xs text-success">
-                                        File saat ini:
-                                        <a href="{{ asset('storage/' . $res->file_surat_justifikasi) }}" target="_blank" class="underline">Lihat file</a>
-                                    </p>
-                                @endif
-                                @error('file_surat_justifikasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
+                    <div class="mb-5 sm:w-1/2 sm:pr-2.25">
+                        <label class="{{ $label }}">Status <span class="text-meta-1">*</span></label>
+                        <select name="status" x-model="status" class="{{ $input }}">
+                            <option value="Sedang diproses">Sedang diproses</option>
+                            <option value="Selesai">Selesai</option>
+                        </select>
+                        @error('status') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Analisa --}}
                     <div class="mb-5 grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         <div>
-                            <label class="{{ $label }}">Tgl Analisa</label>
-                            <input type="date" name="tgl_analisa" value="{{ old('tgl_analisa', $res?->tgl_analisa?->format('Y-m-d') ?? date('Y-m-d')) }}" class="{{ $input }}">
+                            <label class="{{ $label }}">Tgl Analisa <span class="text-xs font-normal text-gray-500">(opsional)</span></label>
+                            <x-form.date-picker id="tgl_analisa" name="tgl_analisa" :defaultDate="old('tgl_analisa', $res?->tgl_analisa?->format('Y-m-d') ?? date('Y-m-d'))" placeholder="Pilih Tanggal Analisa" />
                             @error('tgl_analisa') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="{{ $label }}">Pemeriksa</label>
+                            <label class="{{ $label }}">Pemeriksa <span class="text-meta-1">*</span></label>
                             <select name="pemeriksa_id" class="{{ $input }}">
                                 @foreach($pemeriksas as $p)
                                     <option value="{{ $p->id }}" @selected(old('pemeriksa_id', $res->pemeriksa_id ?? $user->id) == $p->id)>
@@ -202,28 +223,66 @@
                     </div>
 
                     <div class="mb-5">
-                        <label class="{{ $label }}">Analisa Tim Teknis</label>
-                        <textarea name="analisa_teknis" rows="3" class="{{ $input }}">{{ old('analisa_teknis', $res->analisa_teknis ?? '') }}</textarea>
+                        <label class="{{ $label }}">Analisa Tim Teknis <span class="text-xs font-normal text-gray-500">(opsional)</span></label>
+                        <textarea name="analisa_teknis" rows="3" placeholder="Deskripsi analisa masalah oleh tim teknis (opsional)..." class="{{ $input }}">{{ old('analisa_teknis', $res->analisa_teknis ?? '') }}</textarea>
                         @error('analisa_teknis') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Tindak lanjut --}}
                     <div class="mb-5 sm:w-1/2 sm:pr-2.25">
-                        <label class="{{ $label }}">Tgl Tindak Lanjut</label>
-                        <input type="date" name="tgl_tindak_lanjut" value="{{ old('tgl_tindak_lanjut', $res?->tgl_tindak_lanjut?->format('Y-m-d') ?? date('Y-m-d')) }}" class="{{ $input }}">
+                        <label class="{{ $label }}">Tgl Tindak Lanjut <span class="text-meta-1">*</span></label>
+                        <x-form.date-picker id="tgl_tindak_lanjut" name="tgl_tindak_lanjut" :defaultDate="old('tgl_tindak_lanjut', $res?->tgl_tindak_lanjut?->format('Y-m-d') ?? date('Y-m-d'))" placeholder="Pilih Tanggal Tindak Lanjut" />
                         @error('tgl_tindak_lanjut') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="mb-5">
-                        <label class="{{ $label }}">Tindak Lanjut Tim Teknis</label>
-                        <textarea name="tindak_lanjut_teknis" rows="3" class="{{ $input }}">{{ old('tindak_lanjut_teknis', $res->tindak_lanjut_teknis ?? '') }}</textarea>
+                        <label class="{{ $label }}">Tindak Lanjut Tim Teknis <span class="text-meta-1">*</span></label>
+                        <textarea name="tindak_lanjut_teknis" rows="3" placeholder="Tindakan atau perbaikan teknis yang dilakukan..." class="{{ $input }}">{{ old('tindak_lanjut_teknis', $res->tindak_lanjut_teknis ?? '') }}</textarea>
                         @error('tindak_lanjut_teknis') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Jenis penyelesaian (segmented toggle) PINDAH KE SINI --}}
+                    <div class="mb-5">
+                        <label class="{{ $label }}">Jenis Penyelesaian</label>
+                        <input type="hidden" name="jenis_penyelesaian" :value="jenis">
+                        <div class="inline-flex rounded-lg border border-stroke p-1 dark:border-gray-800">
+                            <button type="button" @click="jenis = 'Internal'"
+                                    :class="jenis === 'Internal' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
+                                    class="rounded-md px-6 py-2 text-sm font-medium transition">Internal</button>
+                            <button type="button" @click="jenis = 'Pihak ke-3'"
+                                    :class="jenis === 'Pihak ke-3' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
+                                    class="rounded-md px-6 py-2 text-sm font-medium transition">Pihak ke-3</button>
+                        </div>
+                        @error('jenis_penyelesaian') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Boks Biru Pihak ke-3 --}}
+                    <div x-show="jenis === 'Pihak ke-3'" x-cloak x-transition 
+                         class="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-800/40 dark:bg-blue-900/20">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-800/30 dark:text-blue-400">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-300">Surat Permohonan Perbaikan</h4>
+                                <p class="text-xs text-blue-700 dark:text-blue-400/80">Otomatis di-generate oleh sistem</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('incidents.justifikasi', $ticket) }}" target="_blank"
+                           class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Unduh PDF
+                        </a>
                     </div>
 
                     {{-- Hasil --}}
                     <div class="mb-5 sm:w-1/2 sm:pr-2.25">
                         <label class="{{ $label }}">Tgl Hasil <span class="text-xs font-normal text-gray-500" x-show="status === 'Selesai'">(wajib)</span></label>
-                        <input type="date" name="tgl_hasil" value="{{ old('tgl_hasil', $res?->tgl_hasil?->format('Y-m-d')) }}" class="{{ $input }}">
+                        <x-form.date-picker id="tgl_hasil" name="tgl_hasil" :defaultDate="old('tgl_hasil', $res?->tgl_hasil?->format('Y-m-d'))" placeholder="Pilih Tanggal Hasil" />
                         @error('tgl_hasil') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
@@ -235,22 +294,9 @@
 
                     {{-- Tombol --}}
                     <div class="flex flex-col-reverse gap-3 border-t border-stroke pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
-                        <template x-if="jenis === 'Pihak ke-3'">
-                            @if($res && $res->jenis_penyelesaian === 'Pihak ke-3')
-                                <a href="{{ route('incidents.justifikasi', $ticket) }}" target="_blank"
-                                   class="inline-flex items-center justify-center rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90 dark:bg-meta-4">
-                                    Generate Surat Justifikasi
-                                </a>
-                            @else
-                                <span class="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-gray-200 px-5 py-2.5 text-sm font-medium text-gray-500 dark:bg-meta-4"
-                                      title="Simpan data Pihak ke-3 terlebih dahulu">
-                                    Generate Surat Justifikasi (simpan dulu)
-                                </span>
-                            @endif
-                        </template>
                         <button type="submit"
                                 class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
-                            Simpan
+                            <span x-text="status === 'Selesai' ? 'Simpan & Selesaikan' : 'Simpan Draft'">Simpan Draft</span>
                         </button>
                     </div>
                 </form>
@@ -346,3 +392,5 @@
     </div>
 </div>
 @endsection
+
+

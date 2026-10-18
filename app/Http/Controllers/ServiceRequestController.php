@@ -7,6 +7,7 @@ use App\Models\ReqDetailZoom;
 use App\Models\ReqDetailAkun;
 use App\Models\ReqDetailPeminjaman;
 use App\Models\Bidang;
+use App\Models\Lokasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,9 @@ use App\Notifications\NewTicketNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
 use Illuminate\Support\Facades\Notification;
 use App\Models\User;
+use App\Models\ServiceRequestChat;
+use App\Events\ServiceRequestChatMessageSent;
+use App\Events\ServiceRequestChatStatusChanged;
 
 class ServiceRequestController extends Controller
 {
@@ -94,40 +98,23 @@ class ServiceRequestController extends Controller
     {
         $bidangs = Bidang::all();
 
-        // 1. Integrasi lokasi otomatis berdasarkan bidang pegawai yang sedang login
-        $user = auth()->user()->load('bidang');
-        $bidangUser = $user->bidang?->nama_bidang;
+        // 1. Ambil master lokasi urut alfabetis A-Z (independen, tanpa keterikatan bidang)
+        $user = auth()->user();
+        $lokasis = Lokasi::orderBy('nama_lokasi', 'asc')->pluck('nama_lokasi')->toArray();
 
-        $defaultLokasi = match (true) {
-            str_contains(strtolower($bidangUser ?? ''), 'tata usaha') || str_contains(strtolower($bidangUser ?? ''), 'umum') => 'Ruang Staff Tata Usaha',
-            str_contains(strtolower($bidangUser ?? ''), 'pengawasan') => 'Ruang Staff Pengawasan',
-            str_contains(strtolower($bidangUser ?? ''), 'regulasi') => 'Ruang Staff Regulasi',
-            str_contains(strtolower($bidangUser ?? ''), 'sumber daya') || str_contains(strtolower($bidangUser ?? ''), 'sdm') => 'Ruang Staff SDM',
-            !empty($bidangUser) => 'Ruang Staff ' . $bidangUser,
-            default => 'Ruang Staff Tata Usaha',
-        };
+        // Jika database belum memiliki lokasi, fallback ke daftar default
+        if (empty($lokasis)) {
+            $lokasis = ['Ruang Staff Tata Usaha', 'Aula BPOM', 'Ruang Rapat Utama'];
+        }
+        $defaultLokasi = $lokasis[0] ?? '';
 
-        // 2. Daftar seluruh ruangan staff dan fasilitas bersama
-        $lokasiStaff = [
-            'Ruang Staff Tata Usaha',
-            'Ruang Staff Pengawasan',
-            'Ruang Staff Regulasi',
-            'Ruang Staff SDM',
-        ];
+        $isStaff = $user->isTeknisi() || $user->isAdmin();
 
-        $lokasiUmum = [
-            'Ruang Rapat Utama',
-            'Ruang Rapat Bidang Pengawasan',
-            'Ruang Rapat Bidang Regulasi',
-            'Aula BPOM',
-            'Luar Kantor',
-        ];
+        $users = $isStaff
+            ? User::with('bidang')->select('id', 'nama', 'nip', 'bidang_id')->orderBy('nama')->get()
+            : collect();
 
-        // Gabungkan dan pastikan lokasi default pegawai ada di urutan teratas
-        $allLokasi = array_merge([$defaultLokasi], $lokasiStaff, $lokasiUmum);
-        $lokasis = array_values(array_unique($allLokasi));
-
-        return view('requests.create', compact('bidangs', 'lokasis', 'defaultLokasi'));
+        return view('requests.create', compact('bidangs', 'lokasis', 'defaultLokasi', 'isStaff', 'users'));
     }
 
     /**
@@ -140,7 +127,8 @@ class ServiceRequestController extends Controller
 
         // 1. Validasi Bersyarat ('lainnya' adalah default layanan)
         $validated = $request->validate([
-            'layanan' => 'required|in:lainnya,zoom,akun,peminjaman,konsultasi,operator',
+            'pelapor_id' => 'nullable|exists:users,id',
+            'layanan' => 'required|in:lainnya,zoom,reset_password,tambah_akun,akun,peminjaman,konsultasi,operator',
             'lokasi' => 'required|string|max:100',
             'deskripsi' => 'required_if:layanan,lainnya|nullable|string',
 
@@ -151,13 +139,12 @@ class ServiceRequestController extends Controller
             'jam_selesai' => 'required_if:layanan,zoom|nullable|date_format:H:i|after:jam_mulai',
             'jenis_acara' => 'required_if:layanan,zoom|nullable|in:Rapat,Webinar,Hybrid',
             'butuh_operator' => 'required_if:layanan,zoom|nullable|in:Ya,Tidak',
-            'bentuk_ruangan' => 'required_if:layanan,zoom|nullable|in:Classroom,Shape U,Theater',
-            'jumlah_kursi' => 'required_if:layanan,zoom|nullable|integer|min:1',
 
-            // Validasi khusus Akun
-            'jenis_pengajuan' => 'required_if:layanan,akun|nullable|in:Reset Password,Buat Akun Baru',
-            'sistem_tujuan' => 'required_if:layanan,akun|nullable|in:Srikandi,SIPT',
-            'nip_terkait' => 'required_if:layanan,akun|nullable|string|max:50',
+            // Validasi khusus Akun (Reset Password / Tambah Akun)
+            'sistem_tujuan' => 'required_if:layanan,reset_password,tambah_akun,akun|nullable|string|max:100',
+            'nip_terkait' => 'required_if:layanan,reset_password,tambah_akun,akun|nullable|regex:/^[0-9]+$/|max:50',
+            'email' => 'required_if:layanan,reset_password,tambah_akun|nullable|email|max:150',
+            'password' => 'required_if:layanan,reset_password,tambah_akun|nullable|string|max:255',
 
             // Validasi khusus Peminjaman
             'jenis_perangkat' => 'required_if:layanan,peminjaman|nullable|string|max:255',
@@ -169,11 +156,28 @@ class ServiceRequestController extends Controller
             'deskripsi.required_if' => 'Mohon jelaskan rincian permintaan atau kebutuhan Anda pada kolom deskripsi.',
             'lokasi.required' => 'Lokasi wajib dipilih.',
             'layanan.required' => 'Jenis layanan wajib dipilih.',
+            'nip_terkait.regex' => 'NIP hanya boleh berisi angka.',
+            'email.email' => 'Format email tidak valid.',
         ]);
 
         // 2. Database Transaction
         DB::beginTransaction();
         try {
+            $currentUser = auth()->user();
+            $isStaff = $currentUser->isTeknisi() || $currentUser->isAdmin();
+
+            // Tentukan user pemilik request (user_id) dan user pen-submit (reported_by)
+            $targetUserId = $currentUser->id;
+            $reportedById = null;
+
+            if ($isStaff && $request->filled('pelapor_id')) {
+                $inputPelaporId = (int) $request->pelapor_id;
+                if ($inputPelaporId !== $currentUser->id) {
+                    $targetUserId = $inputPelaporId;
+                    $reportedById = $currentUser->id;
+                }
+            }
+
             // Generate Nomor Request Otomatis (dikunci agar tidak bentrok saat submit bersamaan)
             $date = Carbon::now()->format('Ymd');
             $lastReq = ServiceRequest::where('nomor_request', 'like', "REQ-{$date}-%")
@@ -186,7 +190,8 @@ class ServiceRequestController extends Controller
             // Insert ke tabel utama
             $serviceRequest = ServiceRequest::create([
                 'nomor_request' => $nomorRequest,
-                'user_id' => auth()->id(),
+                'user_id' => $targetUserId,
+                'reported_by' => $reportedById,
                 'layanan' => $validated['layanan'],
                 'tgl_request' => Carbon::now(),
                 'lokasi' => $validated['lokasi'],
@@ -204,15 +209,21 @@ class ServiceRequestController extends Controller
                     'jam_selesai' => $validated['jam_selesai'],
                     'jenis_acara' => $validated['jenis_acara'],
                     'butuh_operator' => $validated['butuh_operator'],
-                    'bentuk_ruangan' => $validated['bentuk_ruangan'],
-                    'jumlah_kursi' => $validated['jumlah_kursi'],
                 ]);
-            } elseif ($validated['layanan'] === 'akun') {
+            } elseif (in_array($validated['layanan'], ['reset_password', 'tambah_akun', 'akun'])) {
+                $jenisPengajuan = match($validated['layanan']) {
+                    'reset_password' => 'Reset Password',
+                    'tambah_akun' => 'Tambah Akun Baru',
+                    default => ($request->input('jenis_pengajuan') ?? 'Reset Password'),
+                };
+
                 ReqDetailAkun::create([
                     'request_id' => $serviceRequest->id,
-                    'jenis_pengajuan' => $validated['jenis_pengajuan'],
-                    'sistem_tujuan' => $validated['sistem_tujuan'],
-                    'nip_terkait' => $validated['nip_terkait'],
+                    'jenis_pengajuan' => $jenisPengajuan,
+                    'sistem_tujuan' => $validated['sistem_tujuan'] ?? $request->input('sistem_tujuan'),
+                    'nip_terkait' => $validated['nip_terkait'] ?? $request->input('nip_terkait'),
+                    'email' => $request->input('email'),
+                    'password' => $request->input('password'),
                 ]);
             } elseif ($validated['layanan'] === 'peminjaman') {
                 ReqDetailPeminjaman::create([
@@ -227,12 +238,17 @@ class ServiceRequestController extends Controller
 
             // Notify Admin & Teknisi
             $staffs = User::whereIn('role', ['teknisi', 'admin'])->get();
-            $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+            $targetUser = User::find($targetUserId);
+            $namaPelaporText = $reportedById
+                ? $currentUser->nama . ' (atas nama ' . ($targetUser->nama ?? 'Pegawai lain') . ')'
+                : $currentUser->nama;
+
+            $avatar = $currentUser->foto_profil ? asset('storage/' . $currentUser->foto_profil) : asset('images/user/owner.png');
             Notification::send($staffs, new NewTicketNotification(
                 'Permintaan Layanan Baru',
-                auth()->user()->nama . ' mengajukan layanan baru (' . $nomorRequest . ').',
+                $namaPelaporText . ' mengajukan layanan baru (' . $nomorRequest . ').',
                 route('requests.show', $serviceRequest->id),
-                auth()->user()->nama,
+                $currentUser->nama,
                 $avatar
             ));
 
@@ -259,22 +275,23 @@ class ServiceRequestController extends Controller
      */
     public function edit(ServiceRequest $req)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (!$user->isTeknisi() && !$user->isAdmin()) {
+            if ($req->user_id !== $user->id) {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit request ini.');
+            }
+            if ($req->status !== 'Diajukan') {
+                return redirect()->route('requests.show', $req->id)
+                                 ->with('error', 'Maaf, request sudah diproses dan tidak dapat diubah lagi.');
+            }
         }
 
         $bidangs = \App\Models\Bidang::all();
-        $lokasis = [
-            'Ruang Server / Data Center',
-            'Ruang Rapat Utama',
-            'Ruang Kepala Balai',
-            'Ruang Tata Usaha',
-            'Ruang Laboratorium',
-            'Ruang Pemeriksaan',
-            'Ruang Infokom',
-            'Layanan Publik / PTSP',
-            'Lainnya'
-        ];
+        $lokasis = Lokasi::orderBy('nama_lokasi', 'asc')->pluck('nama_lokasi')->toArray();
+        if (empty($lokasis)) {
+            $lokasis = ['Ruang Staff Tata Usaha', 'Aula BPOM', 'Ruang Rapat Utama'];
+        }
         return view('requests.edit', compact('req', 'bidangs', 'lokasis'));
     }
 
@@ -283,8 +300,16 @@ class ServiceRequestController extends Controller
      */
     public function updateData(Request $request, ServiceRequest $req)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (!$user->isTeknisi() && !$user->isAdmin()) {
+            if ($req->user_id !== $user->id) {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit request ini.');
+            }
+            if ($req->status !== 'Diajukan') {
+                return redirect()->route('requests.show', $req->id)
+                                 ->with('error', 'Maaf, request sudah diproses dan tidak dapat diubah lagi.');
+            }
         }
 
         $validated = $request->validate([
@@ -307,20 +332,29 @@ class ServiceRequestController extends Controller
                     'jam_mulai' => 'required',
                     'jam_selesai' => 'required',
                     'butuh_operator' => 'required|string',
-                    'bentuk_ruangan' => 'nullable|string',
-                    'jumlah_kursi' => 'nullable|integer',
                 ]);
                 if ($req->detailZoom) {
                     $req->detailZoom->update($zoomData);
                 } else {
                     $req->detailZoom()->create($zoomData);
                 }
-            } elseif ($validated['layanan'] === 'akun') {
+            } elseif (in_array($validated['layanan'], ['reset_password', 'tambah_akun', 'akun'])) {
                 $akunData = $request->validate([
-                    'jenis_pengajuan' => 'required|string',
-                    'sistem_tujuan' => 'required|string',
-                    'nip_terkait' => 'required|string',
+                    'sistem_tujuan' => 'required|string|max:100',
+                    'nip_terkait' => 'required|regex:/^[0-9]+$/|max:50',
+                    'email' => 'nullable|email|max:150',
+                    'password' => 'nullable|string|max:255',
+                ], [
+                    'nip_terkait.regex' => 'NIP hanya boleh berisi angka.',
+                    'email.email' => 'Format email tidak valid.',
                 ]);
+
+                $akunData['jenis_pengajuan'] = match($validated['layanan']) {
+                    'reset_password' => 'Reset Password',
+                    'tambah_akun' => 'Tambah Akun Baru',
+                    default => ($request->input('jenis_pengajuan') ?? 'Reset Password'),
+                };
+
                 if ($req->detailAkun) {
                     $req->detailAkun->update($akunData);
                 } else {
@@ -360,7 +394,9 @@ class ServiceRequestController extends Controller
             'detailZoom.bidang',
             'detailAkun',
             'detailPeminjaman',
-            'resolution.petugas'
+            'resolution.petugas',
+            'chats.user.bidang',
+            'closedByUser'
         ])->findOrFail($id);
 
         // Pelapor hanya boleh melihat request miliknya sendiri
@@ -396,7 +432,7 @@ class ServiceRequestController extends Controller
 
             // Layanan Zoom (opsional/kondisional)
             'zoom_link' => 'nullable|string|max:500',
-            'zoom_meeting_id' => 'nullable|string|max:100',
+            'zoom_meeting_id' => 'nullable|string|regex:/^[0-9\s-]+$/|max:50',
             'zoom_passcode' => 'nullable|string|max:100',
 
             // Layanan Akun (2 field sesuai request user)
@@ -411,6 +447,7 @@ class ServiceRequestController extends Controller
             'tgl_tindak_lanjut.required' => 'Tanggal tindak lanjut wajib diisi.',
             'tindak_lanjut.required_unless' => 'Catatan tindakan tim IT wajib diisi jika tidak ditolak.',
             'alasan_penolakan.required_if' => 'Alasan penolakan wajib diisi jika status Ditolak.',
+            'zoom_meeting_id.regex' => 'Meeting ID Zoom hanya boleh berisi angka, spasi, atau tanda strip (-).',
         ]);
 
         DB::beginTransaction();
@@ -433,9 +470,16 @@ class ServiceRequestController extends Controller
                 ]
             );
 
-            // 2. Perbarui status request
+            // 2. Perbarui status request & timestamp penyelesaian
             $oldStatus = $req->status;
-            $req->update(['status' => $validated['status']]);
+            $statusUpdateData = ['status' => $validated['status']];
+            if ($validated['status'] === 'Selesai' && !$req->completed_at) {
+                $statusUpdateData['completed_at'] = now();
+            } elseif ($validated['status'] !== 'Selesai') {
+                $statusUpdateData['completed_at'] = null;
+                $statusUpdateData['is_chat_closed'] = false;
+            }
+            $req->update($statusUpdateData);
 
             // Notify Pelapor
             if ($oldStatus !== $validated['status'] && $req->user) {
@@ -469,6 +513,304 @@ class ServiceRequestController extends Controller
                 'message' => $e->getMessage(),
             ]);
             return back()->withInput()->with('error', 'Gagal menyimpan tindak lanjut: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Halaman edit tindak lanjut untuk Service Request.
+     */
+    public function editResolution(ServiceRequest $req)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($req->status !== 'Selesai') {
+            return redirect()->route('requests.show', $req->id)
+                ->with('error', 'Hanya request dengan status Selesai yang tindak lanjutnya dapat diedit melalui rute ini.');
+        }
+
+        $req->load(['user.bidang', 'detailZoom.bidang', 'detailAkun', 'detailPeminjaman', 'resolution.petugas']);
+
+        $petugasList = User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama']);
+
+        return view('requests.edit-resolution', compact('req', 'petugasList'));
+    }
+
+    /**
+     * Proses update data resolusi (tindak lanjut) Service Request.
+     */
+    public function updateResolution(Request $request, ServiceRequest $req)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($req->status !== 'Selesai') {
+            return redirect()->route('requests.show', $req->id)
+                ->with('error', 'Tindak lanjut hanya dapat diedit saat status Selesai.');
+        }
+
+        $validated = $request->validate([
+            'petugas_id' => 'required|exists:users,id',
+            'tgl_tindak_lanjut' => 'required|date',
+            'tindak_lanjut' => 'required|string',
+
+            // Layanan Zoom
+            'zoom_link' => 'nullable|string|max:500',
+            'zoom_meeting_id' => 'nullable|string|regex:/^[0-9\s-]+$/|max:50',
+            'zoom_passcode' => 'nullable|string|max:100',
+
+            // Layanan Akun
+            'akun_password_baru' => 'nullable|string|max:255',
+            'akun_instruksi_login' => 'nullable|string',
+
+            // Layanan Peminjaman
+            'pinjam_perangkat_diserahkan' => 'nullable|string|max:255',
+            'pinjam_catatan_pengembalian' => 'nullable|string',
+        ], [
+            'zoom_meeting_id.regex' => 'Meeting ID Zoom hanya boleh berisi angka, spasi, atau tanda strip (-).',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $req->resolution()->updateOrCreate(
+                ['request_id' => $req->id],
+                [
+                    'petugas_id' => $validated['petugas_id'],
+                    'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
+                    'tindak_lanjut' => $validated['tindak_lanjut'],
+                    'zoom_link' => $validated['zoom_link'] ?? null,
+                    'zoom_meeting_id' => $validated['zoom_meeting_id'] ?? null,
+                    'zoom_passcode' => $validated['zoom_passcode'] ?? null,
+                    'akun_password_baru' => $validated['akun_password_baru'] ?? null,
+                    'akun_instruksi_login' => $validated['akun_instruksi_login'] ?? null,
+                    'pinjam_perangkat_diserahkan' => $validated['pinjam_perangkat_diserahkan'] ?? null,
+                    'pinjam_catatan_pengembalian' => $validated['pinjam_catatan_pengembalian'] ?? null,
+                ]
+            );
+
+            DB::commit();
+            return redirect()->route('requests.show', $req->id)
+                ->with('success', 'Catatan tindak lanjut berhasil direvisi.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal merevisi tindak lanjut request', ['request_id' => $req->id, 'message' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Gagal merevisi tindak lanjut: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Menyimpan pesan chat / diskusi tiket request
+     */
+    public function storeChat(Request $request, $id)
+    {
+        $req = ServiceRequest::findOrFail($id);
+        $user = auth()->user();
+
+        // Otorisasi: hanya pelapor request ini atau staf IT (teknisi/admin) yang boleh chat
+        if ($user->isPelapor() && $req->user_id !== $user->id) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak berhak mengirim pesan pada request ini.'], 403);
+            }
+            abort(403, 'Anda tidak berhak mengirim pesan pada request ini.');
+        }
+
+        // Fitur chat hanya aktif jika status tiket sudah Selesai
+        if ($req->status !== 'Selesai') {
+            $statusMsg = 'Fitur diskusi hanya tersedia untuk permohonan layanan yang telah berstatus Selesai.';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $statusMsg], 403);
+            }
+            return back()->with('error', $statusMsg);
+        }
+
+        // Cek apakah sesi chat masih aktif
+        if (!$req->isChatActive()) {
+            $reason = $req->is_chat_closed 
+                ? 'Sesi diskusi telah dihentikan oleh operator.' 
+                : 'Sesi diskusi telah berakhir (maksimal 2 hari setelah status tiket selesai).';
+            
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $reason], 403);
+            }
+            return back()->with('error', $reason);
+        }
+
+        $validated = $request->validate([
+            'pesan' => 'required|string|max:2000',
+        ], [
+            'pesan.required' => 'Pesan tidak boleh kosong.',
+            'pesan.max' => 'Pesan maksimal 2000 karakter.',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // 1. Simpan pesan chat
+            $chat = ServiceRequestChat::create([
+                'request_id' => $req->id,
+                'user_id' => $user->id,
+                'pesan' => trim($validated['pesan']),
+                'is_system' => false,
+            ]);
+
+            // Status tiket tetap 'Selesai' (chat murni pendampingan/asistensi pasca penyelesaian)
+            $wasReopened = false;
+            $sysChat = null;
+
+            DB::commit();
+
+            // Load user data untuk payload event
+            $chat->load('user');
+
+            // Broadcast via WebSocket Reverb (dibungkus try-catch agar jika server Reverb belum aktif, chat tetap tersimpan di DB)
+            try {
+                broadcast(new ServiceRequestChatMessageSent(
+                    $chat, 
+                    false, 
+                    null
+                ))->toOthers();
+            } catch (\Throwable $bErr) {
+                Log::warning('WebSocket broadcast failed (Reverb offline?): ' . $bErr->getMessage());
+            }
+
+            $msg = 'Pesan berhasil dikirim ke ruang diskusi.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $msg,
+                    'chat' => [
+                        'id' => $chat->id,
+                        'pesan' => $chat->pesan,
+                        'user_id' => $user->id,
+                        'user_nama' => $user->nama,
+                        'user_avatar' => $user->foto_profil ? asset('storage/' . $user->foto_profil) : null,
+                        'is_staff' => $user->isTeknisi() || $user->isAdmin(),
+                        'is_me' => true,
+                        'created_time' => $chat->created_at?->format('H:i') ?? now()->format('H:i'),
+                        'created_datetime' => $chat->created_at?->format('H:i, d M') ?? now()->format('H:i, d M'),
+                    ],
+                    'sys_chat' => null,
+                    'was_reopened' => false,
+                ]);
+            }
+
+            return redirect()->to(route('requests.show', $req->id) . '#diskusi')
+                             ->with('success', $msg);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal mengirim pesan chat request', ['request_id' => $req->id, 'message' => $e->getMessage()]);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim pesan: ' . $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Gagal mengirim pesan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mengunci atau membuka kembali sesi chat oleh operator (teknisi/admin)
+     */
+    public function toggleChatStatus(Request $request, $id)
+    {
+        $user = auth()->user();
+        if (!$user->isTeknisi() && !$user->isAdmin()) {
+            abort(403, 'Hanya tim IT (teknisi/admin) yang dapat mengubah status sesi diskusi.');
+        }
+
+        $req = ServiceRequest::findOrFail($id);
+
+        if ($req->status !== 'Selesai') {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Pengaturan sesi diskusi hanya dapat dilakukan untuk permohonan berstatus Selesai.'], 422);
+            }
+            return back()->with('error', 'Pengaturan sesi diskusi hanya dapat dilakukan untuk permohonan berstatus Selesai.');
+        }
+
+        $newClosedState = !$req->is_chat_closed;
+
+        DB::beginTransaction();
+        try {
+            if ($newClosedState) {
+                // Kunci chat
+                $req->update([
+                    'is_chat_closed' => true,
+                    'chat_closed_at' => now(),
+                    'chat_closed_by' => $user->id,
+                ]);
+
+                $sysNotice = 'Sesi diskusi telah dihentikan/dikunci oleh Operator (' . $user->nama . ').';
+            } else {
+                // Buka kembali chat
+                $updateData = [
+                    'is_chat_closed' => false,
+                    'chat_closed_at' => null,
+                    'chat_closed_by' => null,
+                ];
+                // Jika sebelumnya kadaluwarsa karena tiket Selesai > 2 hari, reset timer
+                if ($req->isChatExpired()) {
+                    $updateData['completed_at'] = now();
+                }
+                $req->update($updateData);
+
+                $sysNotice = 'Sesi diskusi telah dibuka kembali oleh Operator (' . $user->nama . ').';
+            }
+
+            $sysChat = ServiceRequestChat::create([
+                'request_id' => $req->id,
+                'user_id' => null,
+                'pesan' => $sysNotice,
+                'is_system' => true,
+            ]);
+
+            DB::commit();
+
+            // Broadcast status change & system message
+            try {
+                broadcast(new ServiceRequestChatStatusChanged(
+                    $req->id,
+                    $req->is_chat_closed,
+                    $req->isChatActive(),
+                    $user->nama,
+                    $sysNotice
+                ));
+
+                broadcast(new ServiceRequestChatMessageSent($sysChat));
+            } catch (\Throwable $bErr) {
+                Log::warning('WebSocket broadcast failed (Reverb offline?): ' . $bErr->getMessage());
+            }
+
+            $msg = $newClosedState 
+                ? 'Sesi diskusi berhasil dihentikan.' 
+                : 'Sesi diskusi berhasil dibuka kembali.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $msg,
+                    'is_chat_closed' => $req->is_chat_closed,
+                    'is_chat_active' => $req->isChatActive(),
+                    'sys_chat' => [
+                        'id' => $sysChat->id,
+                        'pesan' => $sysChat->pesan,
+                        'created_time' => $sysChat->created_at?->format('H:i') ?? now()->format('H:i'),
+                    ]
+                ]);
+            }
+
+            return redirect()->to(route('requests.show', $req->id) . '#diskusi')->with('success', $msg);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal mengubah status chat request', ['request_id' => $req->id, 'message' => $e->getMessage()]);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengubah status sesi: ' . $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Gagal mengubah status sesi: ' . $e->getMessage());
         }
     }
 
