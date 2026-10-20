@@ -34,10 +34,27 @@ Route::middleware('guest')->group(function () {
 // =========================
 
 Route::middleware('auth')->group(function () {
+    // =========================
+    // NOTIFICATIONS
+    // =========================
     Route::post('/notifications/read-all', function () {
         auth()->user()->unreadNotifications->markAsRead();
-        return back();
+        return back()->with('success', 'Semua notifikasi ditandai sudah dibaca.');
     })->name('notifications.readAll');
+
+    Route::get('/notifications/{id}/read', function ($id) {
+        $notification = auth()->user()->notifications()->findOrFail($id);
+        if ($notification->unread()) {
+            $notification->markAsRead();
+        }
+        $targetUrl = $notification->data['url'] ?? route('home');
+        return redirect($targetUrl);
+    })->name('notifications.readAndRedirect');
+
+    Route::delete('/notifications/destroy-all', function () {
+        auth()->user()->notifications()->delete();
+        return back()->with('success', 'Semua notifikasi berhasil dihapus.');
+    })->name('notifications.destroyAll');
 
     Route::get('/', function () {
         $user = auth()->user();
@@ -117,6 +134,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/requests/{req}/chats/toggle', [ServiceRequestController::class, 'toggleChatStatus'])
         ->middleware('role:teknisi,admin')
         ->name('requests.chats.toggle');
+    Route::post('/requests/{req}/confirm-selesai', [ServiceRequestController::class, 'confirmCompleted'])
+        ->name('requests.confirmCompleted');
     Route::delete('/requests/{req}/destroy', [ServiceRequestController::class, 'destroy'])
         ->middleware('role:teknisi,admin')
         ->name('requests.destroy');

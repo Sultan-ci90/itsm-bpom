@@ -17,12 +17,13 @@ use Illuminate\Support\Str;
 use App\Notifications\NewTicketNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
 use Illuminate\Support\Facades\Notification;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class IncidentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Ticket::with(['asset', 'pelapor.bidang']);
+        $query = Ticket::with(['asset', 'pelapor.bidang', 'resolution']);
 
         // Pelapor hanya bisa melihat aduannya sendiri
         if (auth()->user()->isPelapor()) {
@@ -50,6 +51,16 @@ class IncidentController extends Controller
             }
         }
 
+        if ($request->filled('jenis_penyelesaian')) {
+            $validJenis = ['mandiri', 'Pihak ke-3'];
+            $jenis = $request->string('jenis_penyelesaian')->toString();
+            if (in_array($jenis, $validJenis, true)) {
+                $query->whereHas('resolution', function ($q) use ($jenis) {
+                    $q->where('jenis_penyelesaian', $jenis);
+                });
+            }
+        }
+
         $tickets = $query->latest('created_at')->paginate(15)->withQueryString();
 
         return view('incidents.index', compact('tickets'));
@@ -57,7 +68,7 @@ class IncidentController extends Controller
 
     public function all(Request $request)
     {
-        $query = Ticket::with(['asset', 'pelapor.bidang']);
+        $query = Ticket::with(['asset', 'pelapor.bidang', 'resolution']);
 
         if ($request->filled('q')) {
             $term = $request->string('q')->toString();
@@ -72,6 +83,16 @@ class IncidentController extends Controller
             $status = $request->string('status')->toString();
             if (in_array($status, $validStatuses, true)) {
                 $query->where('status', $status);
+            }
+        }
+
+        if ($request->filled('jenis_penyelesaian')) {
+            $validJenis = ['mandiri', 'Pihak ke-3'];
+            $jenis = $request->string('jenis_penyelesaian')->toString();
+            if (in_array($jenis, $validJenis, true)) {
+                $query->whereHas('resolution', function ($q) use ($jenis) {
+                    $q->where('jenis_penyelesaian', $jenis);
+                });
             }
         }
 
@@ -154,8 +175,8 @@ class IncidentController extends Controller
             $staffs = User::whereIn('role', ['teknisi', 'admin'])->get();
             $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
             Notification::send($staffs, new NewTicketNotification(
-                'Laporan Kendala Baru',
-                auth()->user()->nama . ' membuat laporan kendala baru (' . $nomorAduan . ').',
+                'Aduan Kendala Baru',
+                auth()->user()->nama . ' membuat aduan kendala baru (' . $nomorAduan . ').',
                 route('incidents.show', $ticket->id),
                 auth()->user()->nama,
                 $avatar
@@ -164,7 +185,7 @@ class IncidentController extends Controller
             DB::commit();
             return redirect()
                 ->route('incidents.index')
-                ->with('success', 'Laporan kendala berhasil dibuat dengan Nomor Aduan: ' . $nomorAduan);
+                ->with('success', 'Aduan kendala berhasil dibuat dengan Nomor Aduan: ' . $nomorAduan);
 
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
@@ -210,28 +231,35 @@ class IncidentController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Simpan resolusi (one-to-one)
-            // (Data vendor, estimasi_biaya tidak digunakan, Pihak ke-3 generate surat)
+            $isDraft = $request->input('action_type') === 'draft';
+            $newStatus = $isDraft ? 'Sedang diproses' : 'Selesai';
+
+            // 1. Simpan data resolusi
+            $resolutionData = [
+                'pemeriksa_id' => $request->pemeriksa_id ?? auth()->id(),
+                'tgl_analisa' => $request->tgl_analisa,
+                'analisa_teknis' => $request->analisa_teknis,
+                'tgl_tindak_lanjut' => $request->tgl_tindak_lanjut,
+                'tindak_lanjut_teknis' => $request->tindak_lanjut_teknis,
+            ];
+
+            if (!$isDraft) {
+                $resolutionData['jenis_penyelesaian'] = $request->jenis_penyelesaian ?? 'mandiri';
+                $resolutionData['tgl_hasil'] = $request->tgl_hasil;
+                $resolutionData['hasil'] = $request->hasil;
+            } else {
+                $resolutionData['jenis_penyelesaian'] = $request->input('jenis_penyelesaian', $ticket->resolution?->jenis_penyelesaian ?? 'mandiri');
+                if ($request->filled('tgl_hasil')) $resolutionData['tgl_hasil'] = $request->tgl_hasil;
+                if ($request->filled('hasil')) $resolutionData['hasil'] = $request->hasil;
+            }
+
             $ticket->resolution()->updateOrCreate(
                 ['ticket_id' => $ticket->id],
-                [
-                    'pemeriksa_id' => $request->pemeriksa_id ?? auth()->id(),
-                    'jenis_penyelesaian' => $request->jenis_penyelesaian,
-                    'vendor' => null,
-                    'estimasi_biaya' => null,
-                    'tgl_analisa' => $request->tgl_analisa,
-                    'analisa_teknis' => $request->analisa_teknis,
-                    'tgl_tindak_lanjut' => $request->tgl_tindak_lanjut,
-                    'tindak_lanjut_teknis' => $request->tindak_lanjut_teknis,
-                    'tgl_hasil' => $request->tgl_hasil,
-                    'hasil' => $request->hasil,
-                    'file_surat_justifikasi' => null,
-                ]
+                $resolutionData
             );
 
-            // 2. Update status sesuai pilihan
+            // 2. Update status sesuai pilihan aksi
             $oldStatus = $ticket->status;
-            $newStatus = $request->status;
             $ticket->update(['status' => $newStatus]);
 
             // 3. Catat history
@@ -262,8 +290,12 @@ class IncidentController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('incidents.show', $ticket)
-                             ->with('success', 'Aduan berhasil diproses.');
+
+            $msg = $isDraft 
+                ? 'Draft penanganan aduan berhasil disimpan. Tiket kini berstatus "Sedang diproses".' 
+                : 'Aduan berhasil diselesaikan! Tiket kini berstatus "Selesai".';
+
+            return redirect()->route('incidents.show', $ticket)->with('success', $msg);
 
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -416,8 +448,7 @@ class IncidentController extends Controller
 
         $validated = $request->validate([
             'pemeriksa_id' => 'required|exists:users,id',
-            'jenis_penyelesaian' => 'required|in:Internal,Pihak ke-3',
-            'vendor' => 'nullable|string|max:255',
+            'jenis_penyelesaian' => 'required|in:mandiri,Pihak ke-3',
             'tgl_analisa' => 'nullable|date',
             'analisa_teknis' => 'nullable|string',
             'tgl_tindak_lanjut' => 'required|date',
@@ -428,8 +459,6 @@ class IncidentController extends Controller
         ], [
             'pemeriksa_id.required' => 'Petugas pemeriksa wajib dipilih.',
             'jenis_penyelesaian.required' => 'Jenis penyelesaian wajib dipilih.',
-            'estimasi_biaya.numeric' => 'Estimasi biaya harus berupa angka nominal yang valid.',
-            'estimasi_biaya.min' => 'Estimasi biaya tidak boleh bernilai negatif.',
             'tgl_tindak_lanjut.required' => 'Tanggal tindak lanjut wajib diisi.',
             'tindak_lanjut_teknis.required' => 'Tindak lanjut teknis wajib diisi.',
             'tindak_lanjut_teknis.min' => 'Tindak lanjut teknis minimal 5 karakter.',
@@ -445,15 +474,11 @@ class IncidentController extends Controller
                 $filePath = $request->file('file_surat_justifikasi')->store('justifikasi', 'public');
             }
 
-            $isPihak3 = $validated['jenis_penyelesaian'] === 'Pihak ke-3';
-
             $ticket->resolution()->updateOrCreate(
                 ['ticket_id' => $ticket->id],
                 [
                     'pemeriksa_id' => $validated['pemeriksa_id'] ?? auth()->id(),
                     'jenis_penyelesaian' => $validated['jenis_penyelesaian'],
-                    'vendor' => $isPihak3 ? ($validated['vendor'] ?? null) : null,
-                    'estimasi_biaya' => $isPihak3 ? ($validated['estimasi_biaya'] ?? null) : null,
                     'tgl_analisa' => $validated['tgl_analisa'],
                     'analisa_teknis' => $validated['analisa_teknis'],
                     'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
@@ -482,7 +507,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Halaman cetak Surat Justifikasi (hanya untuk penyelesaian Pihak ke-3).
+     * Cetak Surat Permintaan Perbaikan BMN (hanya untuk penyelesaian Pihak ke-3) dalam format PDF.
      */
     public function justifikasi(Ticket $ticket)
     {
@@ -490,13 +515,32 @@ class IncidentController extends Controller
             abort(403);
         }
 
-        $ticket->load(['asset.penanggungJawab', 'pelapor.bidang', 'resolution.pemeriksa']);
+        $ticket->load([
+            'pelapor.bidang',
+            'asset.penanggungJawab',
+            'resolution.pemeriksa',
+        ]);
 
-        if (!$ticket->resolution || $ticket->resolution->jenis_penyelesaian !== 'Pihak ke-3') {
-            return redirect()->route('incidents.show', $ticket)
-                ->with('error', 'Simpan data tindak lanjut dengan jenis penyelesaian Pihak ke-3 terlebih dahulu.');
-        }
+        $kabag = (object) config('itsm.kabag_tu', [
+            'nama' => 'Kepala Bagian Tata Usaha',
+            'nip'  => '19750101 200003 1 001',
+        ]);
+        $pemeriksa = $ticket->resolution?->pemeriksa ?? auth()->user();
 
-        return view('incidents.justifikasi', compact('ticket'));
+        $pdf = Pdf::loadView('pdf.surat-perbaikan-bmn', [
+            'ticket'    => $ticket,
+            'kabag'     => $kabag,
+            'pemeriksa' => $pemeriksa,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream("surat-perbaikan-{$ticket->nomor_aduan}.pdf");
+    }
+
+    /**
+     * Alias method untuk cetak surat sesuai referensi fungsi cetakSurat.
+     */
+    public function cetakSurat(Ticket $ticket)
+    {
+        return $this->justifikasi($ticket);
     }
 }

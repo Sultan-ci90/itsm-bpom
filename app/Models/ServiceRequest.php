@@ -21,6 +21,7 @@ class ServiceRequest extends Model
         'deskripsi',
         'status',
         'completed_at',
+        'konfirmasi_selesai_at',
         'is_chat_closed',
         'chat_closed_at',
         'chat_closed_by',
@@ -30,6 +31,7 @@ class ServiceRequest extends Model
         'tgl_request' => 'date',
         'created_at' => 'datetime',
         'completed_at' => 'datetime',
+        'konfirmasi_selesai_at' => 'datetime',
         'is_chat_closed' => 'boolean',
         'chat_closed_at' => 'datetime',
     ];

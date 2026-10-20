@@ -25,15 +25,41 @@ class PeriodeResolver
         $periode = $params['periode'] ?? null;
 
         switch ($periode) {
-            case 'tanggal':
-                $start = Carbon::parse($params['tanggal_awal'])->startOfDay();
-                $end = Carbon::parse($params['tanggal_akhir'])->endOfDay();
+            case 'triwulan':
+                $tahun = (int) $params['tahun_triwulan'];
+                $triwulan = (int) $params['triwulan'];
+
+                switch ($triwulan) {
+                    case 1:
+                        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+                        $end = Carbon::create($tahun, 3, 31)->endOfDay();
+                        $instance->label = "Triwulan 1 Tahun {$tahun} (Januari - Maret)";
+                        $instance->fileSlug = "Triwulan1_{$tahun}";
+                        break;
+                    case 2:
+                        $start = Carbon::create($tahun, 4, 1)->startOfDay();
+                        $end = Carbon::create($tahun, 6, 30)->endOfDay();
+                        $instance->label = "Triwulan 2 Tahun {$tahun} (April - Juni)";
+                        $instance->fileSlug = "Triwulan2_{$tahun}";
+                        break;
+                    case 3:
+                        $start = Carbon::create($tahun, 7, 1)->startOfDay();
+                        $end = Carbon::create($tahun, 9, 30)->endOfDay();
+                        $instance->label = "Triwulan 3 Tahun {$tahun} (Juli - September)";
+                        $instance->fileSlug = "Triwulan3_{$tahun}";
+                        break;
+                    case 4:
+                    default:
+                        $start = Carbon::create($tahun, 10, 1)->startOfDay();
+                        $end = Carbon::create($tahun, 12, 31)->endOfDay();
+                        $instance->label = "Triwulan 4 Tahun {$tahun} (Oktober - Desember)";
+                        $instance->fileSlug = "Triwulan4_{$tahun}";
+                        break;
+                }
 
                 $instance->startDate = $start->format('Y-m-d H:i:s');
                 $instance->endDate = $end->format('Y-m-d H:i:s');
-                $instance->label = $start->translatedFormat('d F Y') . ' s/d ' . $end->translatedFormat('d F Y');
-                $instance->fileSlug = $start->format('d_M_Y') . '_sd_' . $end->format('d_M_Y');
-                $instance->hasMonthlyRecap = $start->diffInMonths($end) >= 1;
+                $instance->hasMonthlyRecap = true;
                 break;
 
             case 'bulan':
@@ -77,20 +103,6 @@ class PeriodeResolver
                 $instance->endDate = $end->format('Y-m-d H:i:s');
                 $instance->label = "Tahun {$tahun}";
                 $instance->fileSlug = (string) $tahun;
-                $instance->hasMonthlyRecap = true;
-                break;
-
-            case 'dua_tahun':
-                $tahunAwal = (int) $params['tahun_awal_2thn'];
-                $tahunAkhir = $tahunAwal + 1;
-
-                $start = Carbon::create($tahunAwal, 1, 1)->startOfDay();
-                $end = Carbon::create($tahunAkhir, 12, 31)->endOfDay();
-
-                $instance->startDate = $start->format('Y-m-d H:i:s');
-                $instance->endDate = $end->format('Y-m-d H:i:s');
-                $instance->label = "Periode 2 Tahun ({$tahunAwal} - {$tahunAkhir})";
-                $instance->fileSlug = "{$tahunAwal}_{$tahunAkhir}";
                 $instance->hasMonthlyRecap = true;
                 break;
 

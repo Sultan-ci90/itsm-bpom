@@ -15,6 +15,7 @@
 
 @php
     $input = 'shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800';
+    $readonlyInput = 'h-11 w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-400';
     $label = 'mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400';
 @endphp
 
@@ -70,15 +71,61 @@
                 </div>
 
                 <div class="rounded-2xl border border-gray-200 p-5 lg:p-6 dark:border-gray-800">
-                    <h4 class="mb-4 text-base font-medium text-gray-800 dark:text-white/90">Informasi Akun</h4>
+                    <div class="mb-4 flex items-center justify-between">
+                        <h4 class="text-base font-medium text-gray-800 dark:text-white/90">Ubah Password</h4>
+                        <span class="text-xs text-gray-400 dark:text-gray-500">(Opsional)</span>
+                    </div>
                     <div class="flex flex-col gap-4">
                         <div>
                             <label class="{{ $label }}">Email</label>
-                            <input type="email" name="email" value="{{ old('email', $user->email) }}" class="{{ $input }}" required />
+                            <input type="email" value="{{ $user->email }}" class="{{ $readonlyInput }}" disabled readonly title="Email tidak dapat diubah secara mandiri" />
                         </div>
-                        <div>
+                        {{-- 1. Password Lama --}}
+                        <div x-data="{ show: false }">
+                            <label class="{{ $label }}">Password Lama</label>
+                            <div class="relative">
+                                <input :type="show ? 'text' : 'password'" name="current_password" placeholder="Masukkan password saat ini" autocomplete="current-password" class="{{ $input }} pe-10" />
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <svg x-show="!show" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="show" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                </button>
+                            </div>
+                            @error('current_password') <p class="mt-1 text-xs text-error-500">{{ $message }}</p> @enderror
+                        </div>
+                        {{-- 2. Password Baru --}}
+                        <div x-data="{ show: false }">
                             <label class="{{ $label }}">Password Baru</label>
-                            <input type="password" name="password" placeholder="Biarkan kosong jika tak ingin ganti" class="{{ $input }}" />
+                            <div class="relative">
+                                <input :type="show ? 'text' : 'password'" name="password" placeholder="Minimal 6 karakter" autocomplete="new-password" class="{{ $input }} pe-10" />
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <svg x-show="!show" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="show" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                </button>
+                            </div>
+                            @error('password') <p class="mt-1 text-xs text-error-500">{{ $message }}</p> @enderror
+                        </div>
+                        {{-- 3. Password Verifikasi --}}
+                        <div x-data="{ show: false }">
+                            <label class="{{ $label }}">Password Verifikasi</label>
+                            <div class="relative">
+                                <input :type="show ? 'text' : 'password'" name="password_confirmation" placeholder="Ulangi password baru" autocomplete="new-password" class="{{ $input }} pe-10" />
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <svg x-show="!show" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="show" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                </button>
+                            </div>
+                            @error('password_confirmation') <p class="mt-1 text-xs text-error-500">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Tombol Proses / Simpan Password --}}
+                        <div class="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <button type="submit" name="action" value="update_password"
+                                    class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                                <span>Simpan Password Baru</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -87,39 +134,35 @@
             <!-- Kolom kanan: info pribadi & kepegawaian -->
             <div class="flex flex-col gap-6 xl:col-span-2">
                 <div class="rounded-2xl border border-gray-200 p-5 lg:p-6 dark:border-gray-800">
-                    <h4 class="mb-4 text-base font-medium text-gray-800 dark:text-white/90">Informasi Pribadi</h4>
+                    <div class="mb-4 flex items-center justify-between">
+                        <h4 class="text-base font-medium text-gray-800 dark:text-white/90">Informasi Pribadi</h4>
+                        <span class="rounded-md bg-gray-100 px-2.5 py-1 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                            Data identitas resmi (read-only)
+                        </span>
+                    </div>
                     <div class="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
                         <div class="sm:col-span-2">
                             <label class="{{ $label }}">Nama Lengkap</label>
-                            <input type="text" name="nama" value="{{ old('nama', $user->nama) }}" class="{{ $input }}" required />
+                            <input type="text" value="{{ $user->nama }}" class="{{ $readonlyInput }}" disabled readonly />
                         </div>
                         <div>
                             <label class="{{ $label }}">Tempat Lahir</label>
-                            <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $user->tempat_lahir) }}" class="{{ $input }}" />
+                            <input type="text" value="{{ $user->tempat_lahir ?? '-' }}" class="{{ $readonlyInput }}" disabled readonly />
                         </div>
                         <div>
                             <label class="{{ $label }}">Tanggal Lahir</label>
-                            <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir) }}" class="{{ $input }}" />
+                            <input type="text" value="{{ $user->tanggal_lahir ? \Carbon\Carbon::parse($user->tanggal_lahir)->translatedFormat('d F Y') : '-' }}" class="{{ $readonlyInput }}" disabled readonly />
                         </div>
                         <div>
                             <label class="{{ $label }}">Jenis Kelamin</label>
-                            <select name="jenkel" class="{{ $input }}" required>
-                                <option value="">-- Pilih --</option>
-                                <option value="L" @selected(old('jenkel', $user->jenkel) == 'L')>Laki-laki</option>
-                                <option value="P" @selected(old('jenkel', $user->jenkel) == 'P')>Perempuan</option>
-                            </select>
+                            <input type="text" value="{{ match($user->jenkel) { 'L' => 'Laki-laki', 'P' => 'Perempuan', default => '-' } }}" class="{{ $readonlyInput }}" disabled readonly />
                         </div>
                         <div>
                             <label class="{{ $label }}">Status Pernikahan</label>
-                            <select name="status_pernikahan" class="{{ $input }}" required>
-                                <option value="">-- Pilih --</option>
-                                @foreach(['Belum Menikah', 'Menikah', 'Janda', 'Duda'] as $s)
-                                    <option value="{{ $s }}" @selected(old('status_pernikahan', $user->status_pernikahan) == $s)>{{ $s }}</option>
-                                @endforeach
-                            </select>
+                            <input type="text" value="{{ $user->status_pernikahan ?? '-' }}" class="{{ $readonlyInput }}" disabled readonly />
                         </div>
-                        <div>
-                            <label class="{{ $label }}">No. Telepon / WA</label>
+                        <div class="sm:col-span-2">
+                            <label class="{{ $label }}">No. Telepon / WhatsApp <span class="text-brand-500 font-semibold">*</span></label>
                             <input type="tel"
                                    name="no_telp"
                                    inputmode="tel"
@@ -129,10 +172,12 @@
                                    placeholder="Contoh: 08123456789 atau +628123456789"
                                    class="{{ $input }}"
                                    required />
+                            @error('no_telp') <p class="mt-1 text-xs text-error-500">{{ $message }}</p> @enderror
                         </div>
                         <div class="sm:col-span-2">
-                            <label class="{{ $label }}">Alamat Lengkap</label>
+                            <label class="{{ $label }}">Alamat Lengkap <span class="text-brand-500 font-semibold">*</span></label>
                             <textarea name="alamat" rows="3" required class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-800">{{ old('alamat', $user->alamat) }}</textarea>
+                            @error('alamat') <p class="mt-1 text-xs text-error-500">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>

@@ -14,7 +14,7 @@
     $statuses = ['Belum diperiksa', 'Sedang diproses', 'Selesai', 'Ditolak'];
 @endphp
 
-    <x-common.page-breadcrumb :pageTitle="$isStaff ? 'Daftar Aduan' : 'Daftar Aduan Saya'" />
+    <x-common.page-breadcrumb :pageTitle="$isStaff ? 'Semua Aduan Kendala' : 'Aduan Kendala Saya'" />
 
     @if (session('success'))
         <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700 dark:border-green-800/40 dark:bg-green-800/15 dark:text-green-400">
@@ -30,7 +30,12 @@
 
     {{-- Filter + tombol tambah --}}
     <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <form method="GET" action="{{ route('incidents.index') }}" class="flex flex-col gap-3 sm:flex-row">
+    <a href="{{ route('incidents.create') }}"
+           class="inline-flex items-center justify-center rounded-lg bg-[#10B981] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-700">
+            + Lapor Aduan Kendala
+        </a>    
+    
+    <form method="GET" action="{{ route('incidents.index') }}" class="flex flex-col gap-3 sm:flex-row">
             <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nomor / deskripsi..."
                    class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white sm:w-64">
             <select name="status"
@@ -40,11 +45,17 @@
                     <option value="{{ $s }}" @selected(request('status') === $s)>{{ $s }}</option>
                 @endforeach
             </select>
+            <select name="jenis_penyelesaian"
+                    class="rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                <option value="">Semua Penyelesaian</option>
+                <option value="mandiri" @selected(request('jenis_penyelesaian') === 'mandiri')>Mandiri</option>
+                <option value="Pihak ke-3" @selected(request('jenis_penyelesaian') === 'Pihak ke-3')>Pihak ke-3</option>
+            </select>
             <button type="submit"
                     class="inline-flex items-center justify-center rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm font-medium text-black dark:text-white transition hover:bg-opacity-90">
                 Filter
             </button>
-            @if(request()->filled('q') || request()->filled('status'))
+            @if(request()->filled('q') || request()->filled('status') || request()->filled('jenis_penyelesaian'))
                 <a href="{{ route('incidents.index') }}"
                    class="inline-flex items-center justify-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4">
                     Reset
@@ -52,10 +63,7 @@
             @endif
         </form>
 
-        <a href="{{ route('incidents.create') }}"
-           class="inline-flex items-center justify-center rounded-lg bg-[#10B981] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-700">
-            + Lapor Kendala Baru
-        </a>
+        
     </div>
 
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -90,6 +98,13 @@
                                 <span class="inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}">
                                     {{ $ticket->status }}
                                 </span>
+                                @if($ticket->resolution?->jenis_penyelesaian)
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium {{ $ticket->resolution->jenis_penyelesaian === 'Pihak ke-3' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' }}">
+                                            {{ $ticket->resolution->jenis_penyelesaian }}
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-5 py-4" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-center gap-2">
@@ -102,6 +117,25 @@
                                         </svg>
                                     </a>
 
+                                    @php
+                                        $isAdmin = auth()->user()->isAdmin();
+                                    @endphp
+
+                                    {{-- Edit data aduan / resolusi --}}
+                                    @if($isAdmin || $isStaff || (!$isStaff && $ticket->status === 'Belum diperiksa'))
+                                        @php
+                                            $editLink = $isAdmin 
+                                                ? route('incidents.edit', $ticket) 
+                                                : (($isStaff && $ticket->status === 'Selesai') ? route('incidents.editResolution', $ticket) : route('incidents.edit', $ticket));
+                                        @endphp
+                                        <a href="{{ $editLink }}" title="Edit" aria-label="Edit"
+                                           class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                            </svg>
+                                        </a>
+                                    @endif
+
                                     @if($isStaff)
                                         {{-- Proses / tindak lanjut (hanya tiket belum final) --}}
                                         @if(!$final)
@@ -113,7 +147,7 @@
                                             </a>
                                         @endif
 
-                                        {{-- Hapus (soft delete) --}}
+                                        {{-- Hapus (soft delete) diposisikan di paling ujung kanan --}}
                                         <form action="{{ route('incidents.destroy', $ticket) }}" method="POST"
                                               onsubmit="return confirm('Hapus aduan {{ $ticket->nomor_aduan }}? Data tetap tersimpan sebagai arsip.')">
                                             @csrf
@@ -125,23 +159,6 @@
                                                 </svg>
                                             </button>
                                         </form>
-                                    @endif
-
-                                    @if($isStaff || (!$isStaff && $ticket->status === 'Belum diperiksa'))
-                                        {{-- Edit data aduan / resolusi --}}
-                                        @php
-                                            // Jika staff dan status Selesai, arahkan ke form edit tindak lanjut.
-                                            // Jika tidak, arahkan ke form edit data awal.
-                                            $editLink = ($isStaff && $ticket->status === 'Selesai') 
-                                                ? route('incidents.editResolution', $ticket) 
-                                                : route('incidents.edit', $ticket);
-                                        @endphp
-                                        <a href="{{ $editLink }}" title="Edit" aria-label="Edit"
-                                           class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                                            </svg>
-                                        </a>
                                     @endif
                                 </div>
                             </td>

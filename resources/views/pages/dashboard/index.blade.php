@@ -4,36 +4,36 @@
 @php
     $cards = [
         [
-            'title' => 'Total Incident', 'value' => $totalIncident,
+            'title' => 'Total Aduan Kendala', 'value' => $totalIncident,
             'bg' => 'rgba(60, 80, 224, 0.08)', 'icon' => '#3C50E0',
             'svg' => '<path d="M21.3 6.7c-.3-1.4-1.5-2.4-2.9-2.4H16c-.3-2.3-2.2-4-4.5-4S7.3 2 7 4.3H5.6c-1.4 0-2.6 1-2.9 2.4l-.7 4.1V20c0 1.7 1.3 3 3 3h14c1.7 0 3-1.3 3-3v-9.2l-.7-4.1zM11.5 1.9c1.4 0 2.6 1.1 2.7 2.5H8.8c.1-1.4 1.3-2.5 2.7-2.5zm7.9 18.6c0 .8-.7 1.5-1.5 1.5h-14c-.8 0-1.5-.7-1.5-1.5v-9.1l.7-4.1c.2-.7.8-1.1 1.5-1.1h1.3v1.4c0 .4.3.8.8.8s.8-.3.8-.8V6.3h5.4v1.4c0 .4.3.8.8.8s.8-.3.8-.8V6.3h1.3c.7 0 1.3.5 1.5 1.1l.7 4.1v9.1z"/>',
             'delta' => $statsDelta['incident']['delta'], 'period' => 'Bulan ini: ' . $statsDelta['incident']['value'],
         ],
         [
-            'title' => 'Total Request', 'value' => $totalRequest,
+            'title' => 'Total Permintaan Layanan', 'value' => $totalRequest,
             'bg' => 'rgba(65, 177, 251, 0.1)', 'icon' => '#41B1FB',
             'svg' => '<path d="M14.5 15.2c-.6 0-1.2.5-1.2 1.2s.5 1.2 1.2 1.2 1.2-.5 1.2-1.2-.6-1.2-1.2-1.2zM9.5 15.2c-.6 0-1.2.5-1.2 1.2s.5 1.2 1.2 1.2 1.2-.5 1.2-1.2-.6-1.2-1.2-1.2zM21.6 5.8c-.2-.3-.5-.5-.9-.5H5c-.7 0-1.2.6-1.1 1.3.1.6.7 1.1 1.4 1h14.5l1.9 8.2c.2.9-.4 1.7-1.3 1.7H6.6c-.9 0-1.5-.8-1.3-1.7L6.6 8.4H4.8L3.3 9.9c-.4.4-.6 1-.5 1.5l1.4 7.1c.1.6.7 1.1 1.4 1.1h.4c-.1.4-.2.8-.2 1.2 0 1.5 1.2 2.7 2.7 2.7s2.7-1.2 2.7-2.7c0-.4-.1-.8-.3-1.2h3.5c-.1.4-.3.8-.3 1.2 0 1.5 1.2 2.7 2.7 2.7s2.7-1.2 2.7-2.7c0-.4-.1-.8-.3-1.2h1.6c1.9 0 3.4-1.8 3-3.7l-2.2-9.1c-.1-.6-.4-1-.7-1zM7.7 21.7c-.7 0-1.3-.6-1.3-1.3s.6-1.3 1.3-1.3 1.3.6 1.3 1.3-.6 1.3-1.3 1.3zm8.6 0c-.7 0-1.3-.6-1.3-1.3s.6-1.3 1.3-1.3 1.3.6 1.3 1.3-.6 1.3-1.3 1.3z"/>',
             'delta' => $statsDelta['request']['delta'], 'period' => 'Bulan ini: ' . $statsDelta['request']['value'],
         ],
         [
-            'title' => 'Belum / Sedang Diproses', 'value' => $statusIncident['Belum diperiksa'] + $statusIncident['Sedang diproses'],
+            'title' => 'Sedang Diproses', 'value' => $statusIncident['Sedang diproses'],
             'bg' => 'rgba(251, 191, 36, 0.1)', 'icon' => '#FBBF24',
             'svg' => '<path d="M12 1a11 11 0 1 0 11 11A11 11 0 0 0 12 1zm0 20a9 9 0 1 1 9-9 9 9 0 0 1-9 9zm.9-9.4V5.8a.9.9 0 0 0-1.8 0v6.2a1 1 0 0 0 .5.8l4.1 2.4a.9.9 0 1 0 .9-1.6z"/>',
-            'delta' => null, 'period' => 'Menunggu penanganan tim IT',
+            'delta' => null, 'period' => 'Sedang ditangani tim IT',
         ],
         [
             'title' => 'Sudah Selesai', 'value' => $totalSelesai,
             'bg' => 'rgba(77, 168, 99, 0.1)', 'icon' => '#4DA863',
             'svg' => '<path d="M12 1a11 11 0 1 0 11 11A11 11 0 0 0 12 1zm5.4 8.2-6 6a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4l2.3 2.3 5.3-5.3a1 1 0 0 1 1.4 1.4z"/>',
-            'delta' => null, 'period' => 'Incident: ' . $selesaiIncident . ' · Request: ' . $selesaiRequest,
+            'delta' => null, 'period' => 'Aduan Kendala: ' . $selesaiIncident . ' · Permintaan Layanan: ' . $selesaiRequest,
         ],
     ];
 
     $charts = [
-        ['id' => 'incidentTrendChart',  'title' => 'Tren Incident',               'sub' => '6 bulan terakhir',            'span' => 'xl:col-span-7'],
-        ['id' => 'resolutionChart',     'title' => 'Metode Penyelesaian',         'sub' => 'Cara incident diselesaikan',  'span' => 'xl:col-span-5'],
-        ['id' => 'requestLayananChart', 'title' => 'Request per Jenis Layanan',   'sub' => 'Jumlah request tiap layanan', 'span' => 'xl:col-span-7'],
-        ['id' => 'requestStatusChart',  'title' => 'Distribusi Status Request',   'sub' => 'Proporsi status saat ini',    'span' => 'xl:col-span-5'],
+        ['id' => 'incidentTrendChart',  'title' => 'Tren Aduan Kendala & Permintaan Layanan', 'sub' => '6 bulan terakhir', 'span' => 'xl:col-span-7'],
+        ['id' => 'resolutionChart',     'title' => 'Metode Penyelesaian',         'sub' => 'Cara aduan diselesaikan',     'span' => 'xl:col-span-5'],
+        ['id' => 'requestLayananChart', 'title' => 'Permintaan per Jenis Layanan','sub' => 'Jumlah permintaan tiap layanan', 'span' => 'xl:col-span-7'],
+        ['id' => 'requestStatusChart',  'title' => 'Distribusi Status Permintaan','sub' => 'Proporsi status saat ini',    'span' => 'xl:col-span-5'],
     ];
 
     $badge = [
@@ -110,7 +110,7 @@
         {{-- Incident --}}
         <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div class="flex items-center justify-between px-6 py-5 sm:px-7.5">
-                <h4 class="text-xl font-semibold text-black dark:text-white">Incident Terbaru</h4>
+                <h4 class="text-xl font-semibold text-black dark:text-white">Aduan Kendala Terbaru</h4>
                 <a href="{{ route('incidents.index') }}" class="text-sm font-medium text-primary hover:underline">Lihat Semua</a>
             </div>
             <div class="overflow-x-auto">
@@ -144,7 +144,7 @@
         {{-- Request --}}
         <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div class="flex items-center justify-between px-6 py-5 sm:px-7.5">
-                <h4 class="text-xl font-semibold text-black dark:text-white">Request Terbaru</h4>
+                <h4 class="text-xl font-semibold text-black dark:text-white">Permintaan Layanan Terbaru</h4>
                 <a href="{{ route('requests.index') }}" class="text-sm font-medium text-primary hover:underline">Lihat Semua</a>
             </div>
             <div class="overflow-x-auto">
@@ -217,11 +217,29 @@
         apexInstances.trend = new ApexCharts(document.querySelector('#incidentTrendChart'), {
             ...base,
             chart: { ...base.chart, type: 'bar', height: 320 },
-            series: [{ name: 'Jumlah Incident', data: @json($incidentTrend) }],
-            colors: [c.primary],
+            series: [
+                { name: 'Aduan Kendala', data: @json($incidentTrend) },
+                { name: 'Permintaan Layanan', data: @json($requestTrend) }
+            ],
+            colors: ['#465FFF', '#41B1FB'],
             xaxis: { categories: @json($last6Months), labels: axisLabels, axisBorder: { show: false }, axisTicks: { show: false } },
             yaxis: { forceNiceScale: true, labels: { ...axisLabels, formatter: v => Math.round(v) } },
-            plotOptions: { bar: { columnWidth: '40%', borderRadius: 4, borderRadiusApplication: 'end' } },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    borderRadius: 4,
+                    borderRadiusApplication: 'end'
+                }
+            },
+            legend: {
+                show: true,
+                position: 'bottom',
+                horizontalAlign: 'center',
+                labels: { colors: c.text },
+                markers: { width: 10, height: 10, radius: 12 },
+                itemMargin: { horizontal: 12, vertical: 8 },
+            },
             grid: { ...base.grid, xaxis: { lines: { show: false } } },
         });
 
@@ -239,7 +257,7 @@
         apexInstances.layanan = new ApexCharts(document.querySelector('#requestLayananChart'), {
             ...base,
             chart: { ...base.chart, type: 'bar', height: 320 },
-            series: [{ name: 'Jumlah Request', data: @json($layananData['data']) }],
+            series: [{ name: 'Jumlah Permintaan Layanan', data: @json($layananData['data']) }],
             colors: [c.secondary],
             plotOptions: { bar: { horizontal: true, barHeight: '50%', borderRadius: 4, borderRadiusApplication: 'end' } },
             xaxis: { categories: @json($layananData['labels']), labels: axisLabels },

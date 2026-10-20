@@ -26,10 +26,16 @@ class LoginController extends Controller
             'captcha.required' => 'Ketik kata yang tampil pada gambar.',
         ]);
 
-        // Captcha sekali pakai: jawaban langsung dihapus dari session begitu dicek,
-        // jadi setiap percobaan login (benar/salah) butuh gambar baru.
-        $expected = $request->session()->pull('captcha_answer');
-        $given    = CaptchaImage::normalize($credentials['captcha']);
+        // Captcha sekali pakai & memiliki batas waktu 2 menit
+        $expected  = $request->session()->pull('captcha_answer');
+        $expiresAt = $request->session()->pull('captcha_expires_at');
+        $given     = CaptchaImage::normalize($credentials['captcha']);
+
+        if ($expiresAt && now()->timestamp > $expiresAt) {
+            return back()
+                ->withErrors(['captcha' => 'Captcha telah kedaluwarsa (lebih dari 2 menit). Silakan ketik kata dari gambar baru.'])
+                ->onlyInput('email');
+        }
 
         if (!$expected || !hash_equals($expected, $given)) {
             return back()

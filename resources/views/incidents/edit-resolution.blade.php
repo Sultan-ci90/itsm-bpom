@@ -30,7 +30,7 @@
                 </li>
                 <li>
                     <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Daftar Aduan' : 'Daftar Aduan Saya' }}
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Aduan Kendala' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -49,7 +49,7 @@
                     </svg>
                 </li>
                 <li class="font-medium text-gray-800 dark:text-white/90">
-                    Edit Tindak Lanjut
+                    Edit Tindak Lanjut Aduan Kendala
                 </li>
             </ol>
         </nav>
@@ -57,7 +57,7 @@
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex items-center gap-3">
             <a href="{{ route('incidents.show', $ticket) }}"
-               title="Kembali ke Detail Incident"
+               title="Kembali ke Detail Aduan Kendala"
                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                 <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -65,7 +65,7 @@
             </a>
             <div>
                 <h2 class="text-title-md2 font-semibold text-black dark:text-white">
-                    Edit Tindak Lanjut Incident
+                    Edit Tindak Lanjut Aduan Kendala
                 </h2>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Nomor: {{ $ticket->nomor_aduan }}</p>
             </div>
@@ -91,7 +91,7 @@
         <div class="p-6.5">
             <form action="{{ route('incidents.updateResolution', $ticket) }}" method="POST" enctype="multipart/form-data"
                   x-data="{
-                      jenis: @js(old('jenis_penyelesaian', $res->jenis_penyelesaian ?? 'Internal'))
+                      jenis: @js(old('jenis_penyelesaian', $res->jenis_penyelesaian ?? 'mandiri'))
                   }">
                 @csrf
                 @method('PUT')
@@ -100,9 +100,9 @@
                     <label class="{{ $label }}">Jenis Penyelesaian</label>
                     <input type="hidden" name="jenis_penyelesaian" :value="jenis">
                     <div class="inline-flex rounded-lg border border-stroke p-1 dark:border-gray-800">
-                        <button type="button" @click="jenis = 'Internal'"
-                                :class="jenis === 'Internal' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
-                                class="rounded-md px-6 py-2 text-sm font-medium transition">Internal</button>
+                        <button type="button" @click="jenis = 'mandiri'"
+                                :class="jenis === 'mandiri' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
+                                class="rounded-md px-6 py-2 text-sm font-medium transition">mandiri</button>
                         <button type="button" @click="jenis = 'Pihak ke-3'"
                                 :class="jenis === 'Pihak ke-3' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
                                 class="rounded-md px-6 py-2 text-sm font-medium transition">Pihak ke-3</button>
@@ -112,28 +112,40 @@
 
                 <div x-show="jenis === 'Pihak ke-3'" x-transition class="mb-5 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-base font-semibold text-black dark:text-white">Detail Pihak ke-3</h4>
-                    <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
-                        <div>
-                            <label class="{{ $label }}">Nama Vendor</label>
-                            <input type="text" name="vendor" value="{{ old('vendor', $res->vendor ?? '') }}" class="{{ $input }}">
-                            @error('vendor') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                    
+                    {{-- Surat Permohonan Perbaikan (Pihak ke-3) PDF --}}
+                    <div class="mb-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-300">Surat Permohonan Perbaikan (Pihak ke-3)</h4>
+                                <p class="text-xs text-blue-700/80 dark:text-blue-400/80">Dokumen PDF resmi perbaikan BMN oleh pihak ketiga</p>
+                            </div>
                         </div>
-                        <div>
-                            <label class="{{ $label }}">Estimasi Biaya (Rp)</label>
-                            <input type="number" name="estimasi_biaya" min="0" step="any" value="{{ old('estimasi_biaya', $res->estimasi_biaya ?? '') }}" class="{{ $input }}">
-                            @error('estimasi_biaya') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="{{ $label }}">Upload Surat Justifikasi (PDF/DOC, maks 5 MB)</label>
-                            <input type="file" name="file_surat_justifikasi" class="{{ $input }} !py-2">
-                            @if($res?->file_surat_justifikasi)
-                                <p class="mt-1 text-xs text-success">
-                                    File saat ini:
-                                    <a href="{{ asset('storage/' . $res->file_surat_justifikasi) }}" target="_blank" class="underline">Lihat file</a>
-                                </p>
-                            @endif
-                            @error('file_surat_justifikasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
+                        <a href="{{ route('incidents.justifikasi', $ticket) }}" target="_blank"
+                           class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 shadow-xs">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            Unduh Surat PDF
+                        </a>
+                    </div>
+
+                    <div>
+                        <label class="{{ $label }}">Upload Surat Justifikasi (PDF/DOC, maks 5 MB)</label>
+                        <input type="file" name="file_surat_justifikasi" class="{{ $input }} !py-2">
+                        @if($res?->file_surat_justifikasi)
+                            <p class="mt-1 text-xs text-success">
+                                File saat ini:
+                                <a href="{{ asset('storage/' . $res->file_surat_justifikasi) }}" target="_blank" class="underline">Lihat file</a>
+                            </p>
+                        @endif
+                        @error('file_surat_justifikasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
 

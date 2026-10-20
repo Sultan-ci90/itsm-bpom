@@ -33,8 +33,9 @@ class CaptchaController extends Controller
             abort(500, 'Captcha gagal dibuat: ' . $e->getMessage());
         }
 
-        // Jawaban baru disimpan hanya jika gambar berhasil dibuat
+        // Jawaban baru disimpan hanya jika gambar berhasil dibuat (berlaku 2 menit)
         $request->session()->put('captcha_answer', CaptchaImage::normalize($word));
+        $request->session()->put('captcha_expires_at', now()->addMinutes(2)->timestamp);
 
         return response($png, 200, [
             'Content-Type'  => 'image/png',

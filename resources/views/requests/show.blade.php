@@ -58,7 +58,7 @@
                 </li>
                 <li>
                     <a href="{{ route('requests.index') }}" class="transition hover:text-primary">
-                        {{ $isStaff ? 'Permintaan Layanan' : 'Request Saya' }}
+                        {{ $isStaff ? 'Semua Permintaan Layanan' : 'Permintaan Layanan Saya' }}
                     </a>
                 </li>
                 <li>
@@ -76,7 +76,7 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
                 <a href="{{ route('requests.index') }}"
-                   title="Kembali ke Daftar Request"
+                   title="Kembali ke Daftar Permintaan Layanan"
                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                     <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -98,7 +98,7 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
                             </svg>
-                            Tindak Lanjuti / Proses Request
+                            Tindak Lanjuti / Proses Permintaan
                         </a>
                     @else
                         <a href="{{ route('requests.show', $req->id) }}"
@@ -149,7 +149,7 @@
         <div class="p-6.5">
             <dl class="grid grid-cols-1 gap-4.5 sm:grid-cols-2 text-sm">
                 <div>
-                    <dt class="mb-1 font-medium text-gray-500 dark:text-gray-400">Nomor Request</dt>
+                    <dt class="mb-1 font-medium text-gray-500 dark:text-gray-400">Nomor Permintaan</dt>
                     <dd class="font-semibold text-black dark:text-white">{{ $req->nomor_request }}</dd>
                 </div>
                 <div>
@@ -226,29 +226,7 @@
                             <dt class="text-gray-500 dark:text-gray-400">Sistem / Aplikasi Tujuan:</dt>
                             <dd class="font-medium text-black dark:text-white">{{ $req->detailAkun->sistem_tujuan }}</dd>
                         </div>
-                        <div>
-                            <dt class="text-gray-500 dark:text-gray-400">NIP Pemilik Akun:</dt>
-                            <dd class="font-mono font-medium text-black dark:text-white">{{ $req->detailAkun->nip_terkait }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-gray-500 dark:text-gray-400">Email Akun:</dt>
-                            <dd class="font-medium text-black dark:text-white">{{ $req->detailAkun->email ?: '-' }}</dd>
-                        </div>
-                        @if($req->detailAkun->password)
-                        <div class="sm:col-span-2" x-data="{ showPassUser: false }">
-                            <dt class="text-gray-500 dark:text-gray-400">Password yang Diinginkan:</dt>
-                            <dd class="mt-1 flex items-center gap-2">
-                                <span class="rounded bg-gray-100 px-2.5 py-1 font-mono text-sm text-black dark:bg-gray-800 dark:text-white"
-                                      x-text="showPassUser ? '{{ $req->detailAkun->password }}' : '••••••••'">
-                                    ••••••••
-                                </span>
-                                <button type="button" @click="showPassUser = !showPassUser" class="text-xs text-primary hover:underline">
-                                    <span x-show="!showPassUser">Lihat Password</span>
-                                    <span x-show="showPassUser">Sembunyikan</span>
-                                </button>
-                            </dd>
-                        </div>
-                        @endif
+
                     </dl>
                 </div>
             @endif
@@ -412,9 +390,81 @@
     @endif
 
     {{-- ========================================================= --}}
-    {{-- RUANG DISKUSI & KONFIRMASI TIKET (REALTIME WEBSOCKET CHAT)--}}
+    {{-- KONFIRMASI PENYELESAIAN LAYANAN OLEH PEMOHON              --}}
     {{-- Hanya aktif dan muncul jika status permohonan 'Selesai'   --}}
     {{-- ========================================================= --}}
+    @if($req->status === 'Selesai')
+    <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $req->konfirmasi_selesai_at ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400' }}">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-black dark:text-white">
+                        Konfirmasi Penyelesaian Layanan
+                    </h3>
+                    @if($req->konfirmasi_selesai_at)
+                        <p class="text-xs text-green-700 dark:text-green-400 font-medium mt-0.5">
+                            ✓ Layanan telah dikonfirmasi selesai diterima oleh Pemohon pada {{ $req->konfirmasi_selesai_at->translatedFormat('d F Y, H:i') }} WIB.
+                        </p>
+                    @else
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            @if(auth()->id() === $req->user_id || auth()->id() === $req->reported_by)
+                                Apakah permintaan layanan TI Anda telah diselesaikan dan diterima dengan baik? Silakan tekan tombol konfirmasi selesai di samping.
+                            @else
+                                Menunggu konfirmasi penerimaan layanan selesai dari pemohon ({{ $req->user?->nama ?? 'Pegawai' }}).
+                            @endif
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="shrink-0">
+                @if(auth()->id() === $req->user_id || auth()->id() === $req->reported_by)
+                    @if(!$req->konfirmasi_selesai_at)
+                        <form action="{{ route('requests.confirmCompleted', $req->id) }}" method="POST"
+                              onsubmit="return confirm('Apakah Anda yakin ingin mengonfirmasi bahwa permohonan layanan ini telah selesai diterima dengan baik?')">
+                            @csrf
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-800 cursor-pointer">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Konfirmasi Selesai
+                            </button>
+                        </form>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Telah Dikonfirmasi
+                        </span>
+                    @endif
+                @else
+                    @if($req->konfirmasi_selesai_at)
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
+                            ✓ Dikonfirmasi Pemohon
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400">
+                            Menunggu Konfirmasi Pemohon
+                        </span>
+                    @endif
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ========================================================================= --}}
+    {{-- RUANG DISKUSI & KONFIRMASI TIKET (REALTIME WEBSOCKET CHAT) - DINONAKTIFKAN --}}
+    {{-- Kode chat disimpan sebagai arsip/cadangan. Hapus @if(false) jika dibutuhkan lagi. --}}
+    {{-- ========================================================================= --}}
+    @if(false)
     @if($req->status === 'Selesai')
     <div id="diskusi" 
          x-data="serviceRequestChat({
@@ -654,6 +704,7 @@
         </div>
     </div>
     @endif
+    @endif
 
     {{-- ========================================================= --}}
     {{-- 3. FORM TINDAK LANJUT TIM IT (BAGIAN BAWAH)               --}}
@@ -842,6 +893,8 @@
 </div>
 @endsection
 
+@if(false)
+{{-- Skrip chat dinonaktifkan sementara. Hapus @if(false) dan @endif jika fitur chat diaktifkan kembali. --}}
 @push('scripts')
 <script>
 function serviceRequestChat(config) {
@@ -1169,4 +1222,5 @@ function serviceRequestChat(config) {
 }
 </script>
 @endpush
+@endif
 

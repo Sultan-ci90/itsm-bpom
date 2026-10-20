@@ -1,10 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-common.page-breadcrumb pageTitle="Semua Request" />
+    <x-common.page-breadcrumb pageTitle="Semua Permintaan Layanan" />
 
     <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <form method="GET" action="{{ route('requests.all') }}" class="flex flex-col gap-3 sm:flex-row">
+    <a href="{{ route('requests.create') }}"
+           class="inline-flex items-center justify-center rounded-lg bg-[#10B981] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-700">
+            + Permintaan Layanan Baru
+    </a>    
+    <form method="GET" action="{{ route('requests.all') }}" class="flex flex-col gap-3 sm:flex-row">
             <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nomor / layanan..."
                    class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white sm:w-64">
             <select name="status"
@@ -26,10 +30,7 @@
             @endif
         </form>
 
-        <a href="{{ route('requests.create') }}"
-           class="inline-flex items-center justify-center rounded-lg bg-[#10B981] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-700">
-            + Buat Request Baru
-        </a>
+        
     </div>
 
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -39,7 +40,7 @@
                     <th class="px-5 py-4 font-medium">Nomor</th>
                     <th class="px-5 py-4 font-medium">Layanan</th>
                     <th class="px-5 py-4 font-medium">Pemohon</th>
-                    <th class="px-5 py-4 font-medium">Lokasi</th>
+                    <th class="px-5 py-4 font-medium">Deskripsi</th>
                     <th class="px-5 py-4 font-medium">Status</th>
                     <th class="px-5 py-4 text-center font-medium">Aksi</th>
                 </tr>
@@ -52,7 +53,7 @@
                         <td class="px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
                         <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ match($req->layanan) { 'reset_password' => 'Reset Password', 'tambah_akun' => 'Tambah Akun', default => ucwords(str_replace('_', ' ', $req->layanan ?? '-')) } }}</td>
                         <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->user?->nama ?? '-' }}</td>
-                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->lokasi ?? "-" }}</td>
+                        <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title="{{ $req->deskripsi }}">{{ $req->deskripsi ?? "-" }}</td>
                         <td class="px-5 py-4">
                             @php
                                 $statusBadge = match ($req->status) {
@@ -75,9 +76,10 @@
                                 </a>
 
                                 @php
-                                    $editLink = ($req->status === 'Selesai') 
-                                        ? route('requests.editResolution', $req->id) 
-                                        : route('requests.edit', $req->id);
+                                    $isAdmin = auth()->user()->isAdmin();
+                                    $editLink = $isAdmin 
+                                        ? route('requests.edit', $req->id) 
+                                        : (($req->status === 'Selesai') ? route('requests.editResolution', $req->id) : route('requests.edit', $req->id));
                                 @endphp
                                 <a href="{{ $editLink }}" title="Edit Data" aria-label="Edit"
                                     class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
@@ -111,7 +113,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">Belum ada request.</td>
+                        <td colspan="6" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">Belum ada permintaan layanan.</td>
                     </tr>
                 @endforelse
             </tbody>

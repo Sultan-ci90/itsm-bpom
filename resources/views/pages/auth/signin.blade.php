@@ -5,20 +5,12 @@
         <div class="relative flex h-screen w-full flex-col justify-center sm:p-0 lg:flex-row dark:bg-gray-900">
             <!-- Form -->
             <div class="flex w-full flex-1 flex-col lg:w-1/2">
-                <div class="mx-auto w-full max-w-md pt-10">
-                    <a href="/"
-                        class="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                        <svg class="stroke-current rtl:rotate-180" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        Back to dashboard
-                    </a>
-                </div>
+
                 <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
                     <div>
-                        <div class="mb-5 sm:mb-8">
+                        <div class="mb-8 sm:mb-8">
                             <h1 class="text-title-sm sm:text-title-md mb-2 font-semibold text-gray-800 dark:text-white/90">
-                                Sign In
+                                Login
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 Masukkan Email dan Password anda
@@ -62,29 +54,62 @@
                                     <!-- Captcha Banjar -->
                                     <div x-data="{
                                             failed: false,
-                                            refresh() {
+                                            expiredWarning: false,
+                                            timeLeft: 120,
+                                            timer: null,
+                                            init() {
+                                                this.startTimer();
+                                            },
+                                            startTimer() {
+                                                this.timeLeft = 120;
+                                                if (this.timer) clearInterval(this.timer);
+                                                this.timer = setInterval(() => {
+                                                    if (this.timeLeft > 1) {
+                                                        this.timeLeft--;
+                                                    } else {
+                                                        this.expiredWarning = true;
+                                                        this.refresh(true);
+                                                    }
+                                                }, 1000);
+                                            },
+                                            formatTime() {
+                                                const m = Math.floor(this.timeLeft / 60);
+                                                const s = this.timeLeft % 60;
+                                                return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                                            },
+                                            refresh(fromExpire = false) {
                                                 this.failed = false;
+                                                if (!fromExpire) this.expiredWarning = false;
                                                 this.$refs.captchaImg.src = @js(route('captcha.image')) + '?t=' + Date.now();
                                                 this.$refs.captchaInput.value = '';
                                                 this.$refs.captchaInput.focus();
+                                                this.startTimer();
                                             }
                                         }">
-                                        <label for="captcha" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                            Ketik kata pada gambar<span class="text-error-500">*</span>
-                                        </label>
+                                        <div class="mb-1.5 flex items-center justify-between">
+                                            <label for="captcha" class="text-sm font-medium text-gray-700 dark:text-gray-400">
+                                                Captcha<span class="text-error-500">*</span>
+                                            </label>
+                                            <span class="text-xs font-mono text-gray-400 dark:text-gray-500" title="Batas waktu captcha">
+                                                ⏱ <span x-text="formatTime()"></span>
+                                            </span>
+                                        </div>
                                         <div class="mb-2 flex items-center gap-3">
                                             {{-- src diisi langsung dari server (tidak bergantung pada Alpine) --}}
                                             <img src="{{ route('captcha.image') }}?t={{ time() }}" x-ref="captchaImg"
                                                 x-on:error="failed = true" x-on:load="failed = false"
                                                 alt="Captcha" width="240" height="80" draggable="false"
                                                 class="h-20 w-60 max-w-full rounded-lg border border-gray-200 select-none dark:border-gray-700">
-                                            <button type="button" @click="refresh()" title="Ganti gambar" aria-label="Ganti gambar"
+                                            <button type="button" @click="refresh(false)" title="Ganti gambar" aria-label="Ganti gambar"
                                                 class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.03]">
                                                 <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0 0 20 12M18.4 9A8 8 0 0 0 4 12" />
                                                 </svg>
                                             </button>
                                         </div>
+                                        <p x-show="expiredWarning" x-cloak class="mb-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                            ⚠️ Captcha diperbarui otomatis karena batas waktu habis (2 menit).
+                                        </p>
                                         <p x-show="failed" x-cloak class="mb-2 text-sm text-error-500">Gambar captcha gagal dimuat. Klik tombol refresh di samping gambar.</p>
                                         <input type="text" id="captcha" name="captcha" x-ref="captchaInput" required
                                             autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="50"
@@ -133,12 +158,7 @@
                                     </div>
                                 </div>
                             </form>
-                            <div class="mt-5">
-                                <p class="text-center text-sm font-normal text-gray-700 sm:text-start dark:text-gray-400">
-                                    Don't have an account?
-                                    <a href="/signup" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">Sign Up</a>
-                                </p>
-                            </div>
+
                         </div>
                     </div>
                 </div>

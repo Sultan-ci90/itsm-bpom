@@ -2,11 +2,7 @@
 
 @section('content')
 <div x-data="{
-    periode: '{{ old('periode', 'semester') }}',
-    tahunAwal2Thn: {{ old('tahun_awal_2thn', $currentYear - 1) }},
-    get tahunAkhir2Thn() {
-        return parseInt(this.tahunAwal2Thn || {{ $currentYear - 1 }}) + 1;
-    }
+    periode: '{{ old('periode', 'triwulan') }}'
 }">
     {{-- Breadcrumb --}}
     <x-common.page-breadcrumb pageTitle="Laporan & Rekapitulasi" />
@@ -92,65 +88,78 @@
                     <label class="mb-2 block text-sm font-semibold text-gray-900 dark:text-white">
                         2. Model Rentang Periode <span class="text-red-500">*</span>
                     </label>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                        {{-- Per Tanggal --}}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        {{-- Per 3 Bulan (Triwulan) --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
-                               :class="periode === 'tanggal' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
-                            <input type="radio" name="periode" value="tanggal" x-model="periode" class="sr-only">
-                            <span class="text-xs">Per Tanggal</span>
+                               :class="periode === 'triwulan' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
+                            <input type="radio" name="periode" value="triwulan" x-model="periode" class="sr-only">
+                            <span class="text-xs">Per 3 Bulan (Triwulan)</span>
                         </label>
 
                         {{-- Per Bulan --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
                                :class="periode === 'bulan' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
                             <input type="radio" name="periode" value="bulan" x-model="periode" class="sr-only">
-                            <span class="text-xs">Per Bulan</span>
+                            <span class="text-xs">Rentang Bulan</span>
                         </label>
 
                         {{-- Per 6 Bulan (Semester) --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
                                :class="periode === 'semester' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
                             <input type="radio" name="periode" value="semester" x-model="periode" class="sr-only">
-                            <span class="text-xs">Per 6 Bulan</span>
+                            <span class="text-xs">Per 6 Bulan (Semester)</span>
                         </label>
 
                         {{-- Per Tahun --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
                                :class="periode === 'tahun' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
                             <input type="radio" name="periode" value="tahun" x-model="periode" class="sr-only">
-                            <span class="text-xs">Per Tahun</span>
-                        </label>
-
-                        {{-- Per 2 Tahun --}}
-                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition col-span-2 sm:col-span-1"
-                               :class="periode === 'dua_tahun' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
-                            <input type="radio" name="periode" value="dua_tahun" x-model="periode" class="sr-only">
-                            <span class="text-xs">Per 2 Tahun</span>
+                            <span class="text-xs">Per 1 Tahun</span>
                         </label>
                     </div>
                 </div>
 
                 {{-- 3. Input Parameter Dinamis Berdasarkan Periode --}}
                 <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50/70 p-4.5 dark:border-gray-700 dark:bg-gray-900/40">
-                    {{-- A. Panel Per Tanggal --}}
-                    <div x-show="periode === 'tanggal'" x-cloak class="space-y-3">
+                    {{-- A. Panel Per 3 Bulan (Triwulan) --}}
+                    <div x-show="periode === 'triwulan'" x-cloak class="space-y-3">
                         <div class="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            <span>📅 Rentang Tanggal Spesifik (Maksimal 2 Tahun)</span>
+                            <span>📊 Laporan Per 3 Bulan (Triwulan)</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Dari Tanggal</label>
-                                <input type="date" name="tanggal_awal"
-                                       value="{{ old('tanggal_awal', date('Y-m-01')) }}"
-                                       :disabled="periode !== 'tanggal'"
-                                       class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
+                                <select name="tahun_triwulan"
+                                        :disabled="periode !== 'triwulan'"
+                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                    @foreach($availableYears as $yr)
+                                        <option value="{{ $yr }}" {{ (string)old('tahun_triwulan', $currentYear) === (string)$yr ? 'selected' : '' }}>
+                                            Tahun {{ $yr }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div>
-                                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Sampai Tanggal</label>
-                                <input type="date" name="tanggal_akhir"
-                                       value="{{ old('tanggal_akhir', date('Y-m-d')) }}"
-                                       :disabled="periode !== 'tanggal'"
-                                       class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Triwulan</label>
+                                @php
+                                    $curQuarter = ceil(date('n') / 3);
+                                @endphp
+                                <select name="triwulan"
+                                        :disabled="periode !== 'triwulan'"
+                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                    <option value="1" {{ old('triwulan', $curQuarter) == '1' ? 'selected' : '' }}>
+                                        Triwulan 1 (Januari - Maret)
+                                    </option>
+                                    <option value="2" {{ old('triwulan', $curQuarter) == '2' ? 'selected' : '' }}>
+                                        Triwulan 2 (April - Juni)
+                                    </option>
+                                    <option value="3" {{ old('triwulan', $curQuarter) == '3' ? 'selected' : '' }}>
+                                        Triwulan 3 (Juli - September)
+                                    </option>
+                                    <option value="4" {{ old('triwulan', $curQuarter) == '4' ? 'selected' : '' }}>
+                                        Triwulan 4 (Oktober - Desember)
+                                    </option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -229,38 +238,6 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
-
-                    {{-- E. Panel Per 2 Tahun --}}
-                    <div x-show="periode === 'dua_tahun'" x-cloak class="space-y-3">
-                        <div class="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            <span>📈 Laporan Rentang 2 Tahun Berurutan</span>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                            <div>
-                                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Tahun Awal</label>
-                                <select name="tahun_awal_2thn"
-                                        x-model="tahunAwal2Thn"
-                                        :disabled="periode !== 'dua_tahun'"
-                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
-                                    @foreach($availableYears as $yr)
-                                        <option value="{{ $yr }}" {{ (string)old('tahun_awal_2thn', $currentYear - 1) === (string)$yr ? 'selected' : '' }}>
-                                            Tahun {{ $yr }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Tahun Akhir (Otomatis +1)</label>
-                                <div class="flex items-center h-[42px] px-3.5 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                                    <span x-text="'Tahun ' + tahunAkhir2Thn"></span>
-                                    <span class="ms-auto text-[11px] font-normal text-gray-500">(Read-only)</span>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                            💡 Data yang diambil: 1 Januari <span x-text="tahunAwal2Thn"></span> sampai 31 Desember <span x-text="tahunAkhir2Thn"></span>.
-                        </p>
                     </div>
                 </div>
 

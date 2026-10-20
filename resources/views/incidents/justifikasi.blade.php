@@ -43,7 +43,7 @@
         <h2>Surat Justifikasi Perbaikan oleh Pihak Ketiga</h2>
         <div class="nomor">Nomor Aduan: {{ $ticket->nomor_aduan }}</div>
 
-        <p>Yang bertanda tangan di bawah ini menyatakan bahwa perangkat berikut tidak dapat diperbaiki secara internal oleh tim IT dan memerlukan perbaikan oleh pihak ketiga:</p>
+        <p>Yang bertanda tangan di bawah ini menyatakan bahwa perangkat berikut tidak dapat diperbaiki secara mandiri oleh tim IT dan memerlukan perbaikan oleh pihak ketiga:</p>
 
         <table class="data">
             <tr><td>Nama Perangkat</td><td>:</td><td>{{ $ticket->asset->nama_barang ?? '-' }}</td></tr>
@@ -55,8 +55,6 @@
             <tr><td>Deskripsi Masalah</td><td>:</td><td>{{ $ticket->deskripsi_masalah }}</td></tr>
             <tr><td>Hasil Analisa Tim Teknis</td><td>:</td><td>{{ $res->analisa_teknis ?: '-' }}</td></tr>
             <tr><td>Tindak Lanjut</td><td>:</td><td>{{ $res->tindak_lanjut_teknis ?: '-' }}</td></tr>
-            <tr><td>Vendor / Pihak Ketiga</td><td>:</td><td>{{ $res->vendor ?: '-' }}</td></tr>
-            <tr><td>Estimasi Biaya</td><td>:</td><td>{{ !is_null($res->estimasi_biaya) ? 'Rp ' . number_format($res->estimasi_biaya, 0, ',', '.') : '-' }}</td></tr>
         </table>
 
         <p>Demikian surat justifikasi ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>

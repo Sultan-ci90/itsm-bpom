@@ -26,12 +26,12 @@
 
     $info = [
         'Nomor Aduan'      => $ticket->nomor_aduan,
-        'Lokasi'           => $ticket->asset->lokasi ?? '-',
-        'Kode Barang'      => ($ticket->asset->kode_barang ?? '-') . ' / NUP ' . ($ticket->asset->nup ?? '-'),
-        'Nama Perangkat'   => $ticket->asset->nama_barang ?? '-',
         'Tgl Pelaporan'    => $ticket->tgl_pelaporan->format('d/m/Y'),
+        'Nama Perangkat'   => $ticket->asset->nama_barang ?? '-',
+        'Kode Barang'      => ($ticket->asset->kode_barang ?? '-') . ' / NUP ' . ($ticket->asset->nup ?? '-'),
         'Pelapor'          => ($ticket->pelapor->nip ?? '-') . ' || ' . ($ticket->pelapor->nama ?? '-'),
         'Bidang'           => $ticket->pelapor->bidang->nama_bidang ?? '-',
+        'Lokasi'           => $ticket->asset->lokasi ?? '-',
         'Penanggung Jawab' => $ticket->asset->penanggungJawab->nama ?? '-',
     ];
 
@@ -65,7 +65,7 @@
                 </li>
                 <li>
                     <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ $isStaff ? 'Daftar Aduan' : 'Daftar Aduan Saya' }}
+                        {{ $isStaff ? 'Semua Aduan Kendala' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -83,7 +83,7 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
                 <a href="{{ route('incidents.index') }}"
-                   title="Kembali ke Daftar Incident"
+                   title="Kembali ke Daftar Aduan Kendala"
                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                     <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -91,7 +91,7 @@
                 </a>
                 <div>
                     <h2 class="text-title-md2 font-semibold text-black dark:text-white">
-                        Detail Aduan Kendala (Incident)
+                        Detail Aduan Kendala
                     </h2>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Nomor: {{ $ticket->nomor_aduan }}</p>
                 </div>
@@ -148,7 +148,7 @@
         {{-- 1. INFORMASI ADUAN --}}
         <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex items-center justify-between border-b border-stroke px-6.5 py-4 dark:border-gray-800">
-                <h3 class="font-medium text-black dark:text-white">Informasi Aduan</h3>
+                <h3 class="font-medium text-black dark:text-white">Informasi Barang</h3>
                 <span class="inline-flex rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}">
                     {{ $ticket->status }}
                 </span>
@@ -187,19 +187,26 @@
             <div class="p-6.5">
                                 <form action="{{ route('incidents.update', $ticket) }}" method="POST"
                       x-data="{
-                          status: @js(old('status', $ticket->status === 'Belum diperiksa' ? 'Sedang diproses' : $ticket->status)),
-                          jenis: @js(old('jenis_penyelesaian', $res->jenis_penyelesaian ?? 'Internal'))
+                          jenis: @js(old('jenis_penyelesaian', $res->jenis_penyelesaian ?? 'mandiri'))
                       }">
                     @csrf
                     @method('PUT')
 
-                    <div class="mb-5 sm:w-1/2 sm:pr-2.25">
-                        <label class="{{ $label }}">Status <span class="text-meta-1">*</span></label>
-                        <select name="status" x-model="status" class="{{ $input }}">
-                            <option value="Sedang diproses">Sedang diproses</option>
-                            <option value="Selesai">Selesai</option>
-                        </select>
-                        @error('status') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                    {{-- Info status berjalan --}}
+                    <div class="mb-5 flex items-center justify-between rounded-lg border border-stroke bg-gray-50/50 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Status Saat Ini:</span>
+                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium 
+                                {{ $ticket->status === 'Selesai' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' }}">
+                                {{ $ticket->status }}
+                            </span>
+                        </div>
+                        <span class="text-xs text-gray-400">Isi analisa & tindak lanjut untuk draft, atau lengkapi hasil untuk menyelesaikan.</span>
+                    </div>
+
+                    {{-- Bagian 1: Analisa & Tindak Lanjut --}}
+                    <div class="mb-4">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-primary">1. Analisa & Tindak Lanjut</h4>
                     </div>
 
                     {{-- Analisa --}}
@@ -241,17 +248,17 @@
                         @error('tindak_lanjut_teknis') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
-                    {{-- Jenis penyelesaian (segmented toggle) PINDAH KE SINI --}}
+                    {{-- Jenis penyelesaian (segmented toggle) --}}
                     <div class="mb-5">
-                        <label class="{{ $label }}">Jenis Penyelesaian</label>
+                        <label class="{{ $label }}">Jenis Penyelesaian <span class="text-xs font-normal text-gray-500">(pilih mandiri atau perbaikan ke pihak ke-3)</span></label>
                         <input type="hidden" name="jenis_penyelesaian" :value="jenis">
                         <div class="inline-flex rounded-lg border border-stroke p-1 dark:border-gray-800">
-                            <button type="button" @click="jenis = 'Internal'"
-                                    :class="jenis === 'Internal' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
-                                    class="rounded-md px-6 py-2 text-sm font-medium transition">Internal</button>
+                            <button type="button" @click="jenis = 'mandiri'"
+                                    :class="jenis === 'mandiri' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
+                                    class="rounded-md px-6 py-2 text-sm font-medium transition cursor-pointer">mandiri</button>
                             <button type="button" @click="jenis = 'Pihak ke-3'"
                                     :class="jenis === 'Pihak ke-3' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
-                                    class="rounded-md px-6 py-2 text-sm font-medium transition">Pihak ke-3</button>
+                                    class="rounded-md px-6 py-2 text-sm font-medium transition cursor-pointer">Pihak ke-3</button>
                         </div>
                         @error('jenis_penyelesaian') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
@@ -271,7 +278,7 @@
                             </div>
                         </div>
                         <a href="{{ route('incidents.justifikasi', $ticket) }}" target="_blank"
-                           class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700">
+                           class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 shadow-xs">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
@@ -279,24 +286,49 @@
                         </a>
                     </div>
 
+                    {{-- Tombol Simpan Draft DI BAWAH JENIS PENYELESAIAN --}}
+                    <div class="my-6 rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/40 dark:bg-amber-950/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-2 w-2 rounded-full bg-amber-500"></span>
+                                <h4 class="text-sm font-semibold text-amber-900 dark:text-amber-300">Simpan Draft (Sedang Diproses)</h4>
+                            </div>
+                            <p class="mt-1 text-xs text-amber-700/80 dark:text-amber-400/80">Simpan analisa, tindak lanjut, serta jenis penyelesaian terlebih dahulu jika perbaikan/hasil masih dalam proses atau memerlukan waktu (misal: dibawa ke pihak ke-3).</p>
+                        </div>
+                        <button type="submit" name="action_type" value="draft"
+                                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-500 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                            </svg>
+                            Simpan Draft
+                        </button>
+                    </div>
+
+                    <div class="mb-4 pt-3 border-t border-stroke dark:border-gray-800">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-primary">2. Penyelesaian & Hasil Akhir</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Lengkapi bagian ini apabila perbaikan telah tuntas dan tiket siap diselesaikan.</p>
+                    </div>
+
                     {{-- Hasil --}}
                     <div class="mb-5 sm:w-1/2 sm:pr-2.25">
-                        <label class="{{ $label }}">Tgl Hasil <span class="text-xs font-normal text-gray-500" x-show="status === 'Selesai'">(wajib)</span></label>
+                        <label class="{{ $label }}">Tgl Hasil <span class="text-meta-1">*</span> <span class="text-xs font-normal text-gray-500">(wajib untuk menyelesaikan)</span></label>
                         <x-form.date-picker id="tgl_hasil" name="tgl_hasil" :defaultDate="old('tgl_hasil', $res?->tgl_hasil?->format('Y-m-d'))" placeholder="Pilih Tanggal Hasil" />
                         @error('tgl_hasil') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="mb-6">
-                        <label class="{{ $label }}">Hasil <span class="text-xs font-normal text-gray-500" x-show="status === 'Selesai'">(wajib)</span></label>
-                        <textarea name="hasil" rows="3" class="{{ $input }}">{{ old('hasil', $res->hasil ?? '') }}</textarea>
+                        <label class="{{ $label }}">Hasil <span class="text-meta-1">*</span> <span class="text-xs font-normal text-gray-500">(wajib untuk menyelesaikan)</span></label>
+                        <textarea name="hasil" rows="3" placeholder="Deskripsi hasil perbaikan / penyelesaian akhir..." class="{{ $input }}">{{ old('hasil', $res->hasil ?? '') }}</textarea>
                         @error('hasil') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
-                    {{-- Tombol --}}
                     <div class="flex flex-col-reverse gap-3 border-t border-stroke pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
-                        <button type="submit"
-                                class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
-                            <span x-text="status === 'Selesai' ? 'Simpan & Selesaikan' : 'Simpan Draft'">Simpan Draft</span>
+                        <button type="submit" name="action_type" value="selesai"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Simpan & Selesaikan Aduan
                         </button>
                     </div>
                 </form>
@@ -327,26 +359,39 @@
                 </div>
 
                 @if($res->jenis_penyelesaian === 'Pihak ke-3')
-                    <div>
-                        <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Vendor</dt>
-                        <dd class="text-black dark:text-white">{{ $res->vendor ?: '-' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Estimasi Biaya</dt>
-                        <dd class="text-black dark:text-white">{{ !is_null($res->estimasi_biaya) ? 'Rp ' . number_format($res->estimasi_biaya, 0, ',', '.') : '-' }}</dd>
-                    </div>
                     @if($isStaff && $res->file_surat_justifikasi)
                         <div class="sm:col-span-2">
                             <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Surat Justifikasi</dt>
                             <dd><a href="{{ asset('storage/' . $res->file_surat_justifikasi) }}" target="_blank" class="text-primary underline">Lihat file</a></dd>
                         </div>
                     @endif
+                
+                    <div class="sm:col-span-2 mt-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-300">Surat Permohonan Perbaikan (Pihak ke-3)</h4>
+                                    <p class="text-xs text-blue-700/80 dark:text-blue-400/80">Dokumen PDF resmi perbaikan BMN oleh pihak ketiga</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('incidents.justifikasi', $ticket) }}" target="_blank"
+                               class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 shadow-xs">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Unduh Surat PDF
+                            </a>
+                        </div>
+                    </div>
                 @endif
 
-                <div class="sm:col-span-2">
-                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Analisis Tim Teknis</dt>
-                    <dd class="whitespace-pre-line text-black dark:text-white">{{ $res->analisa_teknis ?: '-' }}</dd>
-                </div>
+
                 <div class="sm:col-span-2">
                     <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Tindak Lanjut</dt>
                     <dd class="whitespace-pre-line text-black dark:text-white">{{ $res->tindak_lanjut_teknis ?: '-' }}</dd>

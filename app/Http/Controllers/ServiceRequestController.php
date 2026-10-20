@@ -246,7 +246,7 @@ class ServiceRequestController extends Controller
             $avatar = $currentUser->foto_profil ? asset('storage/' . $currentUser->foto_profil) : asset('images/user/owner.png');
             Notification::send($staffs, new NewTicketNotification(
                 'Permintaan Layanan Baru',
-                $namaPelaporText . ' mengajukan layanan baru (' . $nomorRequest . ').',
+                $namaPelaporText . ' mengajukan permintaan layanan baru (' . $nomorRequest . ').',
                 route('requests.show', $serviceRequest->id),
                 $currentUser->nama,
                 $avatar
@@ -811,6 +811,35 @@ class ServiceRequestController extends Controller
                 return response()->json(['success' => false, 'message' => 'Gagal mengubah status sesi: ' . $e->getMessage()], 500);
             }
             return back()->with('error', 'Gagal mengubah status sesi: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Konfirmasi penerimaan layanan selesai oleh Pelapor / Pembuat request.
+     */
+    public function confirmCompleted(ServiceRequest $req)
+    {
+        $userId = auth()->id();
+
+        // Hanya pelapor atau yang membuat request atas nama yang boleh mengonfirmasi
+        if ($req->user_id !== $userId && $req->reported_by !== $userId && !auth()->user()->isAdmin()) {
+            abort(403, 'Hanya pemohon layanan yang dapat mengonfirmasi penyelesaian.');
+        }
+
+        if ($req->status !== 'Selesai') {
+            return back()->with('error', 'Konfirmasi penyelesaian hanya dapat dilakukan jika permohonan berstatus Selesai.');
+        }
+
+        try {
+            $req->update([
+                'konfirmasi_selesai_at' => now(),
+            ]);
+
+            return redirect()->route('requests.show', $req->id)
+                             ->with('success', 'Terima kasih! Anda telah berhasil mengonfirmasi bahwa layanan TI telah selesai dan diterima dengan baik.');
+        } catch (\Throwable $e) {
+            Log::error('Gagal konfirmasi selesai request', ['request_id' => $req->id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memproses konfirmasi: ' . $e->getMessage());
         }
     }
 

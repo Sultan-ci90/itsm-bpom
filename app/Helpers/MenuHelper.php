@@ -16,103 +16,63 @@ class MenuHelper
         ];
 
         if ($isStaff) {
+            // =========================
+            // MENU ADMIN & TEKNISI (STAFF)
+            // =========================
             $mainItems[] = [
                 'icon' => 'dashboard',
                 'name' => 'Dashboard',
                 'path' => '/',
             ];
-        }
 
-        // =========================
-        // SERVICE REQUEST (ITSM)
-        // =========================
-        $requestSubItems = [
-            [
-                'name' => 'Request Baru',
-                'path' => '/requests/create',
-                'pro' => false,
-            ],
-            [
-                'name' => 'Request Saya',
-                'path' => '/requests',
-                'pro' => false,
-            ],
-        ];
-
-        if ($isStaff) {
-            $requestSubItems[] = [
-                'name' => 'Semua Request',
+            $mainItems[] = [
+                'icon' => 'forms',
+                'name' => 'Semua Permintaan Layanan',
                 'path' => '/requests/all',
-                'pro' => false,
             ];
-        }
 
-        $mainItems[] = [
-            'icon' => 'forms',
-            'name' => 'Service Request',
-            'subItems' => $requestSubItems,
-        ];
-
-        // =========================
-        // INCIDENT (LAPOR KENDALA)
-        // =========================
-        $incidentSubItems = [
-            [
-                'name' => 'Lapor Kendala',
-                'path' => '/incidents/create',
-                'pro' => false,
-            ],
-            [
-                'name' => 'Aduan Saya',
-                'path' => '/incidents',
-                'pro' => false,
-            ],
-        ];
-
-        if ($isStaff) {
-            $incidentSubItems[] = [
-                'name' => 'Semua Aduan',
+            $mainItems[] = [
+                'icon' => 'support-ticket',
+                'name' => 'Semua Aduan Kendala',
                 'path' => '/incidents/all',
-                'pro' => false,
-            ];
-        }
-
-        $mainItems[] = [
-            'icon' => 'support-ticket',
-            'name' => 'Insiden',
-            'subItems' => $incidentSubItems,
-        ];
-
-        // =========================
-        // MASTER DATA (Khusus Staff)
-        // =========================
-        if ($isStaff) {
-            $masterSubItems = [
-                [
-                    'name' => 'Setup Lokasi',
-                    'path' => '/master/lokasi',
-                    'pro' => false,
-                ],
-                [
-                    'name' => 'Setup Petugas',
-                    'path' => '/master/petugas',
-                    'pro' => false,
-                ],
             ];
 
             $mainItems[] = [
                 'icon' => 'master-data',
                 'name' => 'Master Data',
-                'subItems' => $masterSubItems,
+                'subItems' => [
+                    [
+                        'name' => 'Setup Lokasi',
+                        'path' => '/master/lokasi',
+                        'pro' => false,
+                    ],
+                    [
+                        'name' => 'Setup Petugas',
+                        'path' => '/master/petugas',
+                        'pro' => false,
+                    ],
+                ],
             ];
 
-            // =========================
-            // LAPORAN & REKAP (Khusus Staff)
-            // =========================
             $mainItems[] = [
                 'icon' => 'report',
                 'name' => 'Laporan & Rekap',
                 'path' => '/reports',
+            ];
+        } else {
+            // =========================
+            // MENU PELAPOR (USER BIASA)
+            // =========================
+            $mainItems[] = [
+                'icon' => 'forms',
+                'name' => 'Permintaan Layanan Saya',
+                'path' => '/requests',
+            ];
+
+            $mainItems[] = [
+                'icon' => 'support-ticket',
+                'name' => 'Aduan Kendala Saya',
+                'path' => '/incidents',
             ];
         }
 
@@ -126,7 +86,11 @@ class MenuHelper
 
     public static function isActive($path)
     {
-        return request()->is(ltrim($path, '/'));
+        $clean = ltrim($path, '/');
+        if ($clean === '') {
+            return request()->is('/');
+        }
+        return request()->is($clean) || request()->is($clean . '/*');
     }
 
     public static function getIconSvg($iconName)

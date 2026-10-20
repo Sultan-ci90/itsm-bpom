@@ -62,15 +62,13 @@ class DummyDataSeeder extends Seeder
 
                 // Jika status bukan 'Belum diperiksa' dan bukan 'Ditolak', buat Resolution
                 if (in_array($status, ['Sedang diproses', 'Selesai'])) {
-                    $jenisPenyelesaian = $faker->randomElement(['Internal', 'Pihak ke-3']);
+                    $jenisPenyelesaian = $faker->randomElement(['mandiri', 'Pihak ke-3']);
                     $tglAnalisa = $faker->dateTimeBetween($tglPelaporan, now());
                     
                     DB::table('ticket_resolutions')->insert([
                         'ticket_id' => $ticketId,
                         'pemeriksa_id' => $faker->randomElement($teknisiIds),
                         'jenis_penyelesaian' => $jenisPenyelesaian,
-                        'vendor' => $jenisPenyelesaian === 'Pihak ke-3' ? $faker->company() : null,
-                        'estimasi_biaya' => $jenisPenyelesaian === 'Pihak ke-3' ? $faker->numberBetween(500000, 15000000) : null,
                         'tgl_analisa' => $tglAnalisa->format('Y-m-d'),
                         'analisa_teknis' => $faker->paragraph(2),
                         'tgl_tindak_lanjut' => $tglAnalisa->modify('+2 days')->format('Y-m-d'),

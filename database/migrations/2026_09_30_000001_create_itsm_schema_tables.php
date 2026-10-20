@@ -96,7 +96,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('ticket_id')->unique()->constrained('tickets')->cascadeOnDelete();
             $table->foreignId('pemeriksa_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->enum('jenis_penyelesaian', ['Internal', 'Pihak ke-3'])->default('Internal');
+            $table->enum('jenis_penyelesaian', ['mandiri', 'Pihak ke-3'])->default('mandiri');
             $table->string('vendor', 150)->nullable();
             $table->decimal('estimasi_biaya', 12, 2)->nullable();
             $table->date('tgl_analisa')->nullable();

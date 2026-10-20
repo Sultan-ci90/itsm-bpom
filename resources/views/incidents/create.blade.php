@@ -21,7 +21,7 @@
                 </li>
                 <li>
                     <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Daftar Aduan' : 'Daftar Aduan Saya' }}
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Aduan Kendala' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -30,7 +30,7 @@
                     </svg>
                 </li>
                 <li class="font-medium text-gray-800 dark:text-white/90">
-                    Lapor Kendala
+                    Lapor Aduan Kendala
                 </li>
             </ol>
         </nav>
@@ -38,7 +38,7 @@
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex items-center gap-3">
             <a href="{{ route('incidents.index') }}"
-               title="Kembali ke Daftar Incident"
+               title="Kembali ke Daftar Aduan Kendala"
                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                 <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -46,9 +46,9 @@
             </a>
             <div>
                 <h2 class="text-title-md2 font-semibold text-black dark:text-white">
-                    Lapor Kendala (Incident)
+                    Lapor Aduan Kendala
                 </h2>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Buat laporan kerusakan atau kendala perangkat IT</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Buat laporan aduan kendala perangkat IT</p>
             </div>
         </div>
     </div>

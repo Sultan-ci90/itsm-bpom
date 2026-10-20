@@ -23,7 +23,7 @@
                 </li>
                 <li>
                     <a href="{{ route('requests.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Permintaan Layanan' : 'Request Saya' }}
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Permintaan Layanan' : 'Permintaan Layanan Saya' }}
                     </a>
                 </li>
                 <li>
@@ -42,7 +42,7 @@
                     </svg>
                 </li>
                 <li class="font-medium text-gray-800 dark:text-white/90">
-                    Edit Request
+                    Edit Permintaan Layanan
                 </li>
             </ol>
         </nav>
@@ -50,7 +50,7 @@
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex items-center gap-3">
             <a href="{{ route('requests.show', $req->id) }}"
-               title="Kembali ke Detail Request"
+               title="Kembali ke Detail Permintaan Layanan"
                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                 <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -58,7 +58,7 @@
             </a>
             <div>
                 <h2 class="text-title-md2 font-semibold text-black dark:text-white">
-                    Edit Request (Layanan IT)
+                    Edit Permintaan Layanan
                 </h2>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Nomor: {{ $req->nomor_request }}</p>
             </div>
@@ -110,7 +110,7 @@
 
                         <!-- Tanggal -->
                         <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Request</label>
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Permintaan</label>
                             <input type="text" value="{{ \Carbon\Carbon::now()->format('d/m/Y') }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         </div>
 
@@ -142,22 +142,6 @@
                                 @endforeach
                             </select>
                             @error('lokasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <!-- Deskripsi / Penjelasan Permintaan -->
-                        <div class="sm:col-span-2">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
-                                Deskripsi / Penjelasan Permintaan
-                                <span class="text-meta-1" x-show="layanan === 'lainnya'">*</span>
-                            </label>
-                            <textarea name="deskripsi" rows="4"
-                                :required="layanan === 'lainnya'"
-                                placeholder="Jelaskan kebutuhan atau permintaan layanan Anda secara rinci..."
-                                class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">{{ old('deskripsi', $req->deskripsi) }}</textarea>
-                            @error('deskripsi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" x-show="layanan === 'lainnya'">
-                                💡 Cukup jelaskan apa yang Anda perlukan di kolom ini, lalu klik tombol <strong>Tambah Request</strong> di bawah.
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -231,32 +215,7 @@
                             @error('sistem_tujuan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
-                                NIP Pemilik Akun <span class="text-meta-1">*</span>
-                                <span class="text-xs font-normal text-gray-500">(hanya angka)</span>
-                            </label>
-                            <input type="text" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" name="nip_terkait" value="{{ old('nip_terkait', $req->detailAkun->nip_terkait ?? '') }}" placeholder="Masukkan NIP pemilik akun" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                            @error('nip_terkait') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
 
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Email Akun <span class="text-meta-1">*</span></label>
-                            <input type="email" name="email" value="{{ old('email', $req->detailAkun->email ?? '') }}" placeholder="contoh: user@pom.go.id" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                            @error('email') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div x-data="{ showPass: false }">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Password yang Diinginkan <span class="text-meta-1">*</span></label>
-                            <div class="relative">
-                                <input :type="showPass ? 'text' : 'password'" name="password" value="{{ old('password', $req->detailAkun->password ?? '') }}" placeholder="Masukkan password yang diinginkan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 pl-5 pr-12 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                                <button type="button" @click="showPass = !showPass" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black dark:hover:text-white">
-                                    <svg x-show="!showPass" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <svg x-show="showPass" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                                </button>
-                            </div>
-                            @error('password') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
                     </div>
                 </div>
 
@@ -294,6 +253,22 @@
                             @error('lokasi_penggunaan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
+                </div>
+
+                <!-- Deskripsi / Keterangan Permintaan (Posisi Paling Bawah) -->
+                <div class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
+                    <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
+                        Deskripsi / Penjelasan Permintaan
+                        <span class="text-meta-1" x-show="layanan === 'lainnya'">*</span>
+                    </label>
+                    <textarea name="deskripsi" rows="4"
+                        :required="layanan === 'lainnya'"
+                        placeholder="Jelaskan kebutuhan atau permohonan layanan Anda secara rinci..."
+                        class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">{{ old('deskripsi', $req->deskripsi) }}</textarea>
+                    @error('deskripsi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        Catatan tambahan atau uraian rinci permohonan layanan.
+                    </p>
                 </div>
 
                 <!-- Tombol Submit -->

@@ -17,8 +17,6 @@ class TicketResolution extends Model
         'ticket_id',
         'pemeriksa_id',
         'jenis_penyelesaian',
-        'vendor',
-        'estimasi_biaya',
         'tgl_analisa',
         'analisa_teknis',
         'tgl_tindak_lanjut',
@@ -29,7 +27,6 @@ class TicketResolution extends Model
     ];
 
     protected $casts = [
-        'estimasi_biaya' => 'decimal:2',
         'tgl_analisa' => 'date',
         'tgl_tindak_lanjut' => 'date',
         'tgl_hasil' => 'date',

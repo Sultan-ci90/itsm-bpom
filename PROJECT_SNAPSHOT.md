@@ -812,7 +812,7 @@ TailAdmin delivers a refined Tailwind CSS Laravel Dashboard experience, combinin
 
 ### Laravel Admin Dashboard
 
-If you’re searching for a dependable Laravel Admin Dashboard template that’s easy to set up and ready for production, TailAdmin fits the job. It offers a polished UI, reusable components, optimized performance, and all the essentials needed to launch dashboards, CRM systems, and internal tools quickly. It gives developers a solid foundation, so projects move faster with fewer decisions to worry about.
+If you’re searching for a dependable Laravel Admin Dashboard template that’s easy to set up and ready for production, TailAdmin fits the job. It offers a polished UI, reusable components, optimized performance, and all the essentials needed to launch dashboards, CRM systems, and mandiri tools quickly. It gives developers a solid foundation, so projects move faster with fewer decisions to worry about.
 
 ### Check Your Environment
 
@@ -1589,7 +1589,7 @@ class DashboardController extends Controller
                                      ->count();
         }
 
-        // Chart 2: Penyelesaian Incident (Internal vs Pihak ke-3)
+        // Chart 2: Penyelesaian Incident (mandiri vs Pihak ke-3)
         $resolutionStats = TicketResolution::selectRaw('jenis_penyelesaian, COUNT(*) as total')
             ->groupBy('jenis_penyelesaian')
             ->pluck('total', 'jenis_penyelesaian');
@@ -2493,7 +2493,7 @@ class UpdateTicketRequest extends FormRequest
     {
         return [
             'status' => 'required|in:Sedang diproses,Selesai,Ditolak',
-            'jenis_penyelesaian' => 'required|in:Internal,Pihak ke-3',
+            'jenis_penyelesaian' => 'required|in:mandiri,Pihak ke-3',
             
             // Validasi Bersyarat: Wajib jika Pihak ke-3
             'vendor' => 'required_if:jenis_penyelesaian,Pihak ke-3|nullable|string|max:150',
@@ -6069,7 +6069,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('ticket_id')->unique()->constrained('tickets')->cascadeOnDelete();
             $table->foreignId('pemeriksa_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->enum('jenis_penyelesaian', ['Internal', 'Pihak ke-3'])->default('Internal');
+            $table->enum('jenis_penyelesaian', ['mandiri', 'Pihak ke-3'])->default('mandiri');
             $table->string('vendor', 150)->nullable();
             $table->decimal('estimasi_biaya', 12, 2)->nullable();
             $table->date('tgl_analisa')->nullable();
@@ -6241,7 +6241,7 @@ class DummyDataSeeder extends Seeder
 
                 // Jika status bukan 'Belum diperiksa' dan bukan 'Ditolak', buat Resolution
                 if (in_array($status, ['Sedang diproses', 'Selesai'])) {
-                    $jenisPenyelesaian = $faker->randomElement(['Internal', 'Pihak ke-3']);
+                    $jenisPenyelesaian = $faker->randomElement(['mandiri', 'Pihak ke-3']);
                     $tglAnalisa = $faker->dateTimeBetween($tglPelaporan, now());
                     
                     DB::table('ticket_resolutions')->insert([
@@ -14186,7 +14186,7 @@ export default initMap;
                 <h3 class="mb-4 text-lg font-medium text-primary">Form Proses & Tindak Lanjut</h3>
                 
                 <form action="{{ route('incidents.update', $ticket) }}" method="POST" enctype="multipart/form-data" 
-                      x-data="{ jenis: '{{ old('jenis_penyelesaian', $ticket->resolution?->jenis_penyelesaian ?? 'Internal') }}', status: '{{ old('status', $ticket->status) }}' }">
+                      x-data="{ jenis: '{{ old('jenis_penyelesaian', $ticket->resolution?->jenis_penyelesaian ?? 'mandiri') }}', status: '{{ old('status', $ticket->status) }}' }">
                     @csrf
                     @method('PUT')
 
@@ -14202,7 +14202,7 @@ export default initMap;
                         <div>
                             <label class="mb-2 block text-sm font-medium text-black dark:text-white">Jenis Penyelesaian</label>
                             <select name="jenis_penyelesaian" x-model="jenis" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:bg-gray-900 dark:text-white">
-                                <option value="Internal">Internal IT</option>
+                                <option value="mandiri">mandiri IT</option>
                                 <option value="Pihak ke-3">Pihak ke-3 (Vendor)</option>
                             </select>
                         </div>

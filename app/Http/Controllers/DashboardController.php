@@ -21,7 +21,7 @@ class DashboardController extends Controller
     ];
 
     /** Urutan tetap supaya warna di chart selalu cocok dengan labelnya. */
-    private const JENIS_PENYELESAIAN = ['Internal', 'Pihak ke-3'];
+    private const JENIS_PENYELESAIAN = ['mandiri', 'Pihak ke-3'];
     private const STATUS_REQUEST     = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
 
     public function index()
@@ -51,20 +51,22 @@ class DashboardController extends Controller
         ];
 
         // 2. DATA CHART
-        // Chart 1: Tren incident 6 bulan terakhir (nama bulan bahasa Indonesia)
-        $last6Months   = [];
-        $incidentTrend = [];
+        // Chart 1: Tren aduan kendala & permintaan layanan 6 bulan terakhir (nama bulan bahasa Indonesia)
+        $last6Months    = [];
+        $incidentTrend  = [];
+        $requestTrend   = [];
         for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->startOfMonth()->subMonths($i);
+            $date         = Carbon::now()->startOfMonth()->subMonths($i);
+            $startOfMonth = $date->copy()->startOfMonth();
+            $endOfMonth   = $date->copy()->endOfMonth();
+
             $last6Months[]   = $date->copy()->locale('id')->translatedFormat('M Y');
-            $incidentTrend[] = Ticket::whereBetween('created_at', [
-                $date->copy()->startOfMonth(),
-                $date->copy()->endOfMonth(),
-            ])->count();
+            $incidentTrend[] = Ticket::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+            $requestTrend[]  = ServiceRequest::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
         }
 
         // Chart 2: Metode penyelesaian — hanya tiket yang belum dihapus (soft delete),
-        // urutan label tetap agar warna Internal/Pihak ke-3 tidak tertukar.
+        // urutan label tetap agar warna mandiri/Pihak ke-3 tidak tertukar.
         $resolutionStats = TicketResolution::whereHas('ticket')
             ->selectRaw('jenis_penyelesaian, COUNT(*) as total')
             ->groupBy('jenis_penyelesaian')
@@ -124,7 +126,7 @@ class DashboardController extends Controller
         return view('pages.dashboard.index', compact(
             'totalIncident', 'totalRequest', 'statusIncident', 'statsDelta',
             'totalSelesai', 'selesaiIncident', 'selesaiRequest',
-            'last6Months', 'incidentTrend',
+            'last6Months', 'incidentTrend', 'requestTrend',
             'resolutionData', 'layananData', 'requestStatusData',
             'recentIncidents', 'recentRequests'
         ));

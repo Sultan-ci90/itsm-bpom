@@ -25,11 +25,11 @@ class GenerateReportRequest extends FormRequest
     {
         return [
             'jenis'           => ['required', 'in:kerusakan,layanan'],
-            'periode'         => ['required', 'in:tanggal,bulan,semester,tahun,dua_tahun'],
+            'periode'         => ['required', 'in:triwulan,bulan,semester,tahun'],
 
-            // Per Tanggal
-            'tanggal_awal'    => ['required_if:periode,tanggal', 'nullable', 'date'],
-            'tanggal_akhir'   => ['required_if:periode,tanggal', 'nullable', 'date', 'after_or_equal:tanggal_awal'],
+            // Per Triwulan (Per 3 Bulan)
+            'tahun_triwulan'  => ['required_if:periode,triwulan', 'nullable', 'integer', 'min:2020', 'max:2099'],
+            'triwulan'        => ['required_if:periode,triwulan', 'nullable', 'in:1,2,3,4'],
 
             // Per Bulan
             'bulan_awal'      => ['required_if:periode,bulan', 'nullable', 'date_format:Y-m'],
@@ -41,9 +41,6 @@ class GenerateReportRequest extends FormRequest
 
             // Per Tahun
             'tahun'           => ['required_if:periode,tahun', 'nullable', 'integer', 'min:2020', 'max:2099'],
-
-            // Per 2 Tahun
-            'tahun_awal_2thn' => ['required_if:periode,dua_tahun', 'nullable', 'integer', 'min:2020', 'max:2099'],
         ];
     }
 
@@ -54,20 +51,6 @@ class GenerateReportRequest extends FormRequest
     {
         $validator->after(function ($v) {
             $periode = $this->input('periode');
-
-            // Validasi batas maksimal 2 tahun untuk periode tanggal
-            if ($periode === 'tanggal' && $this->filled('tanggal_awal') && $this->filled('tanggal_akhir')) {
-                try {
-                    $start = Carbon::parse($this->input('tanggal_awal'));
-                    $end = Carbon::parse($this->input('tanggal_akhir'));
-
-                    if ($start->copy()->addYears(2)->startOfDay()->lt($end->startOfDay())) {
-                        $v->errors()->add('tanggal_akhir', 'Rentang tanggal maksimal tidak boleh melebihi 2 tahun.');
-                    }
-                } catch (\Exception $e) {
-                    // Penanganan format tanggal ditangani oleh rule 'date'
-                }
-            }
 
             // Validasi batas maksimal 2 tahun untuk periode bulan
             if ($periode === 'bulan' && $this->filled('bulan_awal') && $this->filled('bulan_akhir')) {
@@ -93,14 +76,13 @@ class GenerateReportRequest extends FormRequest
         return [
             'jenis'           => 'Jenis Laporan',
             'periode'         => 'Pilihan Periode',
-            'tanggal_awal'    => 'Tanggal Awal',
-            'tanggal_akhir'   => 'Tanggal Akhir',
+            'tahun_triwulan'  => 'Tahun Triwulan',
+            'triwulan'        => 'Pilihan Triwulan',
             'bulan_awal'      => 'Bulan Awal',
             'bulan_akhir'     => 'Bulan Akhir',
             'tahun_semester'  => 'Tahun Semester',
             'semester'        => 'Pilihan Semester',
             'tahun'           => 'Tahun Laporan',
-            'tahun_awal_2thn' => 'Tahun Awal',
         ];
     }
 
@@ -113,10 +95,8 @@ class GenerateReportRequest extends FormRequest
             'required'                      => ':attribute wajib dipilih atau diisi.',
             'required_if'                   => ':attribute wajib diisi untuk periode yang dipilih.',
             'in'                            => ':attribute tidak valid.',
-            'date'                          => ':attribute harus berupa format tanggal yang valid.',
             'date_format'                   => ':attribute harus berupa format YYYY-MM (Bulan-Tahun).',
             'after_or_equal'                => ':attribute tidak boleh lebih awal dari tanggal/bulan awal.',
-            'tanggal_akhir.after_or_equal'  => 'Tanggal akhir tidak boleh lebih kecil dari tanggal awal.',
             'bulan_akhir.after_or_equal'    => 'Bulan akhir tidak boleh lebih kecil dari bulan awal.',
         ];
     }
