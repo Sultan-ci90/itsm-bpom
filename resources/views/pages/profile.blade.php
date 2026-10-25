@@ -42,7 +42,7 @@
         @csrf
         <div class="mb-5 flex items-center justify-between lg:mb-7">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Pengaturan Profil</h3>
-            <button type="submit" class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
+            <button type="submit" class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 cursor-pointer">
                 Simpan Perubahan
             </button>
         </div>
@@ -55,7 +55,7 @@
                     <h4 class="mb-4 text-base font-medium text-gray-800 dark:text-white/90">Foto Profil</h4>
                     <div class="flex flex-col items-center gap-4">
                         <button type="button" @click="openModal()" title="Ubah foto"
-                                class="relative size-32 overflow-hidden rounded-full border-4 border-white shadow-md dark:border-gray-800">
+                                class="relative size-32 overflow-hidden rounded-full border-4 border-white shadow-md dark:border-gray-800 cursor-pointer">
                             <img :src="displayPhoto" alt="Foto profil" class="size-full object-cover" />
                         </button>
 
@@ -63,7 +63,7 @@
                         <input type="hidden" name="hapus_foto" :value="deleteFoto ? '1' : '0'">
 
                         <button type="button" @click="openModal()"
-                                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]">
+                                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03] cursor-pointer">
                             Ubah Foto
                         </button>
                         <p class="text-center text-xs text-gray-500 dark:text-gray-400">Format JPG atau PNG, maksimal 5 MB.</p>
@@ -85,7 +85,7 @@
                             <label class="{{ $label }}">Password Lama</label>
                             <div class="relative">
                                 <input :type="show ? 'text' : 'password'" name="current_password" placeholder="Masukkan password saat ini" autocomplete="current-password" class="{{ $input }} pe-10" />
-                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer">
                                     <svg x-show="!show" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <svg x-show="show" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                                 </button>
@@ -97,7 +97,7 @@
                             <label class="{{ $label }}">Password Baru</label>
                             <div class="relative">
                                 <input :type="show ? 'text' : 'password'" name="password" placeholder="Minimal 6 karakter" autocomplete="new-password" class="{{ $input }} pe-10" />
-                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer">
                                     <svg x-show="!show" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <svg x-show="show" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                                 </button>
@@ -109,7 +109,7 @@
                             <label class="{{ $label }}">Password Verifikasi</label>
                             <div class="relative">
                                 <input :type="show ? 'text' : 'password'" name="password_confirmation" placeholder="Ulangi password baru" autocomplete="new-password" class="{{ $input }} pe-10" />
-                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer">
                                     <svg x-show="!show" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <svg x-show="show" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                                 </button>
@@ -120,7 +120,7 @@
                         {{-- Tombol Proses / Simpan Password --}}
                         <div class="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
                             <button type="submit" name="action" value="update_password"
-                                    class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden">
+                                    class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden cursor-pointer">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                 </svg>
@@ -211,14 +211,14 @@
     </form>
 
     <!-- ============ MODAL UBAH FOTO PROFIL ============ -->
-    <div x-show="isCropModalOpen" x-cloak class="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto p-4 sm:p-5">
+    <div x-show="isCropModalOpen" x-cloak x-transition.opacity.duration.200ms class="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto p-4 sm:p-5">
         <div class="fixed inset-0 h-full w-full bg-gray-900/60 backdrop-blur-sm" @click="closeModal()"></div>
 
         <div class="relative w-full max-w-md rounded-2xl bg-white shadow-lg dark:bg-gray-900" @click.stop>
             <!-- Header -->
             <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">Ubah Foto Profil</h4>
-                <button @click="closeModal()" type="button" aria-label="Tutup" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <button @click="closeModal()" type="button" aria-label="Tutup" class="cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg class="size-5 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
                 </button>
             </div>
@@ -236,7 +236,7 @@
                         </div>
 
                         <button type="button" @click="$refs.fileInput.click()" aria-label="Pilih foto"
-                                class="absolute right-1 bottom-1 flex size-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-xs hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                                class="cursor-pointer absolute right-1 bottom-1 flex size-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-xs hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                             <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
                         </button>
                     </div>
@@ -245,12 +245,12 @@
                 <!-- Tombol unggah & hapus -->
                 <div class="mb-6 flex items-center justify-center gap-3">
                     <button type="button" @click="$refs.fileInput.click()"
-                            class="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                            class="cursor-pointer flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
                         <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                         Unggah Foto Baru
                     </button>
                     <button type="button" @click="hapusFoto()" :disabled="!hasPhoto"
-                            class="flex items-center gap-2 rounded-lg bg-error-50 px-4 py-2 text-sm font-medium text-error-600 hover:bg-error-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-error-500/10 dark:text-error-500 dark:hover:bg-error-500/20">
+                            class="cursor-pointer flex items-center gap-2 rounded-lg bg-error-50 px-4 py-2 text-sm font-medium text-error-600 hover:bg-error-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-error-500/10 dark:text-error-500 dark:hover:bg-error-500/20">
                         <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         Hapus Foto
                     </button>
@@ -274,14 +274,14 @@
                 <div class="mb-6 flex items-center gap-3" :class="!imageSrc && 'opacity-50'">
                     <span class="shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">Sesuaikan Ukuran</span>
                     <button type="button" @click="zoomOutSlider()" :disabled="!imageSrc" aria-label="Perkecil"
-                            class="flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:text-gray-800 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400">
+                            class="cursor-pointer flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:text-gray-800 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400">
                         <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
                     </button>
                     <input type="range" min="0" max="100" step="1" x-model="zoomSlider" :disabled="!imageSrc"
                            class="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 outline-hidden disabled:cursor-not-allowed dark:bg-gray-700"
                            style="accent-color: #3641f5;">
                     <button type="button" @click="zoomInSlider()" :disabled="!imageSrc" aria-label="Perbesar"
-                            class="flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:text-gray-800 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400">
+                            class="cursor-pointer flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:text-gray-800 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400">
                         <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                     </button>
                 </div>
@@ -289,11 +289,11 @@
                 <!-- Footer -->
                 <div class="flex items-center justify-end gap-3">
                     <button type="button" @click="closeModal()"
-                            class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]">
+                            class="cursor-pointer rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]">
                         Batal
                     </button>
                     <button type="button" @click="saveAndSubmit()" :disabled="saving"
-                            class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60">
+                            class="cursor-pointer rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60">
                         <span x-show="!saving">Simpan Perubahan</span>
                         <span x-cloak x-show="saving">Menyimpan...</span>
                     </button>
@@ -307,7 +307,8 @@
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
-    document.addEventListener('alpine:init', () => {
+    function registerProfileForm() {
+        if (typeof Alpine === 'undefined') return;
         Alpine.data('profileForm', () => ({
             // data dari server
             currentPhoto: @js($user->foto_profil ? asset('storage/' . $user->foto_profil) : null),
@@ -510,6 +511,12 @@
                 this.$nextTick(() => this.$refs.profileForm.requestSubmit());
             },
         }));
-    });
+    }
+
+    if (typeof Alpine !== 'undefined') {
+        registerProfileForm();
+    } else {
+        document.addEventListener('alpine:init', registerProfileForm);
+    }
 </script>
 @endpush

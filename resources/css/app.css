@@ -203,7 +203,7 @@
 }
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm cursor-pointer;
 }
 
 @utility menu-item-active {
@@ -239,7 +239,7 @@
 }
 
 @utility menu-dropdown-item {
-  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium cursor-pointer;
 }
 
 @utility menu-dropdown-item-active {
@@ -1169,7 +1169,7 @@ pre[class*='language-'] {
 }
 
 @utility menu-item {
-  @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium;
+  @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer;
 }
 
 @utility menu-item-active {
@@ -1201,7 +1201,7 @@ pre[class*='language-'] {
 }
 
 @utility menu-dropdown-item {
-  @apply text-theme-sm relative flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium;
+  @apply text-theme-sm relative flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium cursor-pointer;
 }
 
 @utility menu-dropdown-item-active {

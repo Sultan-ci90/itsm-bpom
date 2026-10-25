@@ -61,11 +61,9 @@ class DetailKerusakanSheet implements FromQuery, WithTitle, WithHeadings, WithMa
             'Nomor Aduan',
             'Tanggal Pelaporan',
             'Nama Pelapor',
-            'NIP Pelapor',
-            'Bidang / Unit Kerja',
+            'Jenis Kendala',
             'Kode Barang',
             'Nama Barang',
-            'Jenis Barang',
             'Deskripsi Masalah',
             'Status',
             'Tgl Analisa',
@@ -83,17 +81,17 @@ class DetailKerusakanSheet implements FromQuery, WithTitle, WithHeadings, WithMa
         $this->rowNumber++;
 
         $res = $ticket->resolution;
+        $isAset = ($ticket->jenis_kendala ?? ($ticket->asset_id ? 'aset' : 'lainnya')) === 'aset';
+        $jenisKendalaLabel = $isAset ? 'Aset / Perangkat TIK' : 'Lainnya (Non-Aset)';
 
         return [
             $this->rowNumber,
             $ticket->nomor_aduan,
             $ticket->tgl_pelaporan ? Carbon::parse($ticket->tgl_pelaporan)->translatedFormat('d/m/Y') : '-',
             $ticket->pelapor->nama ?? '-',
-            $ticket->pelapor->nip ?? '-',
-            $ticket->pelapor->bidang->nama_bidang ?? 'Umum',
-            $ticket->asset->kode_barang ?? '-',
-            $ticket->asset->nama_barang ?? '-',
-            $ticket->asset->jenis_barang ?? '-',
+            $jenisKendalaLabel,
+            $isAset ? ($ticket->asset?->kode_barang ?? '-') : '-',
+            $isAset ? ($ticket->asset?->nama_barang ?? '-') : '-',
             $ticket->deskripsi_masalah ?? '-',
             $ticket->status,
             $res?->tgl_analisa ? Carbon::parse($res->tgl_analisa)->translatedFormat('d/m/Y') : '-',
@@ -106,7 +104,7 @@ class DetailKerusakanSheet implements FromQuery, WithTitle, WithHeadings, WithMa
     public function styles(Worksheet $sheet): ?array
     {
         // Style header row (Row 1)
-        $sheet->getStyle('A1:O1')->applyFromArray([
+        $sheet->getStyle('A1:M1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],

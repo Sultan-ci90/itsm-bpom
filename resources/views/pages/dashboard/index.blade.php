@@ -29,13 +29,6 @@
         ],
     ];
 
-    $charts = [
-        ['id' => 'incidentTrendChart',  'title' => 'Tren Aduan Kendala & Permintaan Layanan', 'sub' => '6 bulan terakhir', 'span' => 'xl:col-span-7'],
-        ['id' => 'resolutionChart',     'title' => 'Metode Penyelesaian',         'sub' => 'Cara aduan diselesaikan',     'span' => 'xl:col-span-5'],
-        ['id' => 'requestLayananChart', 'title' => 'Permintaan per Jenis Layanan','sub' => 'Jumlah permintaan tiap layanan', 'span' => 'xl:col-span-7'],
-        ['id' => 'requestStatusChart',  'title' => 'Distribusi Status Permintaan','sub' => 'Proporsi status saat ini',    'span' => 'xl:col-span-5'],
-    ];
-
     $badge = [
         'Selesai' => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
         'Diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
@@ -93,15 +86,122 @@
 
     {{-- 2. CHARTS --}}
     <div class="mb-6 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
-        @foreach($charts as $c)
-        <div class="col-span-12 {{ $c['span'] }} rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
-            <div class="mb-4">
-                <h4 class="text-xl font-semibold text-black dark:text-white">{{ $c['title'] }}</h4>
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ $c['sub'] }}</p>
+
+        {{-- BARIS 1: BARCHART TREN ADUAN KENDALA & PERMINTAAN LAYANAN (FULL WIDTH - 12 KOLOM) --}}
+        <div class="col-span-12 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5"
+             x-data="{
+                 period: '6months',
+                 year: '{{ date('Y') }}',
+                 loading: false,
+                 async fetchTrend() {
+                     this.loading = true;
+                     try {
+                         const url = `{{ route('dashboard.trendData') }}?period=${this.period}&year=${this.year}`;
+                         const res = await fetch(url, {
+                             headers: { 'Accept': 'application/json' }
+                         });
+                         const data = await res.json();
+                         if (window.updateDashboardTrend) {
+                             window.updateDashboardTrend(data, this.period === 'yearly' ? 'Periode Tahun ' + this.year : '6 bulan terakhir');
+                         }
+                     } catch (e) {
+                         console.error('Failed to update trend chart', e);
+                     } finally {
+                         this.loading = false;
+                     }
+                 },
+                 setPeriod(newPeriod) {
+                     if (this.period === newPeriod) return;
+                     this.period = newPeriod;
+                     this.fetchTrend();
+                 },
+                 changeYear(newYear) {
+                     this.year = newYear;
+                     this.fetchTrend();
+                 }
+             }">
+            <div class="mb-4 flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h4 class="text-xl font-semibold text-black dark:text-white">Tren Aduan Kendala & Permintaan Layanan</h4>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400" id="trendSubText" x-text="period === 'yearly' ? 'Periode Tahun ' + year : '6 bulan terakhir'">6 bulan terakhir</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5">
+                    {{-- Loading Spinner indicator --}}
+                    <div x-show="loading" x-cloak class="flex items-center gap-1.5 text-xs font-medium text-primary">
+                        <svg class="h-4 w-4 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span>Memuat...</span>
+                    </div>
+
+                    {{-- Dropdown Pemilihan Tahun (Hanya muncul saat mode Per Tahun aktif) --}}
+                    <div x-show="period === 'yearly'" x-cloak x-transition.opacity.duration.200ms>
+                        <select :value="year"
+                                @change="changeYear($event.target.value)"
+                                class="rounded-lg border border-stroke bg-gray-50 px-3 py-1.5 text-xs font-medium text-black outline-none transition focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white cursor-pointer">
+                            @foreach($availableYears as $y)
+                                <option value="{{ $y }}" @selected($y == date('Y'))>Tahun {{ $y }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Segmented Toggle Button: 6 Bulan | Per Tahun --}}
+                    <div class="inline-flex rounded-lg border border-stroke p-1 dark:border-strokedark bg-gray-50 dark:bg-meta-4">
+                        <button type="button"
+                                @click="setPeriod('6months')"
+                                :class="period === '6months' ? 'bg-white text-primary shadow-xs dark:bg-boxdark dark:text-white font-semibold' : 'text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white font-medium'"
+                                class="rounded-md px-3 py-1 text-xs transition cursor-pointer">
+                            6 Bulan
+                        </button>
+                        <button type="button"
+                                @click="setPeriod('yearly')"
+                                :class="period === 'yearly' ? 'bg-white text-primary shadow-xs dark:bg-boxdark dark:text-white font-semibold' : 'text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white font-medium'"
+                                class="rounded-md px-3 py-1 text-xs transition cursor-pointer">
+                            Per Tahun
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div id="{{ $c['id'] }}" class="min-h-[320px] w-full"></div>
+
+            <div id="incidentTrendChart" class="min-h-[340px] w-full"></div>
         </div>
-        @endforeach
+
+        {{-- BARIS 2: PERMINTAAN PER JENIS LAYANAN (7 KOLOM) & DISTRIBUSI STATUS PERMINTAAN (5 KOLOM) --}}
+        <div class="col-span-12 xl:col-span-7 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
+            <div class="mb-4">
+                <h4 class="text-xl font-semibold text-black dark:text-white">Permintaan per Jenis Layanan</h4>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Jumlah permintaan tiap layanan</p>
+            </div>
+            <div id="requestLayananChart" class="min-h-[320px] w-full"></div>
+        </div>
+
+        <div class="col-span-12 xl:col-span-5 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
+            <div class="mb-4">
+                <h4 class="text-xl font-semibold text-black dark:text-white">Distribusi Status Permintaan</h4>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Proporsi status saat ini</p>
+            </div>
+            <div id="requestStatusChart" class="min-h-[320px] w-full"></div>
+        </div>
+
+        {{-- BARIS 3: JENIS KENDALA (6 KOLOM) & METODE PENYELESAIAN (6 KOLOM) --}}
+        <div class="col-span-12 xl:col-span-6 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
+            <div class="mb-4">
+                <h4 class="text-xl font-semibold text-black dark:text-white">Jenis Kendala</h4>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Perbandingan kendala aset TIK vs non-aset</p>
+            </div>
+            <div id="jenisKendalaChart" class="min-h-[320px] w-full"></div>
+        </div>
+
+        <div class="col-span-12 xl:col-span-6 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
+            <div class="mb-4">
+                <h4 class="text-xl font-semibold text-black dark:text-white">Metode Penyelesaian</h4>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Cara aduan diselesaikan</p>
+            </div>
+            <div id="resolutionChart" class="min-h-[320px] w-full"></div>
+        </div>
+
     </div>
 
     {{-- 3. TABEL TERBARU --}}
@@ -111,7 +211,7 @@
         <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div class="flex items-center justify-between px-6 py-5 sm:px-7.5">
                 <h4 class="text-xl font-semibold text-black dark:text-white">Aduan Kendala Terbaru</h4>
-                <a href="{{ route('incidents.index') }}" class="text-sm font-medium text-primary hover:underline">Lihat Semua</a>
+                <a href="{{ route('incidents.all') }}" class="text-sm font-medium text-primary hover:underline">Lihat Semua</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full table-auto text-left">
@@ -145,7 +245,7 @@
         <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div class="flex items-center justify-between px-6 py-5 sm:px-7.5">
                 <h4 class="text-xl font-semibold text-black dark:text-white">Permintaan Layanan Terbaru</h4>
-                <a href="{{ route('requests.index') }}" class="text-sm font-medium text-primary hover:underline">Lihat Semua</a>
+                <a href="{{ route('requests.all') }}" class="text-sm font-medium text-primary hover:underline">Lihat Semua</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full table-auto text-left">
@@ -174,9 +274,8 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
-    const apexInstances = {};
+    let apexInstances = {};
 
     function getApexTheme() {
         const isDark = document.documentElement.classList.contains('dark');
@@ -209,14 +308,26 @@
     }
 
     function renderCharts() {
-        Object.values(apexInstances).forEach(ch => ch.destroy());
+        if (!document.querySelector('#incidentTrendChart')) return;
+
+        const ApexConstructor = window.ApexCharts || (typeof ApexCharts !== 'undefined' ? ApexCharts : null);
+        if (!ApexConstructor) {
+            console.warn('[Dashboard] ApexCharts belum tersedia.');
+            return;
+        }
+
+        Object.values(apexInstances).forEach(ch => {
+            try { ch.destroy(); } catch (e) {}
+        });
+        apexInstances = {};
+
         const c = getApexTheme();
         const base = baseOptions(c);
         const axisLabels = { style: { colors: c.text, fontSize: '12px' } };
 
-        apexInstances.trend = new ApexCharts(document.querySelector('#incidentTrendChart'), {
+        apexInstances.trend = new ApexConstructor(document.querySelector('#incidentTrendChart'), {
             ...base,
-            chart: { ...base.chart, type: 'bar', height: 320 },
+            chart: { ...base.chart, type: 'bar', height: 340 },
             series: [
                 { name: 'Aduan Kendala', data: @json($incidentTrend) },
                 { name: 'Permintaan Layanan', data: @json($requestTrend) }
@@ -227,7 +338,7 @@
             plotOptions: {
                 bar: {
                     horizontal: false,
-                    columnWidth: '55%',
+                    columnWidth: '45%',
                     borderRadius: 4,
                     borderRadiusApplication: 'end'
                 }
@@ -243,18 +354,7 @@
             grid: { ...base.grid, xaxis: { lines: { show: false } } },
         });
 
-        apexInstances.resolution = new ApexCharts(document.querySelector('#resolutionChart'), {
-            ...base,
-            chart: { ...base.chart, type: 'donut', height: 320 },
-            series: @json($resolutionData['data']),
-            labels: @json($resolutionData['labels']),
-            colors: [c.success, c.warning],
-            stroke: { show: false },
-            dataLabels: { enabled: false },
-            plotOptions: { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: c.text } } } } },
-        });
-
-        apexInstances.layanan = new ApexCharts(document.querySelector('#requestLayananChart'), {
+        apexInstances.layanan = new ApexConstructor(document.querySelector('#requestLayananChart'), {
             ...base,
             chart: { ...base.chart, type: 'bar', height: 320 },
             series: [{ name: 'Jumlah Permintaan Layanan', data: @json($layananData['data']) }],
@@ -265,7 +365,7 @@
             grid: { ...base.grid, yaxis: { lines: { show: false } } },
         });
 
-        apexInstances.status = new ApexCharts(document.querySelector('#requestStatusChart'), {
+        apexInstances.status = new ApexConstructor(document.querySelector('#requestStatusChart'), {
             ...base,
             chart: { ...base.chart, type: 'donut', height: 320 },
             series: @json($requestStatusData['data']),
@@ -275,14 +375,67 @@
             plotOptions: { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: c.text } } } } },
         });
 
+        apexInstances.jenisKendala = new ApexConstructor(document.querySelector('#jenisKendalaChart'), {
+            ...base,
+            chart: { ...base.chart, type: 'donut', height: 320 },
+            series: @json($jenisKendalaData['data']),
+            labels: @json($jenisKendalaData['labels']),
+            colors: ['#465FFF', '#A855F7'],
+            stroke: { show: false },
+            plotOptions: { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: c.text } } } } },
+        });
+
+        apexInstances.resolution = new ApexConstructor(document.querySelector('#resolutionChart'), {
+            ...base,
+            chart: { ...base.chart, type: 'donut', height: 320 },
+            series: @json($resolutionData['data']),
+            labels: @json($resolutionData['labels']),
+            colors: [c.success, c.warning],
+            stroke: { show: false },
+            dataLabels: { enabled: false },
+            plotOptions: { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: c.text } } } } },
+        });
+
         Object.values(apexInstances).forEach(ch => ch.render());
     }
 
-    document.addEventListener('DOMContentLoaded', renderCharts);
+    window.updateDashboardTrend = function(data, subtext) {
+        if (!apexInstances.trend) return;
+        apexInstances.trend.updateOptions({
+            xaxis: {
+                categories: data.categories
+            },
+            series: [
+                { name: 'Aduan Kendala', data: data.incidentTrend },
+                { name: 'Permintaan Layanan', data: data.requestTrend }
+            ]
+        });
+        const subEl = document.getElementById('trendSubText');
+        if (subEl && subtext) {
+            subEl.textContent = subtext;
+        }
+    };
+
+    window.renderDashboardCharts = renderCharts;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderCharts);
+    } else {
+        renderCharts();
+    }
+
+    window.addEventListener('spa:navigated', () => {
+        if (document.querySelector('#incidentTrendChart')) {
+            renderCharts();
+        }
+    });
 
     // Render ulang chart saat dark mode di-toggle (class 'dark' pada <html>)
-    new MutationObserver(() => renderCharts())
-        .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    new MutationObserver(() => {
+        if (document.querySelector('#incidentTrendChart')) {
+            renderCharts();
+        }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 </script>
 @endpush
 @endsection

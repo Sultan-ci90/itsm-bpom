@@ -9,6 +9,8 @@ use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\KnowledgeBaseController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\Api\UserSearchController;
 
 
@@ -72,6 +74,8 @@ Route::middleware('auth')->group(function () {
     // DASHBOARD (Halaman staf IT, pelapor otomatis dialihkan ke Pilih Fitur di controller)
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+    Route::get('/dashboard/trend-data', [DashboardController::class, 'trendData'])
+        ->name('dashboard.trendData');
 
     // =========================
     // INCIDENT (Lapor Kendala)
@@ -86,6 +90,9 @@ Route::middleware('auth')->group(function () {
         ->name('incidents.all');
         
     Route::get('/incidents/{ticket}', [IncidentController::class, 'show'])->name('incidents.show');
+    Route::post('/incidents/{ticket}/take', [IncidentController::class, 'take'])
+        ->middleware('role:teknisi,admin')
+        ->name('incidents.take');
     Route::put('/incidents/{ticket}', [IncidentController::class, 'update'])->name('incidents.update');
     Route::get('/incidents/{ticket}/justifikasi', [IncidentController::class, 'justifikasi'])
         ->middleware('role:teknisi,admin')
@@ -118,6 +125,9 @@ Route::middleware('auth')->group(function () {
         ->name('requests.all');
         
     Route::get('/requests/{req}', [ServiceRequestController::class, 'show'])->name('requests.show');
+    Route::post('/requests/{req}/take', [ServiceRequestController::class, 'take'])
+        ->middleware('role:teknisi,admin')
+        ->name('requests.take');
     Route::put('/requests/{req}', [ServiceRequestController::class, 'update'])->name('requests.update');
     Route::get('/requests/{req}/edit', [ServiceRequestController::class, 'edit'])
         ->name('requests.edit');
@@ -165,6 +175,29 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:teknisi,admin')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::post('/export', [ReportController::class, 'export'])->name('export');
+    });
+
+    // =========================
+    // PANDUAN & FAQ (KNOWLEDGE BASE)
+    // =========================
+    Route::prefix('panduan')->name('panduan.')->group(function () {
+        Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
+        Route::get('/create', [KnowledgeBaseController::class, 'create'])->name('create');
+        Route::post('/', [KnowledgeBaseController::class, 'store'])->name('store');
+        Route::get('/{slug}', [KnowledgeBaseController::class, 'show'])->name('show');
+        Route::get('/{panduan}/edit', [KnowledgeBaseController::class, 'edit'])->name('edit');
+        Route::put('/{panduan}', [KnowledgeBaseController::class, 'update'])->name('update');
+        Route::delete('/{panduan}', [KnowledgeBaseController::class, 'destroy'])->name('destroy');
+        Route::post('/{panduan}/feedback', [KnowledgeBaseController::class, 'feedback'])->name('feedback');
+    });
+
+    // =========================
+    // PENGATURAN SISTEM (WhatsApp Gateway Fonnte)
+    // =========================
+    Route::middleware('role:teknisi,admin')->prefix('settings')->name('settings.')->group(function () {
+        Route::get('/whatsapp', [SettingController::class, 'whatsapp'])->name('whatsapp');
+        Route::put('/whatsapp', [SettingController::class, 'updateWhatsapp'])->name('whatsapp.update');
+        Route::post('/whatsapp/test-send', [SettingController::class, 'testSend'])->name('whatsapp.test_send');
     });
 });
 

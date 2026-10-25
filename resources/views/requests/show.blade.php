@@ -32,8 +32,18 @@
     // Mode proses (dibuka lewat tombol penindakan)
     $isProsesMode = request()->boolean('proses') || request('proses') == '1';
 
-    // Detail resolusi ditampilkan jika ada data resolusi dan (tiket sudah final / dilihat pelapor / sedang mode detail)
-    $showResolutionDetail = $res && ($isFinal || !$isStaff || !$isProsesMode);
+    // Cek apakah permintaan bisa di-take (status Diajukan & belum ada petugas)
+    $canTake = $isStaff && $req->status === 'Diajukan' && empty($res?->petugas_id);
+
+    // Cek status penanganan
+    $isHandler = empty($res?->petugas_id) || ($res->petugas_id === $user->id);
+    $handledByOther = !empty($res?->petugas_id) && ($res->petugas_id !== $user->id);
+
+    // Staff dapat memproses/menindaklanjuti selama status bukan 'Ditolak' DAN bukan ditangani teknisi lain
+    $canProcess = $isStaff && $req->status !== 'Ditolak' && $isHandler;
+
+    // Detail resolusi ditampilkan jika ada data resolusi dan (tiket sudah ditolak / dilihat pelapor / tidak dalam mode proses / ditangani teknisi lain)
+    $showResolutionDetail = $res && ($req->status === 'Ditolak' || !$isStaff || !$isProsesMode || $handledByOther);
 @endphp
 
 <div class="mx-auto max-w-4xl space-y-6">
@@ -57,8 +67,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ route('requests.index') }}" class="transition hover:text-primary">
-                        {{ $isStaff ? 'Semua Permintaan Layanan' : 'Permintaan Layanan Saya' }}
+                    <a href="{{ $isStaff ? route('requests.all') : route('requests.index') }}" class="transition hover:text-primary">
+                        {{ $isStaff ? 'Semua Permintaan Layanan TIK' : 'Permintaan Layanan Saya' }}
                     </a>
                 </li>
                 <li>
@@ -75,7 +85,7 @@
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
-                <a href="{{ route('requests.index') }}"
+                <a href="{{ $isStaff ? route('requests.all') : route('requests.index') }}"
                    title="Kembali ke Daftar Permintaan Layanan"
                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                     <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,29 +100,68 @@
                 </div>
             </div>
 
-            @if($isStaff && !$isFinal)
-                <div class="flex items-center gap-3">
-                    @if(!$isProsesMode)
-                        <a href="{{ route('requests.show', $req->id) }}?proses=1#proses"
-                           class="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-opacity-90">
+            <div class="flex flex-wrap items-center gap-2">
+                @if($canTake)
+                    <form action="{{ route('requests.take', $req->id) }}" method="POST"
+                          onsubmit="return confirm('Apakah Anda yakin ingin mengambil dan menangani permintaan layanan ini?')">
+                        @csrf
+                        <button type="submit"
+                                class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-opacity-90 cursor-pointer">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <polyline points="16 11 18 13 22 9"></polyline>
                             </svg>
-                            Tindak Lanjuti / Proses Permintaan
-                        </a>
-                    @else
-                        <a href="{{ route('requests.show', $req->id) }}"
-                           class="inline-flex items-center gap-2 rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-meta-4">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                            Sembunyikan Form Penindakan
-                        </a>
-                    @endif
-                </div>
-            @endif
+                            Ambil Permintaan
+                        </button>
+                    </form>
+                @endif
+
+                @if($handledByOther)
+                    <div class="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3.5 py-2 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <span>Ditangani oleh: <strong>{{ $res->petugas->nama ?? 'Teknisi Lain' }}</strong></span>
+                    </div>
+                @endif
+
+                @if($canProcess)
+                    <div>
+                        @if(!$isProsesMode)
+                            <a href="{{ route('requests.show', $req->id) }}?proses=1#proses"
+                               class="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
+                                </svg>
+                                Tindak Lanjuti / Proses Permintaan
+                            </a>
+                        @else
+                            <a href="{{ route('requests.show', $req->id) }}"
+                               class="inline-flex items-center gap-2 rounded-lg border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-meta-4">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                Sembunyikan Form Penindakan
+                            </a>
+                        @endif
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
+
+    {{-- Banner Notifikasi jika sedang ditangani oleh teknisi lain --}}
+    @if($handledByOther)
+        <div class="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
+            <svg class="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <span class="font-semibold">Perhatian:</span> Permintaan layanan ini sedang ditangani oleh <strong>{{ $res->petugas->nama ?? 'Teknisi Lain' }}</strong>. Anda hanya dapat melihat detail dan riwayat penanganan.
+            </div>
+        </div>
+    @endif
 
     {{-- Flash message --}}
     @if (session('success'))
@@ -190,6 +239,10 @@
                         <div class="sm:col-span-2">
                             <dt class="text-gray-500 dark:text-gray-400">Nama Acara:</dt>
                             <dd class="font-medium text-black dark:text-white">{{ $req->detailZoom->nama_acara }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500 dark:text-gray-400">Tanggal Acara:</dt>
+                            <dd class="font-medium text-black dark:text-white">{{ $req->detailZoom->tgl_acara ? $req->detailZoom->tgl_acara->translatedFormat('d F Y') : '-' }}</dd>
                         </div>
                         <div>
                             <dt class="text-gray-500 dark:text-gray-400">Bidang:</dt>
@@ -308,31 +361,6 @@
             </div>
             @endif
 
-            {{-- OUTPUT LAYANAN AKUN (2 FIELD: PASSWORD BARU & INSTRUKSI LOGIN) --}}
-            @if(in_array($req->layanan, ['reset_password', 'tambah_akun', 'akun']) && ($res->akun_password_baru || $res->akun_instruksi_login))
-            <div class="sm:col-span-2 rounded-xl border border-blue-200 bg-blue-50/70 p-5 dark:border-blue-900/50 dark:bg-blue-950/20 space-y-3">
-                <h4 class="font-semibold text-primary dark:text-blue-400 flex items-center gap-2">
-                    <span>ðŸ”‘ Kredensial Akun Baru</span>
-                </h4>
-                @if($res->akun_password_baru)
-                <div>
-                    <dt class="text-xs uppercase font-medium text-gray-500 dark:text-gray-400">Password Baru / Sementara:</dt>
-                    <dd class="mt-1 inline-block rounded-md bg-white px-3 py-1.5 font-mono text-base font-bold text-primary dark:bg-gray-900 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-                        {{ $res->akun_password_baru }}
-                    </dd>
-                </div>
-                @endif
-                @if($res->akun_instruksi_login)
-                <div>
-                    <dt class="text-xs uppercase font-medium text-gray-500 dark:text-gray-400">Instruksi Login:</dt>
-                    <dd class="mt-1 whitespace-pre-line text-sm text-black dark:text-white">
-                        {{ $res->akun_instruksi_login }}
-                    </dd>
-                </div>
-                @endif
-            </div>
-            @endif
-
             {{-- OUTPUT LAYANAN ZOOM --}}
             @if($req->layanan === 'zoom' && ($res->zoom_link || $res->zoom_meeting_id))
             <div class="sm:col-span-2 rounded-xl border border-green-200 bg-green-50/70 p-5 dark:border-green-900/50 dark:bg-green-950/20 space-y-3">
@@ -364,25 +392,6 @@
                     </div>
                     @endif
                 </div>
-            </div>
-            @endif
-
-            {{-- OUTPUT LAYANAN PEMINJAMAN --}}
-            @if($req->layanan === 'peminjaman' && ($res->pinjam_perangkat_diserahkan || $res->pinjam_catatan_pengembalian))
-            <div class="sm:col-span-2 rounded-xl border border-stroke bg-white p-5 dark:border-gray-800 dark:bg-gray-900 space-y-3">
-                <h4 class="font-semibold text-black dark:text-white">ðŸ“¦ Catatan Penyerahan & Pengembalian:</h4>
-                @if($res->pinjam_perangkat_diserahkan)
-                <div>
-                    <dt class="text-xs uppercase font-medium text-gray-500 dark:text-gray-400">Perangkat / NUP yang Diserahkan:</dt>
-                    <dd class="mt-1 font-medium text-black dark:text-white">{{ $res->pinjam_perangkat_diserahkan }}</dd>
-                </div>
-                @endif
-                @if($res->pinjam_catatan_pengembalian)
-                <div>
-                    <dt class="text-xs uppercase font-medium text-gray-500 dark:text-gray-400">Catatan Pengembalian:</dt>
-                    <dd class="mt-1 whitespace-pre-line text-black dark:text-white">{{ $res->pinjam_catatan_pengembalian }}</dd>
-                </div>
-                @endif
             </div>
             @endif
         </dl>
@@ -708,9 +717,9 @@
 
     {{-- ========================================================= --}}
     {{-- 3. FORM TINDAK LANJUT TIM IT (BAGIAN BAWAH)               --}}
-    {{-- Hanya tampil untuk Teknisi / Admin                        --}}
+    {{-- Tampil untuk Teknisi / Admin saat mode proses aktif       --}}
     {{-- ========================================================= --}}
-    @if($isStaff && !$isFinal && $isProsesMode)
+    @if($canProcess && $isProsesMode)
     <div id="proses" class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="flex items-center justify-between border-b border-stroke px-6.5 py-4 dark:border-gray-800">
             <h3 class="font-medium text-black dark:text-white">
@@ -744,13 +753,15 @@
 
                     <div>
                         <label class="{{ $label }}">Petugas Penindak Lanjut <span class="text-meta-1">*</span></label>
-                        <select name="petugas_id" class="{{ $input }}">
-                            @foreach($petugasList as $p)
-                                <option value="{{ $p->id }}" @selected(old('petugas_id', $res?->petugas_id ?? $user->id) == $p->id)>
-                                    {{ $p->nama }} ({{ $p->nip }})
-                                </option>
-                            @endforeach
-                        </select>
+                        @php
+                            $assignedPetugas = $res?->petugas ?? $user;
+                        @endphp
+                        <input type="text"
+                               class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition cursor-not-allowed dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                               value="{{ ($assignedPetugas->nip ?? '-') . ' || ' . ($assignedPetugas->nama ?? '-') }}"
+                               readonly>
+                        <input type="hidden" name="petugas_id" value="{{ $assignedPetugas->id }}">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Petugas dikunci permanen sesuai penangan permintaan.</p>
                         @error('petugas_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -764,38 +775,11 @@
                     @error('tgl_tindak_lanjut') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                 </div>
 
-                {{-- FORM DINAMIS: LAYANAN AKUN (2 FIELD: PASSWORD BARU & INSTRUKSI LOGIN) --}}
-                @if(in_array($req->layanan, ['reset_password', 'tambah_akun', 'akun']))
-                <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
-                    <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                        <span>ðŸ”‘ Output Akun / Reset Password:</span>
-                    </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="{{ $label }}">Password Baru / Sementara</label>
-                            <input type="text" name="akun_password_baru" 
-                                   value="{{ old('akun_password_baru', $res?->akun_password_baru ?? '') }}" 
-                                   placeholder="Contoh: Bpom@2026 (atau biarkan kosong jika dikirim via email)" 
-                                   class="{{ $input }}">
-                            @error('akun_password_baru') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="{{ $label }}">Instruksi Login</label>
-                            <textarea name="akun_instruksi_login" rows="3" 
-                                      placeholder="Contoh: Silakan login ke aplikasi Srikandi menggunakan password baru di atas, lalu segera ubah password Anda pada menu Profil." 
-                                      class="{{ $input }}">{{ old('akun_instruksi_login', $res?->akun_instruksi_login ?? '') }}</textarea>
-                            @error('akun_instruksi_login') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 {{-- FORM DINAMIS: LAYANAN ZOOM --}}
                 @if($req->layanan === 'zoom')
                 <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
                     <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                        <span>ðŸŽ¥ Informasi Link Zoom Meeting:</span>
+                        <span>📹 Informasi Link Zoom Meeting:</span>
                     </h4>
                     <div class="space-y-4">
                         <div>
@@ -830,34 +814,8 @@
                 </div>
                 @endif
 
-                {{-- FORM DINAMIS: LAYANAN PEMINJAMAN --}}
-                @if($req->layanan === 'peminjaman')
-                <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
-                    <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-black dark:text-white">
-                        ðŸ“¦ Penyerahan & Pengembalian Perangkat:
-                    </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="{{ $label }}">Perangkat / No. NUP yang Diserahkan</label>
-                            <input type="text" name="pinjam_perangkat_diserahkan" 
-                                   value="{{ old('pinjam_perangkat_diserahkan', $res?->pinjam_perangkat_diserahkan ?? '') }}" 
-                                   placeholder="Contoh: Laptop Asus ExpertBook (NUP: 0012) + Charger & Tas" 
-                                   class="{{ $input }}">
-                            @error('pinjam_perangkat_diserahkan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="{{ $label }}">Catatan Pengembalian (kondisi / kelengkapan)</label>
-                            <textarea name="pinjam_catatan_pengembalian" rows="2" 
-                                      placeholder="Diisi saat barang dikembalikan pemohon..." 
-                                      class="{{ $input }}">{{ old('pinjam_catatan_pengembalian', $res?->pinjam_catatan_pengembalian ?? '') }}</textarea>
-                            @error('pinjam_catatan_pengembalian') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 {{-- Tindakan / Solusi Tim IT (Wajib jika tidak ditolak) --}}
-                <div class="mb-5" x-show="status !== 'Ditolak'">
+                <div class="mb-5" x-show="status !== 'Ditolak'" x-cloak x-transition>
                     <label class="{{ $label }}">
                         Tindakan yang Dilakukan / Solusi Tim IT <span class="text-meta-1">*</span>
                     </label>
@@ -868,7 +826,7 @@
                 </div>
 
                 {{-- Alasan Penolakan (Wajib jika status = Ditolak) --}}
-                <div class="mb-5" x-show="status === 'Ditolak'" x-transition>
+                <div class="mb-5" x-show="status === 'Ditolak'" x-cloak x-transition>
                     <label class="{{ $label }}">
                         Alasan Penolakan <span class="text-meta-1">*</span>
                     </label>
@@ -881,7 +839,7 @@
                 {{-- Tombol Submit --}}
                 <div class="flex justify-end border-t border-stroke pt-5 dark:border-gray-800">
                     <button type="submit" 
-                            class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
+                            class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90 cursor-pointer">
                         {{ $res ? 'Simpan Perubahan' : 'Simpan Tindak Lanjut' }}
                     </button>
                 </div>

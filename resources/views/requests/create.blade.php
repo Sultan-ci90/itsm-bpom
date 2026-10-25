@@ -22,8 +22,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ route('requests.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Permintaan Layanan' : 'Permintaan Layanan Saya' }}
+                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('requests.all') : route('requests.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Permintaan Layanan TIK' : 'Permintaan Layanan Saya' }}
                     </a>
                 </li>
                 <li>
@@ -39,7 +39,7 @@
 
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex items-center gap-3">
-            <a href="{{ route('requests.index') }}"
+            <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('requests.all') : route('requests.index') }}"
                title="Kembali ke Daftar Permintaan Layanan"
                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                 <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,7 +65,11 @@
             {{-- Nilai awal `layanan` dibaca langsung dari elemen select (bukan via string Blade)
                  agar atribut x-data tidak pernah rusak oleh karakter kutip → Alpine selalu init. --}}
             <form action="{{ route('requests.store') }}" method="POST"
-                x-data="{ layanan: $el.querySelector('[name=layanan]') ? $el.querySelector('[name=layanan]').value : 'lainnya' }">
+                x-data="{ 
+                    layanan: $el.querySelector('[name=layanan]') ? $el.querySelector('[name=layanan]').value : 'lainnya',
+                    submitting: false
+                }"
+                @submit="submitting = true">
                 @csrf
 
                 @if ($errors->any())
@@ -156,7 +160,7 @@
                 </div>
 
                 <!-- SECTION 2: Form Dinamis Zoom -->
-                <div x-show="layanan === 'zoom'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
+                <div x-show="layanan === 'zoom'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Zoom Meeting</h4>
                     <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         
@@ -178,12 +182,18 @@
                         </div>
 
                         <div class="sm:col-span-2">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Acara <span class="text-meta-1">*</span></label>
+                            <x-form.date-picker id="tgl_acara" name="tgl_acara" :defaultDate="old('tgl_acara')" placeholder="Pilih Tanggal Acara" />
+                            @error('tgl_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="sm:col-span-2">
                             <x-form.time-range-picker 
                                 startName="jam_mulai" 
                                 endName="jam_selesai" 
                                 :startValue="old('jam_mulai')" 
                                 :endValue="old('jam_selesai')" 
-                                :required="true" />
+                                :alpineRequired="'layanan === \'zoom\''" />
                         </div>
 
                         <div>
@@ -209,7 +219,7 @@
                 </div>
 
                 <!-- SECTION 3: Form Dinamis Akun (Reset Password / Tambah Akun) -->
-                <div x-show="layanan === 'reset_password' || layanan === 'tambah_akun' || layanan === 'akun'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
+                <div x-show="layanan === 'reset_password' || layanan === 'tambah_akun' || layanan === 'akun'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-lg font-semibold text-black dark:text-white" x-text="layanan === 'tambah_akun' ? 'Detail Tambah Akun Baru' : 'Detail Reset Password Akun'">Detail Akun</h4>
                     <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         <div>
@@ -228,7 +238,7 @@
                 </div>
 
                 <!-- SECTION 4: Form Dinamis Peminjaman -->
-                <div x-show="layanan === 'peminjaman'" x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
+                <div x-show="layanan === 'peminjaman'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Peminjaman Perangkat</h4>
                     <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                         <div class="sm:col-span-2">
@@ -281,8 +291,10 @@
 
                 <!-- Tombol Submit -->
                 <div class="flex justify-end border-t border-stroke pt-5 dark:border-gray-800">
-                    <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition">
-                        Ajukan Permintaan Layanan
+                    <button type="submit" :disabled="submitting"
+                            class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                        <span x-show="!submitting">Ajukan Permintaan Layanan</span>
+                        <span x-cloak x-show="submitting">Mengajukan...</span>
                     </button>
                 </div>
             </form>
@@ -326,6 +338,7 @@
         } else {
             window.addEventListener('load', initPelaporSelect);
         }
+        window.addEventListener('spa:navigated', initPelaporSelect);
     });
 </script>
 @endpush

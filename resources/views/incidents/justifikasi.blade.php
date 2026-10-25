@@ -46,10 +46,10 @@
         <p>Yang bertanda tangan di bawah ini menyatakan bahwa perangkat berikut tidak dapat diperbaiki secara mandiri oleh tim IT dan memerlukan perbaikan oleh pihak ketiga:</p>
 
         <table class="data">
-            <tr><td>Nama Perangkat</td><td>:</td><td>{{ $ticket->asset->nama_barang ?? '-' }}</td></tr>
-            <tr><td>Kode Barang / NUP</td><td>:</td><td>{{ $ticket->asset->kode_barang ?? '-' }} / {{ $ticket->asset->nup ?? '-' }}</td></tr>
-            <tr><td>Lokasi</td><td>:</td><td>{{ $ticket->asset->lokasi ?? '-' }}</td></tr>
-            <tr><td>Penanggung Jawab</td><td>:</td><td>{{ $ticket->asset->penanggungJawab->nama ?? '-' }}</td></tr>
+            <tr><td>Nama Perangkat</td><td>:</td><td>{{ $ticket->asset?->nama_barang ?? '-' }}</td></tr>
+            <tr><td>Kode Barang / NUP</td><td>:</td><td>{{ $ticket->asset?->kode_barang ?? '-' }} / {{ $ticket->asset?->nup ?? '-' }}</td></tr>
+            <tr><td>Lokasi</td><td>:</td><td>{{ $ticket->asset?->lokasi ?? '-' }}</td></tr>
+            <tr><td>Penanggung Jawab</td><td>:</td><td>{{ $ticket->asset?->penanggungJawab?->nama ?? '-' }}</td></tr>
             <tr><td>Pelapor</td><td>:</td><td>{{ $ticket->pelapor->nama ?? '-' }} ({{ $ticket->pelapor->bidang->nama_bidang ?? '-' }})</td></tr>
             <tr><td>Tanggal Pelaporan</td><td>:</td><td>{{ $ticket->tgl_pelaporan->format('d/m/Y') }}</td></tr>
             <tr><td>Deskripsi Masalah</td><td>:</td><td>{{ $ticket->deskripsi_masalah }}</td></tr>

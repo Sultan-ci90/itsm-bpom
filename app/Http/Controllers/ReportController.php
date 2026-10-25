@@ -106,14 +106,17 @@ class ReportController extends Controller
             ->toArray();
         $rekapStatus = array_merge($defaultStatuses, $statusCounts);
 
-        // Rekap Kategori (Jenis Barang Aset)
-        $rekapKategori = Ticket::join('assets', 'tickets.asset_id', '=', 'assets.id')
-            ->whereBetween('tickets.tgl_pelaporan', [$resolver->startDate, $resolver->endDate])
-            ->selectRaw("COALESCE(assets.jenis_barang, 'Lainnya') as kategori, count(*) as aggregate")
-            ->groupBy('kategori')
-            ->orderByDesc('aggregate')
-            ->pluck('aggregate', 'kategori')
+        // Rekap Kategori (Jenis Kendala)
+        $rawKendala = Ticket::whereBetween('tgl_pelaporan', [$resolver->startDate, $resolver->endDate])
+            ->selectRaw("COALESCE(jenis_kendala, 'lainnya') as jenis, count(*) as aggregate")
+            ->groupBy('jenis')
+            ->pluck('aggregate', 'jenis')
             ->toArray();
+
+        $rekapKategori = [
+            'Aset / Perangkat TIK' => (int) ($rawKendala['aset'] ?? 0),
+            'Lainnya (Non-Aset)'   => (int) ($rawKendala['lainnya'] ?? 0),
+        ];
 
         // Rekap Bulanan (jika periode lebih dari 1 bulan)
         $rekapBulanan = [];
@@ -135,13 +138,13 @@ class ReportController extends Controller
         $user = auth()->user();
 
         return [
-            'judul'           => 'LAPORAN KERUSAKAN ASET (ITSM BPOM)',
-            'jenis_label'     => 'Kerusakan Aset / Aduan Kendala TI',
+            'judul'           => 'LAPORAN ADUAN KENDALA TI & KERUSAKAN ASET (ITSM BPOM)',
+            'jenis_label'     => 'Aduan Kendala TI & Kerusakan Aset',
             'periode_label'   => $resolver->label,
             'tgl_cetak'       => Carbon::now()->translatedFormat('d F Y H:i:s'),
             'dicetak_oleh'    => ($user->nama ?? 'Sistem') . ' (NIP: ' . ($user->nip ?? '-') . ')',
             'total_laporan'   => $total,
-            'kategori_header' => 'Jenis Barang Aset',
+            'kategori_header' => 'Jenis Kendala',
             'rekap_status'    => $rekapStatus,
             'rekap_kategori'  => $rekapKategori,
             'rekap_bulanan'   => $rekapBulanan,

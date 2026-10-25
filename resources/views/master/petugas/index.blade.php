@@ -132,46 +132,57 @@
         </div>
     </div>
 
-    {{-- Filter & Search Card --}}
-    <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-stroke bg-white p-4 shadow-default dark:border-gray-800 dark:bg-white/[0.03] lg:flex-row lg:items-center lg:justify-between">
-        <form method="GET" action="{{ route('master.petugas.index') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="relative flex-1">
-                <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama pegawai, NIP, atau email..."
-                       class="w-full rounded-xl border border-stroke bg-transparent py-2.5 ps-10 pe-4 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                <svg class="absolute start-3.5 top-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-            </div>
+    {{-- Filter & Search Card + Tabel Petugas --}}
+    <div x-data="liveTable()">
+        <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-stroke bg-white p-4 shadow-default dark:border-gray-800 dark:bg-white/[0.03] lg:flex-row lg:items-center lg:justify-between">
+            <form x-ref="form" @submit.prevent="applyFilter()" method="GET" action="{{ route('master.petugas.index') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="relative flex-1">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama pegawai, NIP, atau email..."
+                           @input.debounce.350ms="applyFilter()"
+                           class="w-full rounded-xl border border-stroke bg-transparent py-2.5 ps-10 pe-4 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                    <svg class="absolute start-3.5 top-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
 
-            <div class="w-full sm:w-64">
-                <select name="role"
-                        class="w-full rounded-xl border border-stroke bg-transparent py-2.5 px-4 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                    <option value="" {{ empty($roleFilter) ? 'selected' : '' }}>Semua Petugas (Tim IT & Admin)</option>
-                    <option value="teknisi" {{ $roleFilter === 'teknisi' ? 'selected' : '' }}>Hanya Tim IT (Teknisi)</option>
-                    <option value="admin" {{ $roleFilter === 'admin' ? 'selected' : '' }}>Hanya Administrator</option>
-                    <option value="pelapor" {{ $roleFilter === 'pelapor' ? 'selected' : '' }}>Pegawai Biasa (Pelapor)</option>
-                </select>
-            </div>
+                <div class="w-full sm:w-64">
+                    <select name="role"
+                            @change="applyFilter()"
+                            class="w-full rounded-xl border border-stroke bg-transparent py-2.5 px-4 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                        <option value="" {{ empty($roleFilter) ? 'selected' : '' }}>Semua Petugas (Tim IT & Admin)</option>
+                        <option value="teknisi" {{ $roleFilter === 'teknisi' ? 'selected' : '' }}>Hanya Tim IT (Teknisi)</option>
+                        <option value="admin" {{ $roleFilter === 'admin' ? 'selected' : '' }}>Hanya Administrator</option>
+                        <option value="pelapor" {{ $roleFilter === 'pelapor' ? 'selected' : '' }}>Pegawai Biasa (Pelapor)</option>
+                    </select>
+                </div>
 
-            <div class="flex gap-2">
-                <button type="submit"
-                        class="inline-flex items-center justify-center rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-800 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
-                    Filter
+                <button type="button"
+                        @click.prevent="resetFilters()"
+                        x-show="hasFilters"
+                        x-cloak
+                        class="inline-flex items-center justify-center rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
+                    Reset
                 </button>
-                @if($search || $roleFilter)
-                    <a href="{{ route('master.petugas.index') }}"
-                       class="inline-flex items-center justify-center rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
-                        Reset
-                    </a>
-                @endif
+            </form>
+        </div>
+
+        {{-- Tabel Petugas dengan Overlay Loading Spinner --}}
+        <div class="relative min-h-[200px]">
+            <!-- Loading Overlay Spinner di tengah tabel -->
+            <div x-show="loading" x-cloak
+                 class="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-[1px] transition-opacity duration-200 dark:bg-gray-900/60">
+                <div class="inline-flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-theme-sm dark:border-gray-700 dark:bg-gray-800">
+                    <svg class="h-5 w-5 animate-spin text-[#10B981]" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Memuat data...</span>
+                </div>
             </div>
-        </form>
 
-       
-    </div>
-
-    {{-- Tabel Petugas --}}
-    <div class="overflow-hidden rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+            <!-- Konten Dinamis yang di-swap via AJAX -->
+            <div x-ref="tableWrapper">
+                <div class="overflow-hidden rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="overflow-x-auto">
             <table class="w-full text-start">
                 <thead>
@@ -281,11 +292,15 @@
                 {{ $petugasList->links() }}
             </div>
         @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Modal Tambah / Tugaskan Petugas Baru --}}
     <div x-show="showCreateModal"
          x-cloak
+         x-transition.opacity.duration.200ms
          class="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs"
          @keydown.escape.window="showCreateModal = false"
          x-data="{ mode: 'new' }">
@@ -293,7 +308,7 @@
              @click.outside="showCreateModal = false">
             <div class="mb-4 flex items-center justify-between border-b border-stroke pb-3 dark:border-gray-800">
                 <h3 class="text-lg font-semibold text-black dark:text-white">Tambah / Tugaskan Petugas</h3>
-                <button @click="showCreateModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <button @click="showCreateModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -305,13 +320,13 @@
                 <button type="button"
                         @click="mode = 'new'"
                         :class="mode === 'new' ? 'bg-brand-500 text-white shadow-xs font-semibold' : 'text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white'"
-                        class="flex-1 rounded-lg py-2 text-xs transition">
+                        class="flex-1 rounded-lg py-2 text-xs transition cursor-pointer">
                     + Daftarkan Pegawai Baru
                 </button>
                 <button type="button"
                         @click="mode = 'existing'"
                         :class="mode === 'existing' ? 'bg-brand-500 text-white shadow-xs font-semibold' : 'text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white'"
-                        class="flex-1 rounded-lg py-2 text-xs transition">
+                        class="flex-1 rounded-lg py-2 text-xs transition cursor-pointer">
                     Pilih dari Pegawai Terdaftar
                 </button>
             </div>
@@ -449,13 +464,14 @@
     {{-- Modal Ubah Peran Pegawai --}}
     <div x-show="showEditModal"
          x-cloak
+         x-transition.opacity.duration.200ms
          class="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs"
          @keydown.escape.window="showEditModal = false">
         <div class="w-full max-w-lg rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-gray-900"
              @click.outside="showEditModal = false">
             <div class="mb-4 flex items-center justify-between border-b border-stroke pb-3 dark:border-gray-800">
                 <h3 class="text-lg font-semibold text-black dark:text-white">Ubah Peran Petugas</h3>
-                <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -504,11 +520,11 @@
 
                 <div class="mt-6 flex justify-end gap-3 pt-3 border-t border-stroke dark:border-gray-800">
                     <button @click="showEditModal = false" type="button"
-                            class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
+                            class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
                         Batal
                     </button>
                     <button type="submit"
-                            class="rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600">
+                            class="rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 cursor-pointer">
                         Simpan Perubahan
                     </button>
                 </div>
@@ -519,6 +535,7 @@
     {{-- Modal Konfirmasi Cabut Status Petugas --}}
     <div x-show="showRevokeModal"
          x-cloak
+         x-transition.opacity.duration.200ms
          class="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs"
          @keydown.escape.window="showRevokeModal = false">
         <div class="w-full max-w-md rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-gray-900"
@@ -536,14 +553,14 @@
             </p>
             <div class="mt-6 flex justify-end gap-3">
                 <button @click="showRevokeModal = false" type="button"
-                        class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
+                        class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
                     Batal
                 </button>
                 <form :action="'{{ url('/master/petugas') }}/' + revokeTarget.id" method="POST">
                     @csrf
                     @method('DELETE')
                     <button type="submit"
-                            class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-700">
+                            class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 cursor-pointer">
                         Ya, Cabut Status
                     </button>
                 </form>

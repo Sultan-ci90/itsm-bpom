@@ -18,22 +18,19 @@ use App\Notifications\NewTicketNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
 use Illuminate\Support\Facades\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\FonnteService;
 
 class IncidentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Ticket::with(['asset', 'pelapor.bidang', 'resolution']);
-
-        // Pelapor hanya bisa melihat aduannya sendiri
-        if (auth()->user()->isPelapor()) {
-            $query->where('pelapor_id', auth()->id());
-        } else {
-            // Admin/Tim IT di halaman 'Aduan Saya' (jika ada form/menu khusus),
-            // sebenarnya 'incidents.index' dibuat untuk user yang login saat ini
-            // Agar membedakan dengan Semua Aduan, kita set agar Admin melihat miliknya saja di sini.
-            $query->where('pelapor_id', auth()->id());
+        // Admin & Teknisi selalu diarahkan ke semua Aduan Kendala TIK
+        if (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) {
+            return redirect()->route('incidents.all', $request->query());
         }
+
+        $query = Ticket::with(['asset', 'pelapor.bidang', 'resolution']);
+        $query->where('pelapor_id', auth()->id());
 
         if ($request->filled('q')) {
             $term = $request->string('q')->toString();
@@ -149,9 +146,13 @@ class IncidentController extends Controller
                 $fotoPath = $request->file('foto_kendala')->store('kendala_photos', 'public');
             }
 
+            $jenisKendala = $request->input('jenis_kendala', 'lainnya');
+            $assetId = ($jenisKendala === 'aset') ? $request->asset_id : null;
+
             $ticket = Ticket::create([
                 'nomor_aduan' => $nomorAduan,
-                'asset_id' => $request->asset_id,
+                'jenis_kendala' => $jenisKendala,
+                'asset_id' => $assetId,
                 'pelapor_id' => $targetPelaporId,
                 'reported_by' => $reportedById,
                 'tgl_pelaporan' => Carbon::now(),
@@ -183,8 +184,17 @@ class IncidentController extends Controller
             ));
 
             DB::commit();
+
+            // WhatsApp Notification via Fonnte
+            try {
+                app(FonnteService::class)->sendNewTicketNotification($ticket);
+            } catch (\Throwable $e) {
+                Log::warning('Fonnte sendNewTicketNotification error: ' . $e->getMessage());
+            }
+
+            $targetRoute = (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? 'incidents.all' : 'incidents.index';
             return redirect()
-                ->route('incidents.index')
+                ->route($targetRoute)
                 ->with('success', 'Aduan kendala berhasil dibuat dengan Nomor Aduan: ' . $nomorAduan);
 
         } catch (\Illuminate\Database\QueryException $e) {
@@ -223,10 +233,60 @@ class IncidentController extends Controller
         return view('incidents.show', compact('ticket', 'pemeriksas'));
     }
 
-        public function update(UpdateTicketRequest $request, Ticket $ticket)
+    /**
+     * Ambil (take) tiket aduan untuk ditangani langsung oleh teknisi yang login.
+     */
+    public function take(Ticket $ticket)
     {
         if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
             abort(403);
+        }
+
+        if ($ticket->status !== 'Belum diperiksa' || !empty($ticket->resolution?->pemeriksa_id)) {
+            return redirect()->route('incidents.show', $ticket)
+                ->with('error', 'Tiket ini sudah diambil atau sedang diproses oleh teknisi lain.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $ticket->update(['status' => 'Sedang diproses']);
+
+            $ticket->resolution()->updateOrCreate(
+                ['ticket_id' => $ticket->id],
+                [
+                    'pemeriksa_id' => auth()->id(),
+                    'tgl_tindak_lanjut' => Carbon::now(),
+                ]
+            );
+
+            TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'status_label' => 'status diubah',
+                'keterangan' => 'Tiket diambil dan mulai ditangani oleh ' . auth()->user()->nama . '.',
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('incidents.show', $ticket)
+                ->with('success', 'Tiket aduan berhasil diambil. Anda ditugaskan sebagai pemeriksa.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal mengambil tiket', ['ticket_id' => $ticket->id, 'message' => $e->getMessage()]);
+            return redirect()->route('incidents.show', $ticket)
+                ->with('error', 'Gagal mengambil tiket: ' . $e->getMessage());
+        }
+    }
+
+    public function update(UpdateTicketRequest $request, Ticket $ticket)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $res = $ticket->resolution;
+        if ($res && !empty($res->pemeriksa_id) && $res->pemeriksa_id !== auth()->id()) {
+            abort(403, 'Tiket ini sedang ditangani oleh teknisi lain.');
         }
 
         DB::beginTransaction();
@@ -234,9 +294,9 @@ class IncidentController extends Controller
             $isDraft = $request->input('action_type') === 'draft';
             $newStatus = $isDraft ? 'Sedang diproses' : 'Selesai';
 
-            // 1. Simpan data resolusi
+            // 1. Simpan data resolusi (pemeriksa terkunci permanen)
             $resolutionData = [
-                'pemeriksa_id' => $request->pemeriksa_id ?? auth()->id(),
+                'pemeriksa_id' => $res?->pemeriksa_id ?? auth()->id(),
                 'tgl_analisa' => $request->tgl_analisa,
                 'analisa_teknis' => $request->analisa_teknis,
                 'tgl_tindak_lanjut' => $request->tgl_tindak_lanjut,
@@ -291,6 +351,15 @@ class IncidentController extends Controller
 
             DB::commit();
 
+            // WhatsApp Notification via Fonnte saat tiket diselesaikan
+            if ($newStatus === 'Selesai') {
+                try {
+                    app(FonnteService::class)->sendTicketCompletedNotification($ticket);
+                } catch (\Throwable $e) {
+                    Log::warning('Fonnte sendTicketCompletedNotification error: ' . $e->getMessage());
+                }
+            }
+
             $msg = $isDraft 
                 ? 'Draft penanganan aduan berhasil disimpan. Tiket kini berstatus "Sedang diproses".' 
                 : 'Aduan berhasil diselesaikan! Tiket kini berstatus "Selesai".';
@@ -342,9 +411,15 @@ class IncidentController extends Controller
         }
 
         $validated = $request->validate([
-            'asset_id' => 'required|exists:assets,id',
+            'jenis_kendala' => 'required|in:aset,lainnya',
+            'asset_id' => 'required_if:jenis_kendala,aset|nullable|exists:assets,id',
             'deskripsi_masalah' => 'required|string|min:10',
             'foto_kendala' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ], [
+            'jenis_kendala.required' => 'Silakan pilih jenis kendala.',
+            'asset_id.required_if' => 'Silakan pilih aset/barang TIK terlebih dahulu.',
+            'deskripsi_masalah.required' => 'Deskripsi masalah wajib diisi.',
+            'deskripsi_masalah.min' => 'Deskripsi masalah minimal 10 karakter.',
         ]);
 
         DB::beginTransaction();
@@ -357,8 +432,12 @@ class IncidentController extends Controller
                 $fotoPath = $request->file('foto_kendala')->store('kendala_photos', 'public');
             }
 
+            $jenisKendala = $validated['jenis_kendala'];
+            $assetId = ($jenisKendala === 'aset') ? $validated['asset_id'] : null;
+
             $ticket->update([
-                'asset_id' => $validated['asset_id'],
+                'jenis_kendala' => $jenisKendala,
+                'asset_id' => $assetId,
                 'deskripsi_masalah' => $validated['deskripsi_masalah'],
                 'foto_kendala' => $fotoPath,
             ]);
@@ -400,7 +479,7 @@ class IncidentController extends Controller
             $ticket->delete();
 
             DB::commit();
-            return redirect()->route('incidents.index')
+            return redirect()->route('incidents.all')
                              ->with('success', 'Aduan ' . $ticket->nomor_aduan . ' berhasil dihapus.');
 
         } catch (\Throwable $e) {
@@ -418,6 +497,10 @@ class IncidentController extends Controller
     {
         if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
             abort(403);
+        }
+
+        if ($ticket->resolution?->pemeriksa_id && $ticket->resolution->pemeriksa_id !== auth()->id()) {
+            abort(403, 'Hanya teknisi yang menangani tiket ini yang dapat merevisi tindak lanjut.');
         }
 
         if ($ticket->status !== 'Selesai') {
@@ -441,13 +524,17 @@ class IncidentController extends Controller
             abort(403);
         }
 
+        if ($ticket->resolution?->pemeriksa_id && $ticket->resolution->pemeriksa_id !== auth()->id()) {
+            abort(403, 'Hanya teknisi yang menangani tiket ini yang dapat merevisi tindak lanjut.');
+        }
+
         if ($ticket->status !== 'Selesai') {
             return redirect()->route('incidents.show', $ticket)
                 ->with('error', 'Tindak lanjut hanya dapat diedit saat status Selesai.');
         }
 
         $validated = $request->validate([
-            'pemeriksa_id' => 'required|exists:users,id',
+            'pemeriksa_id' => 'nullable|exists:users,id',
             'jenis_penyelesaian' => 'required|in:mandiri,Pihak ke-3',
             'tgl_analisa' => 'nullable|date',
             'analisa_teknis' => 'nullable|string',
@@ -457,7 +544,6 @@ class IncidentController extends Controller
             'hasil' => 'nullable|string|min:10',
             'file_surat_justifikasi' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
         ], [
-            'pemeriksa_id.required' => 'Petugas pemeriksa wajib dipilih.',
             'jenis_penyelesaian.required' => 'Jenis penyelesaian wajib dipilih.',
             'tgl_tindak_lanjut.required' => 'Tanggal tindak lanjut wajib diisi.',
             'tindak_lanjut_teknis.required' => 'Tindak lanjut teknis wajib diisi.',
@@ -466,18 +552,10 @@ class IncidentController extends Controller
 
         DB::beginTransaction();
         try {
-            $filePath = $ticket->resolution?->file_surat_justifikasi;
-            if ($request->hasFile('file_surat_justifikasi')) {
-                if ($filePath && Storage::disk('public')->exists($filePath)) {
-                    Storage::disk('public')->delete($filePath);
-                }
-                $filePath = $request->file('file_surat_justifikasi')->store('justifikasi', 'public');
-            }
-
             $ticket->resolution()->updateOrCreate(
                 ['ticket_id' => $ticket->id],
                 [
-                    'pemeriksa_id' => $validated['pemeriksa_id'] ?? auth()->id(),
+                    'pemeriksa_id' => $ticket->resolution?->pemeriksa_id ?? auth()->id(),
                     'jenis_penyelesaian' => $validated['jenis_penyelesaian'],
                     'tgl_analisa' => $validated['tgl_analisa'],
                     'analisa_teknis' => $validated['analisa_teknis'],
@@ -485,7 +563,6 @@ class IncidentController extends Controller
                     'tindak_lanjut_teknis' => $validated['tindak_lanjut_teknis'],
                     'tgl_hasil' => $validated['tgl_hasil'] ?? null,
                     'hasil' => $validated['hasil'] ?? null,
-                    'file_surat_justifikasi' => $filePath,
                 ]
             );
 
@@ -513,6 +590,11 @@ class IncidentController extends Controller
     {
         if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
             abort(403);
+        }
+
+        if (!$ticket->resolution || $ticket->resolution->jenis_penyelesaian !== 'Pihak ke-3') {
+            return redirect()->route('incidents.show', $ticket)
+                ->with('error', 'Surat Permohonan Perbaikan hanya dapat diunduh jika penanganan telah disimpan dengan jenis penyelesaian "Pihak ke-3".');
         }
 
         $ticket->load([

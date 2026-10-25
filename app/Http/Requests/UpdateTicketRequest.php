@@ -16,17 +16,24 @@ class UpdateTicketRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $action = $this->input('action_type', 'selesai');
+        $data = [];
         if ($action === 'draft') {
-            $this->merge([
-                'status' => 'Sedang diproses',
-                'action_type' => 'draft',
-            ]);
+            $data['status'] = 'Sedang diproses';
+            $data['action_type'] = 'draft';
         } else {
-            $this->merge([
-                'status' => 'Selesai',
-                'action_type' => 'selesai',
-            ]);
+            $data['status'] = 'Selesai';
+            $data['action_type'] = 'selesai';
         }
+
+        // Kunci pemeriksa_id jika tiket sudah punya resolusi atau fallback ke user yang sedang login
+        $ticket = $this->route('ticket');
+        if ($ticket instanceof \App\Models\Ticket && $ticket->resolution?->pemeriksa_id) {
+            $data['pemeriksa_id'] = $ticket->resolution->pemeriksa_id;
+        } elseif (!$this->filled('pemeriksa_id')) {
+            $data['pemeriksa_id'] = auth()->id();
+        }
+
+        $this->merge($data);
     }
 
     public function rules(): array

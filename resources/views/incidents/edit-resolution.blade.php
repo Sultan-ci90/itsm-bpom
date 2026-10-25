@@ -29,8 +29,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Aduan Kendala' : 'Aduan Kendala Saya' }}
+                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -102,19 +102,20 @@
                     <div class="inline-flex rounded-lg border border-stroke p-1 dark:border-gray-800">
                         <button type="button" @click="jenis = 'mandiri'"
                                 :class="jenis === 'mandiri' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
-                                class="rounded-md px-6 py-2 text-sm font-medium transition">mandiri</button>
+                                class="rounded-md px-6 py-2 text-sm font-medium transition cursor-pointer">mandiri</button>
                         <button type="button" @click="jenis = 'Pihak ke-3'"
                                 :class="jenis === 'Pihak ke-3' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-meta-4'"
-                                class="rounded-md px-6 py-2 text-sm font-medium transition">Pihak ke-3</button>
+                                class="rounded-md px-6 py-2 text-sm font-medium transition cursor-pointer">Pihak ke-3</button>
                     </div>
                     @error('jenis_penyelesaian') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                 </div>
 
-                <div x-show="jenis === 'Pihak ke-3'" x-transition class="mb-5 rounded-lg border border-stroke p-5 dark:border-gray-800">
+                @if($res && $res->jenis_penyelesaian === 'Pihak ke-3')
+                <div x-show="jenis === 'Pihak ke-3'" x-cloak x-transition class="mb-5 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <h4 class="mb-4 text-base font-semibold text-black dark:text-white">Detail Pihak ke-3</h4>
                     
                     {{-- Surat Permohonan Perbaikan (Pihak ke-3) PDF --}}
-                    <div class="mb-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
                         <div class="flex items-center gap-3">
                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,19 +136,8 @@
                             Unduh Surat PDF
                         </a>
                     </div>
-
-                    <div>
-                        <label class="{{ $label }}">Upload Surat Justifikasi (PDF/DOC, maks 5 MB)</label>
-                        <input type="file" name="file_surat_justifikasi" class="{{ $input }} !py-2">
-                        @if($res?->file_surat_justifikasi)
-                            <p class="mt-1 text-xs text-success">
-                                File saat ini:
-                                <a href="{{ asset('storage/' . $res->file_surat_justifikasi) }}" target="_blank" class="underline">Lihat file</a>
-                            </p>
-                        @endif
-                        @error('file_surat_justifikasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                    </div>
                 </div>
+                @endif
 
                 <div class="mb-5 grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                     <div>
@@ -157,13 +147,15 @@
                     </div>
                     <div>
                         <label class="{{ $label }}">Pemeriksa <span class="text-meta-1">*</span></label>
-                        <select name="pemeriksa_id" class="{{ $input }}">
-                            @foreach($pemeriksas as $p)
-                                <option value="{{ $p->id }}" @selected(old('pemeriksa_id', $res->pemeriksa_id ?? $user->id) == $p->id)>
-                                    {{ $p->nip }} || {{ $p->nama }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @php
+                            $assignedPemeriksa = $res?->pemeriksa ?? $user;
+                        @endphp
+                        <input type="text"
+                               class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition cursor-not-allowed dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                               value="{{ ($assignedPemeriksa->nip ?? '-') . ' || ' . ($assignedPemeriksa->nama ?? '-') }}"
+                               readonly>
+                        <input type="hidden" name="pemeriksa_id" value="{{ $assignedPemeriksa->id }}">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Teknisi pemeriksa dikunci permanen sesuai penangan tiket.</p>
                         @error('pemeriksa_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -200,11 +192,11 @@
 
                 <div class="flex flex-col-reverse gap-3 border-t border-stroke pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
                     <a href="{{ route('incidents.show', $ticket) }}"
-                       class="inline-flex items-center justify-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4">
+                       class="inline-flex items-center justify-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4 cursor-pointer">
                         Batal
                     </a>
                     <button type="submit"
-                            class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
+                            class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90 cursor-pointer">
                         Simpan Perubahan
                     </button>
                 </div>

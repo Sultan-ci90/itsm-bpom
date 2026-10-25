@@ -30,8 +30,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ route('requests.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Permintaan Layanan' : 'Permintaan Layanan Saya' }}
+                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('requests.all') : route('requests.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Permintaan Layanan TIK' : 'Permintaan Layanan Saya' }}
                     </a>
                 </li>
                 <li>
@@ -102,13 +102,15 @@
                 <div class="mb-5 grid grid-cols-1 gap-4.5 sm:grid-cols-2">
                     <div>
                         <label class="{{ $label }}">Petugas Penindak Lanjut <span class="text-meta-1">*</span></label>
-                        <select name="petugas_id" class="{{ $input }}">
-                            @foreach($petugasList as $p)
-                                <option value="{{ $p->id }}" @selected(old('petugas_id', $res?->petugas_id ?? $user->id) == $p->id)>
-                                    {{ $p->nama }} ({{ $p->nip }})
-                                </option>
-                            @endforeach
-                        </select>
+                        @php
+                            $assignedPetugas = $res?->petugas ?? $user;
+                        @endphp
+                        <input type="text"
+                               class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition cursor-not-allowed dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                               value="{{ ($assignedPetugas->nip ?? '-') . ' || ' . ($assignedPetugas->nama ?? '-') }}"
+                               readonly>
+                        <input type="hidden" name="petugas_id" value="{{ $assignedPetugas->id }}">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Petugas dikunci permanen sesuai penangan permintaan.</p>
                         @error('petugas_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
 
@@ -120,32 +122,6 @@
                         @error('tgl_tindak_lanjut') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
-
-                @if(in_array($req->layanan, ['reset_password', 'tambah_akun', 'akun']))
-                <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
-                    <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                        <span>🔑 Output Akun / Reset Password:</span>
-                    </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="{{ $label }}">Password Baru / Sementara</label>
-                            <input type="text" name="akun_password_baru" 
-                                   value="{{ old('akun_password_baru', $res?->akun_password_baru ?? '') }}" 
-                                   placeholder="Contoh: Bpom@2026 (atau biarkan kosong jika dikirim via email)" 
-                                   class="{{ $input }}">
-                            @error('akun_password_baru') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="{{ $label }}">Instruksi Login</label>
-                            <textarea name="akun_instruksi_login" rows="3" 
-                                      placeholder="Contoh: Silakan login ke aplikasi Srikandi menggunakan password baru di atas, lalu segera ubah password Anda pada menu Profil." 
-                                      class="{{ $input }}">{{ old('akun_instruksi_login', $res?->akun_instruksi_login ?? '') }}</textarea>
-                            @error('akun_instruksi_login') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-                @endif
 
                 @if($req->layanan === 'zoom')
                 <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
@@ -185,31 +161,6 @@
                 </div>
                 @endif
 
-                @if($req->layanan === 'peminjaman')
-                <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
-                    <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-black dark:text-white">
-                        📦 Penyerahan & Pengembalian Perangkat:
-                    </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="{{ $label }}">Perangkat / No. NUP yang Diserahkan</label>
-                            <input type="text" name="pinjam_perangkat_diserahkan" 
-                                   value="{{ old('pinjam_perangkat_diserahkan', $res?->pinjam_perangkat_diserahkan ?? '') }}" 
-                                   placeholder="Contoh: Laptop Asus ExpertBook (NUP: 0012) + Charger & Tas" 
-                                   class="{{ $input }}">
-                            @error('pinjam_perangkat_diserahkan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="{{ $label }}">Catatan Pengembalian (kondisi / kelengkapan)</label>
-                            <textarea name="pinjam_catatan_pengembalian" rows="2" 
-                                      placeholder="Diisi saat barang dikembalikan pemohon..." 
-                                      class="{{ $input }}">{{ old('pinjam_catatan_pengembalian', $res?->pinjam_catatan_pengembalian ?? '') }}</textarea>
-                            @error('pinjam_catatan_pengembalian') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 <div class="mb-5">
                     <label class="{{ $label }}">
                         Tindakan yang Dilakukan / Solusi Tim IT <span class="text-meta-1">*</span>
@@ -222,11 +173,11 @@
 
                 <div class="flex flex-col-reverse gap-3 border-t border-stroke pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
                     <a href="{{ route('requests.show', $req->id) }}"
-                       class="inline-flex items-center justify-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4">
+                       class="inline-flex items-center justify-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4 cursor-pointer">
                         Batal
                     </a>
                     <button type="submit" 
-                            class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90">
+                            class="inline-flex items-center justify-center rounded-lg bg-green-700 px-8 py-2.5 text-sm font-medium text-white transition hover:bg-opacity-90 cursor-pointer">
                         Simpan Perubahan
                     </button>
                 </div>

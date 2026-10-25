@@ -49,21 +49,21 @@
     <tr>
         <td class="label">Jenis Barang</td>
         <td class="sep">:</td>
-        <td>{{ $ticket->asset->jenis_barang ?? '-' }}</td>
+        <td>{{ $ticket->asset?->jenis_barang ?? ($ticket->jenis_kendala === 'lainnya' ? 'Non-Aset / Lainnya' : '-') }}</td>
     </tr>
     <tr>
         <td class="label">Nama Barang</td>
         <td class="sep">:</td>
-        <td><b>{{ $ticket->asset->nama_barang ?? '-' }}</b></td>
+        <td><b>{{ $ticket->asset?->nama_barang ?? ($ticket->jenis_kendala === 'lainnya' ? 'Aplikasi / Jaringan / Lainnya' : '-') }}</b></td>
     </tr>
     <tr>
         <td class="label">Lokasi</td>
         <td class="sep">:</td>
-        <td>{{ $ticket->asset->lokasi ?? '-' }}</td>
+        <td>{{ $ticket->asset?->lokasi ?? '-' }}</td>
     </tr>
 </table>
 
-<div class="judul-box">Aduan Kerusakan :</div>
+<div class="judul-box">Deskripsi Kendala :</div>
 <div class="box">{{ $ticket->deskripsi_masalah ?? '-' }}</div>
 
 <div class="judul-box">

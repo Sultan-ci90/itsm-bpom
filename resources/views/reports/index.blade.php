@@ -131,7 +131,7 @@
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
                                 <select name="tahun_triwulan"
                                         :disabled="periode !== 'triwulan'"
-                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                        class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     @foreach($availableYears as $yr)
                                         <option value="{{ $yr }}" {{ (string)old('tahun_triwulan', $currentYear) === (string)$yr ? 'selected' : '' }}>
                                             Tahun {{ $yr }}
@@ -146,7 +146,7 @@
                                 @endphp
                                 <select name="triwulan"
                                         :disabled="periode !== 'triwulan'"
-                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                        class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     <option value="1" {{ old('triwulan', $curQuarter) == '1' ? 'selected' : '' }}>
                                         Triwulan 1 (Januari - Maret)
                                     </option>
@@ -197,7 +197,7 @@
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
                                 <select name="tahun_semester"
                                         :disabled="periode !== 'semester'"
-                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                        class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     @foreach($availableYears as $yr)
                                         <option value="{{ $yr }}" {{ (string)old('tahun_semester', $currentYear) === (string)$yr ? 'selected' : '' }}>
                                             Tahun {{ $yr }}
@@ -209,7 +209,7 @@
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Semester</label>
                                 <select name="semester"
                                         :disabled="periode !== 'semester'"
-                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                        class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     <option value="1" {{ old('semester', (date('n') <= 6 ? '1' : '2')) == '1' ? 'selected' : '' }}>
                                         Semester 1 (Januari - Juni)
                                     </option>
@@ -230,7 +230,7 @@
                             <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
                             <select name="tahun"
                                     :disabled="periode !== 'tahun'"
-                                    class="w-full sm:w-1/2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
+                                    class="cursor-pointer w-full sm:w-1/2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                 @foreach($availableYears as $yr)
                                     <option value="{{ $yr }}" {{ (string)old('tahun', $currentYear) === (string)$yr ? 'selected' : '' }}>
                                         Tahun {{ $yr }}
@@ -271,7 +271,7 @@
                             <li>Periode & tanggal cetak</li>
                             <li>Identitas operator / dicetak oleh</li>
                             <li>Tabel rekapitulasi status tiket/request</li>
-                            <li>Tabel rekapitulasi jenis barang / layanan</li>
+                            <li>Tabel rekapitulasi jenis kendala / layanan</li>
                             <li>Tabel tren volume laporan per bulan</li>
                         </ul>
                     </div>

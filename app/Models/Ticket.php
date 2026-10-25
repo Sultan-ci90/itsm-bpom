@@ -17,6 +17,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'nomor_aduan',
+        'jenis_kendala',
         'asset_id',
         'pelapor_id',
         'reported_by',

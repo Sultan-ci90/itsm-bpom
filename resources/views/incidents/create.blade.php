@@ -20,8 +20,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Aduan Kendala' : 'Aduan Kendala Saya' }}
+                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -37,7 +37,7 @@
 
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex items-center gap-3">
-            <a href="{{ route('incidents.index') }}"
+            <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}"
                title="Kembali ke Daftar Aduan Kendala"
                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                 <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,28 +113,45 @@
 
                 <div class="mt-6">
                     <label class="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Pilih Aset / Barang <span class="text-red-500">*</span>
+                        Jenis Kendala <span class="text-red-500">*</span>
                     </label>
-                    <select id="asset_select" name="asset_id" x-ref="assetSelect" required
-                            @change="lokasi = ASSET_LOKASI[$event.target.value] ?? ''"
+                    <select name="jenis_kendala" x-model="jenisKendala" required
                             class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                        <option value="" class="bg-white text-black dark:bg-gray-900 dark:text-white">-- Cari Kode Barang, NUP, atau Nama --</option>
-                        @foreach ($assets as $asset)
-                            <option value="{{ $asset->id }}" class="bg-white text-black dark:bg-gray-900 dark:text-white" @selected(old('asset_id') == $asset->id)>
-                                {{ $asset->kode_barang }} - {{ $asset->nama_barang }} (NUP: {{ $asset->nup }})
-                            </option>
-                        @endforeach
+                        <option value="lainnya">Lainnya (Aplikasi, Jaringan, Akun, atau lainnya)</option>
+                        <option value="aset">Aset / Barang TIK (Komputer, Laptop, Printer, dll.)</option>
                     </select>
-                    @error('asset_id')
+                    @error('jenis_kendala')
                     <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div class="mt-6">
-                    <label class="mb-3 block text-sm font-medium text-black dark:text-white">Lokasi Aset</label>
-                    <input type="text" x-model="lokasi" readonly placeholder="Terisi otomatis saat aset dipilih"
-                           class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black">
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Lokasi diambil dari data aset; tidak perlu diisi manual.</p>
+                {{-- Field Aset dan Lokasi: Hanya Muncul Jika Jenis Kendala = 'aset' --}}
+                <div x-cloak x-show="jenisKendala === 'aset'" x-transition class="space-y-6 mt-6">
+                    <div>
+                        <label class="mb-3 block text-sm font-medium text-black dark:text-white">
+                            Pilih Aset / Barang <span class="text-red-500">*</span>
+                        </label>
+                        <select id="asset_select" name="asset_id" x-ref="assetSelect" :required="jenisKendala === 'aset'"
+                                @change="lokasi = ASSET_LOKASI[$event.target.value] ?? ''"
+                                class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            <option value="" class="bg-white text-black dark:bg-gray-900 dark:text-white">-- Cari Kode Barang, NUP, atau Nama --</option>
+                            @foreach ($assets as $asset)
+                                <option value="{{ $asset->id }}" class="bg-white text-black dark:bg-gray-900 dark:text-white" @selected(old('asset_id') == $asset->id)>
+                                    {{ $asset->kode_barang }} - {{ $asset->nama_barang }} (NUP: {{ $asset->nup }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('asset_id')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-3 block text-sm font-medium text-black dark:text-white">Lokasi Aset</label>
+                        <input type="text" x-model="lokasi" readonly placeholder="Terisi otomatis saat aset dipilih"
+                               class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Lokasi diambil dari data aset; tidak perlu diisi manual.</p>
+                    </div>
                 </div>
 
                 <div class="mt-6">
@@ -161,12 +178,12 @@
                 </div>
 
                 <div class="mt-8 flex justify-end gap-3">
-                    <a href="{{ route('incidents.index') }}"
-                       class="inline-flex items-center rounded-md border border-gray-300 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}"
+                       class="inline-flex items-center rounded-md border border-gray-300 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
                         Batal
                     </a>
                     <button type="submit" :disabled="submitting"
-                            class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                            class="inline-flex items-center px-5 py-2.5 bg-[#10B981] rounded-lg font-medium text-white text-sm hover:bg-green-700 transition focus:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
                         <span x-show="!submitting">Tambah Laporan</span>
                         <span x-cloak x-show="submitting">Menyimpan...</span>
                     </button>
@@ -178,16 +195,27 @@
     <script>
         function incidentForm() {
             return {
+                jenisKendala: @js(old('jenis_kendala', 'lainnya')),
                 lokasi: '',
                 submitting: false,
                 init() {
                     const select = this.$refs.assetSelect;
-                    if (!select) return;
 
                     // Retensi lokasi jika form gagal validasi dan asset_id lama terpilih kembali
-                    if (select.value) {
+                    if (select && select.value) {
                         this.lokasi = ASSET_LOKASI[select.value] ?? '';
                     }
+
+                    this.$watch('jenisKendala', (val) => {
+                        if (val !== 'aset') {
+                            if (select && select.tomselect) {
+                                select.tomselect.clear();
+                            } else if (select) {
+                                select.value = '';
+                            }
+                            this.lokasi = '';
+                        }
+                    });
 
                     const setupTomSelect = () => {
                         if (typeof TomSelect === 'undefined') return;

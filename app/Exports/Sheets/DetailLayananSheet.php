@@ -60,10 +60,7 @@ class DetailLayananSheet implements FromQuery, WithTitle, WithHeadings, WithMapp
             'Nomor Request',
             'Tanggal Request',
             'Nama Pemohon',
-            'NIP Pemohon',
-            'Bidang / Unit Kerja',
             'Jenis Layanan',
-            'Lokasi Ruangan',
             'Deskripsi / Keperluan',
             'Status',
             'Petugas Penangan',
@@ -96,10 +93,7 @@ class DetailLayananSheet implements FromQuery, WithTitle, WithHeadings, WithMapp
             $req->nomor_request,
             $req->tgl_request ? Carbon::parse($req->tgl_request)->translatedFormat('d/m/Y') : '-',
             $req->user->nama ?? '-',
-            $req->user->nip ?? '-',
-            $req->user->bidang->nama_bidang ?? 'Umum',
             $layananText,
-            $req->lokasi ?? '-',
             $req->deskripsi ?? '-',
             $req->status,
             $res?->petugas->nama ?? '-',
@@ -112,7 +106,7 @@ class DetailLayananSheet implements FromQuery, WithTitle, WithHeadings, WithMapp
     public function styles(Worksheet $sheet): ?array
     {
         // Style header row (Row 1)
-        $sheet->getStyle('A1:N1')->applyFromArray([
+        $sheet->getStyle('A1:K1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],

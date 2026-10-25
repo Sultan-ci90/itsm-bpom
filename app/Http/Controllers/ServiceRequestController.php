@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\ServiceRequestChat;
 use App\Events\ServiceRequestChatMessageSent;
 use App\Events\ServiceRequestChatStatusChanged;
+use App\Services\FonnteService;
 
 class ServiceRequestController extends Controller
 {
@@ -27,6 +28,11 @@ class ServiceRequestController extends Controller
      */
     public function index(Request $request)
     {
+        // Admin & Teknisi selalu diarahkan ke Semua Permintaan Layanan TIK
+        if (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) {
+            return redirect()->route('requests.all', $request->query());
+        }
+
         $query = ServiceRequest::with(['user']);
 
         // 'Request Saya' selalu menampilkan milik user yang sedang login
@@ -67,11 +73,27 @@ class ServiceRequestController extends Controller
         $query = ServiceRequest::with(['user']);
 
         $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
+        $layananOptions = [
+            'zoom'           => 'Permintaan Link Zoom Meeting',
+            'reset_password' => 'Reset Password Akun Aplikasi',
+            'tambah_akun'    => 'Tambah / Pembuatan Akun Baru',
+            'peminjaman'     => 'Peminjaman Perangkat IT',
+            'konsultasi'     => 'Konsultasi / Asistensi IT',
+            'operator'       => 'Permintaan Operator Kegiatan',
+            'lainnya'        => 'Lainnya',
+        ];
 
         if ($request->filled('status')) {
             $status = $request->string('status')->toString();
             if (in_array($status, $validStatuses, true)) {
                 $query->where('status', $status);
+            }
+        }
+
+        if ($request->filled('layanan')) {
+            $layanan = $request->string('layanan')->toString();
+            if (array_key_exists($layanan, $layananOptions)) {
+                $query->where('layanan', $layanan);
             }
         }
 
@@ -87,7 +109,8 @@ class ServiceRequestController extends Controller
 
         return view('requests.all', [
             'requests' => $requests,
-            'statuses' => $validStatuses
+            'statuses' => $validStatuses,
+            'layananOptions' => $layananOptions,
         ]);
     }
 
@@ -135,6 +158,7 @@ class ServiceRequestController extends Controller
             // Validasi khusus Zoom
             'bidang_id' => "required_if:layanan,zoom|nullable|exists:{$bidangTable},id",
             'nama_acara' => 'required_if:layanan,zoom|nullable|string|max:255',
+            'tgl_acara' => 'required_if:layanan,zoom|nullable|date',
             'jam_mulai' => 'required_if:layanan,zoom|nullable|date_format:H:i',
             'jam_selesai' => 'required_if:layanan,zoom|nullable|date_format:H:i|after:jam_mulai',
             'jenis_acara' => 'required_if:layanan,zoom|nullable|in:Rapat,Webinar,Hybrid',
@@ -204,6 +228,7 @@ class ServiceRequestController extends Controller
                 ReqDetailZoom::create([
                     'request_id' => $serviceRequest->id,
                     'bidang_id' => $validated['bidang_id'],
+                    'tgl_acara' => $validated['tgl_acara'] ?? null,
                     'nama_acara' => $validated['nama_acara'],
                     'jam_mulai' => $validated['jam_mulai'],
                     'jam_selesai' => $validated['jam_selesai'],
@@ -253,7 +278,16 @@ class ServiceRequestController extends Controller
             ));
 
             DB::commit();
-            return redirect()->route('requests.index')
+
+            // WhatsApp Notification via Fonnte
+            try {
+                app(FonnteService::class)->sendNewTicketNotification($serviceRequest);
+            } catch (\Throwable $e) {
+                Log::warning('Fonnte sendNewTicketNotification error: ' . $e->getMessage());
+            }
+
+            $targetRoute = (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? 'requests.all' : 'requests.index';
+            return redirect()->route($targetRoute)
                 ->with('success', 'Permintaan layanan berhasil diajukan dengan Nomor: ' . $nomorRequest);
 
         } catch (\Throwable $e) {
@@ -327,7 +361,8 @@ class ServiceRequestController extends Controller
             if ($validated['layanan'] === 'zoom') {
                 $zoomData = $request->validate([
                     'nama_acara' => 'required|string|max:255',
-                    'bidang_id' => 'required|exists:bidangs,id',
+                    'tgl_acara' => 'required|date',
+                    'bidang_id' => 'required|exists:bidang,id',
                     'jenis_acara' => 'required|string',
                     'jam_mulai' => 'required',
                     'jam_selesai' => 'required',
@@ -413,6 +448,47 @@ class ServiceRequestController extends Controller
     }
 
     /**
+     * Ambil (take) permintaan layanan untuk ditangani langsung oleh staf IT / teknisi yang login.
+     */
+    public function take($id)
+    {
+        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $req = ServiceRequest::findOrFail($id);
+
+        if ($req->status !== 'Diajukan' || !empty($req->resolution?->petugas_id)) {
+            return redirect()->route('requests.show', $req->id)
+                ->with('error', 'Permintaan layanan ini sudah diambil atau sedang diproses oleh petugas lain.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $req->update(['status' => 'Diproses']);
+
+            $req->resolution()->updateOrCreate(
+                ['request_id' => $req->id],
+                [
+                    'petugas_id' => auth()->id(),
+                    'tgl_tindak_lanjut' => Carbon::now(),
+                ]
+            );
+
+            DB::commit();
+
+            return redirect()->route('requests.show', $req->id)
+                ->with('success', 'Permintaan layanan berhasil diambil. Anda ditugaskan sebagai petugas penindak lanjut.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Gagal mengambil permintaan layanan', ['request_id' => $req->id, 'message' => $e->getMessage()]);
+            return redirect()->route('requests.show', $req->id)
+                ->with('error', 'Gagal mengambil permintaan layanan: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Update status dan simpan data tindak lanjut service request (hanya teknisi/admin)
      */
     public function update(Request $request, $id)
@@ -422,10 +498,15 @@ class ServiceRequestController extends Controller
         }
 
         $req = ServiceRequest::findOrFail($id);
+        $res = $req->resolution;
+
+        if ($res && !empty($res->petugas_id) && $res->petugas_id !== auth()->id()) {
+            abort(403, 'Permintaan layanan ini sedang ditangani oleh petugas lain.');
+        }
 
         $validated = $request->validate([
             'status' => 'required|in:Diproses,Selesai,Ditolak',
-            'petugas_id' => 'required|exists:users,id',
+            'petugas_id' => 'nullable|exists:users,id',
             'tgl_tindak_lanjut' => 'required|date',
             'tindak_lanjut' => 'required_unless:status,Ditolak|nullable|string',
             'alasan_penolakan' => 'required_if:status,Ditolak|nullable|string',
@@ -434,16 +515,7 @@ class ServiceRequestController extends Controller
             'zoom_link' => 'nullable|string|max:500',
             'zoom_meeting_id' => 'nullable|string|regex:/^[0-9\s-]+$/|max:50',
             'zoom_passcode' => 'nullable|string|max:100',
-
-            // Layanan Akun (2 field sesuai request user)
-            'akun_password_baru' => 'nullable|string|max:255',
-            'akun_instruksi_login' => 'nullable|string',
-
-            // Layanan Peminjaman
-            'pinjam_perangkat_diserahkan' => 'nullable|string|max:255',
-            'pinjam_catatan_pengembalian' => 'nullable|string',
         ], [
-            'petugas_id.required' => 'Petugas penindak lanjut wajib dipilih.',
             'tgl_tindak_lanjut.required' => 'Tanggal tindak lanjut wajib diisi.',
             'tindak_lanjut.required_unless' => 'Catatan tindakan tim IT wajib diisi jika tidak ditolak.',
             'alasan_penolakan.required_if' => 'Alasan penolakan wajib diisi jika status Ditolak.',
@@ -452,21 +524,17 @@ class ServiceRequestController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Simpan atau perbarui data resolusi tindak lanjut
+            // 1. Simpan atau perbarui data resolusi tindak lanjut (petugas terkunci permanen)
             $req->resolution()->updateOrCreate(
                 ['request_id' => $req->id],
                 [
-                    'petugas_id' => $validated['petugas_id'],
+                    'petugas_id' => $res?->petugas_id ?? auth()->id(),
                     'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
                     'tindak_lanjut' => $validated['tindak_lanjut'] ?? null,
                     'alasan_penolakan' => $validated['alasan_penolakan'] ?? null,
                     'zoom_link' => $validated['zoom_link'] ?? null,
                     'zoom_meeting_id' => $validated['zoom_meeting_id'] ?? null,
                     'zoom_passcode' => $validated['zoom_passcode'] ?? null,
-                    'akun_password_baru' => $validated['akun_password_baru'] ?? null,
-                    'akun_instruksi_login' => $validated['akun_instruksi_login'] ?? null,
-                    'pinjam_perangkat_diserahkan' => $validated['pinjam_perangkat_diserahkan'] ?? null,
-                    'pinjam_catatan_pengembalian' => $validated['pinjam_catatan_pengembalian'] ?? null,
                 ]
             );
 
@@ -494,6 +562,15 @@ class ServiceRequestController extends Controller
             }
 
             DB::commit();
+
+            // WhatsApp Notification via Fonnte saat request diselesaikan
+            if ($validated['status'] === 'Selesai') {
+                try {
+                    app(FonnteService::class)->sendTicketCompletedNotification($req);
+                } catch (\Throwable $e) {
+                    Log::warning('Fonnte sendTicketCompletedNotification error: ' . $e->getMessage());
+                }
+            }
 
             Log::info('Service request ditindaklanjuti', [
                 'request_id' => $req->id,
@@ -525,6 +602,10 @@ class ServiceRequestController extends Controller
             abort(403);
         }
 
+        if ($req->resolution?->petugas_id && $req->resolution->petugas_id !== auth()->id()) {
+            abort(403, 'Hanya petugas yang menangani request ini yang dapat merevisi tindak lanjut.');
+        }
+
         if ($req->status !== 'Selesai') {
             return redirect()->route('requests.show', $req->id)
                 ->with('error', 'Hanya request dengan status Selesai yang tindak lanjutnya dapat diedit melalui rute ini.');
@@ -546,13 +627,17 @@ class ServiceRequestController extends Controller
             abort(403);
         }
 
+        if ($req->resolution?->petugas_id && $req->resolution->petugas_id !== auth()->id()) {
+            abort(403, 'Hanya petugas yang menangani request ini yang dapat merevisi tindak lanjut.');
+        }
+
         if ($req->status !== 'Selesai') {
             return redirect()->route('requests.show', $req->id)
                 ->with('error', 'Tindak lanjut hanya dapat diedit saat status Selesai.');
         }
 
         $validated = $request->validate([
-            'petugas_id' => 'required|exists:users,id',
+            'petugas_id' => 'nullable|exists:users,id',
             'tgl_tindak_lanjut' => 'required|date',
             'tindak_lanjut' => 'required|string',
 
@@ -560,14 +645,6 @@ class ServiceRequestController extends Controller
             'zoom_link' => 'nullable|string|max:500',
             'zoom_meeting_id' => 'nullable|string|regex:/^[0-9\s-]+$/|max:50',
             'zoom_passcode' => 'nullable|string|max:100',
-
-            // Layanan Akun
-            'akun_password_baru' => 'nullable|string|max:255',
-            'akun_instruksi_login' => 'nullable|string',
-
-            // Layanan Peminjaman
-            'pinjam_perangkat_diserahkan' => 'nullable|string|max:255',
-            'pinjam_catatan_pengembalian' => 'nullable|string',
         ], [
             'zoom_meeting_id.regex' => 'Meeting ID Zoom hanya boleh berisi angka, spasi, atau tanda strip (-).',
         ]);
@@ -577,16 +654,12 @@ class ServiceRequestController extends Controller
             $req->resolution()->updateOrCreate(
                 ['request_id' => $req->id],
                 [
-                    'petugas_id' => $validated['petugas_id'],
+                    'petugas_id' => $req->resolution?->petugas_id ?? auth()->id(),
                     'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
                     'tindak_lanjut' => $validated['tindak_lanjut'],
                     'zoom_link' => $validated['zoom_link'] ?? null,
                     'zoom_meeting_id' => $validated['zoom_meeting_id'] ?? null,
                     'zoom_passcode' => $validated['zoom_passcode'] ?? null,
-                    'akun_password_baru' => $validated['akun_password_baru'] ?? null,
-                    'akun_instruksi_login' => $validated['akun_instruksi_login'] ?? null,
-                    'pinjam_perangkat_diserahkan' => $validated['pinjam_perangkat_diserahkan'] ?? null,
-                    'pinjam_catatan_pengembalian' => $validated['pinjam_catatan_pengembalian'] ?? null,
                 ]
             );
 

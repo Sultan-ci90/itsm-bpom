@@ -162,8 +162,9 @@
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6" id="main-content">
                 @yield('content')
+                @stack('scripts')
             </div>
         </div>
 
@@ -179,6 +180,7 @@
                 if (!el.tomselect) new TomSelect(el, { create: false });
             });
         }
+        window.initTomSelect = initTomSelect;
         document.addEventListener('DOMContentLoaded', initTomSelect);
     </script>
 
@@ -198,7 +200,5 @@
     </script>
 
 </body>
-
-@stack('scripts')
 
 </html>

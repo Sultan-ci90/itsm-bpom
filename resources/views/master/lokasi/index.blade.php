@@ -60,7 +60,7 @@
             </div>
             <button @click="openCreate()"
                     type="button"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#10B981] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-700">
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#10B981] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-700 cursor-pointer">
                 <svg class="h-4 w-4 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -92,34 +92,46 @@
         </div>
     @endif
 
-    {{-- Filter & Search Toolbar --}}
-    <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-stroke bg-white p-4 shadow-default dark:border-gray-800 dark:bg-white/[0.03] lg:flex-row lg:items-center lg:justify-between">
-        <form method="GET" action="{{ route('master.lokasi.index') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="relative flex-1">
-                <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama lokasi ruangan..."
-                       class="w-full rounded-xl border border-stroke bg-transparent py-2.5 ps-10 pe-4 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                <svg class="absolute start-3.5 top-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-            </div>
+    {{-- Filter & Search Toolbar + Tabel --}}
+    <div x-data="liveTable()">
+        <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-stroke bg-white p-4 shadow-default dark:border-gray-800 dark:bg-white/[0.03] lg:flex-row lg:items-center lg:justify-between">
+            <form x-ref="form" @submit.prevent="applyFilter()" method="GET" action="{{ route('master.lokasi.index') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="relative flex-1">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama lokasi ruangan..."
+                           @input.debounce.350ms="applyFilter()"
+                           class="w-full rounded-xl border border-stroke bg-transparent py-2.5 ps-10 pe-4 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                    <svg class="absolute start-3.5 top-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
 
-            <div class="flex gap-2">
-                <button type="submit"
-                        class="inline-flex items-center justify-center rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-800 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
-                    Cari
+                <button type="button"
+                        @click.prevent="resetFilters()"
+                        x-show="hasFilters"
+                        x-cloak
+                        class="inline-flex items-center justify-center rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
+                    Reset
                 </button>
-                @if($search)
-                    <a href="{{ route('master.lokasi.index') }}"
-                       class="inline-flex items-center justify-center rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
-                        Reset
-                    </a>
-                @endif
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    {{-- Tabel Master Lokasi --}}
-    <div class="overflow-hidden rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+        {{-- Tabel Master Lokasi dengan Overlay Loading Spinner --}}
+        <div class="relative min-h-[200px]">
+            <!-- Loading Overlay Spinner di tengah tabel -->
+            <div x-show="loading" x-cloak
+                 class="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-[1px] transition-opacity duration-200 dark:bg-gray-900/60">
+                <div class="inline-flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-theme-sm dark:border-gray-700 dark:bg-gray-800">
+                    <svg class="h-5 w-5 animate-spin text-[#10B981]" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Memuat data...</span>
+                </div>
+            </div>
+
+            <!-- Konten Dinamis yang di-swap via AJAX -->
+            <div x-ref="tableWrapper">
+                <div class="overflow-hidden rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="overflow-x-auto">
             <table class="w-full text-start">
                 <thead>
@@ -186,11 +198,15 @@
                 {{ $lokasis->links() }}
             </div>
         @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Modal Tambah / Edit Lokasi --}}
     <div x-show="showModal"
          x-cloak
+         x-transition.opacity.duration.200ms
          class="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs"
          @keydown.escape.window="showModal = false">
         <div class="w-full max-w-lg rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-gray-900"
@@ -198,7 +214,7 @@
             <div class="mb-4 flex items-center justify-between border-b border-stroke pb-3 dark:border-gray-800">
                 <h3 class="text-lg font-semibold text-black dark:text-white"
                     x-text="editMode ? 'Edit Lokasi Ruangan' : 'Tambah Lokasi Ruangan Baru'"></h3>
-                <button @click="showModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <button @click="showModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -226,11 +242,11 @@
 
                 <div class="mt-6 flex justify-end gap-3 pt-3 border-t border-stroke dark:border-gray-800">
                     <button @click="showModal = false" type="button"
-                            class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
+                            class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
                         Batal
                     </button>
                     <button type="submit"
-                            class="rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600">
+                            class="rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 cursor-pointer">
                         <span x-text="editMode ? 'Simpan Perubahan' : 'Tambah Lokasi'"></span>
                     </button>
                 </div>
@@ -241,6 +257,7 @@
     {{-- Modal Konfirmasi Hapus --}}
     <div x-show="deleteModal"
          x-cloak
+         x-transition.opacity.duration.200ms
          class="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs"
          @keydown.escape.window="deleteModal = false">
         <div class="w-full max-w-md rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-gray-900"
@@ -258,14 +275,14 @@
             </p>
             <div class="mt-6 flex justify-end gap-3">
                 <button @click="deleteModal = false" type="button"
-                        class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800">
+                        class="rounded-xl border border-stroke px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
                     Batal
                 </button>
                 <form :action="'{{ url('/master/lokasi') }}/' + deleteTarget.id" method="POST">
                     @csrf
                     @method('DELETE')
                     <button type="submit"
-                            class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-700">
+                            class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 cursor-pointer">
                         Ya, Hapus Lokasi
                     </button>
                 </form>

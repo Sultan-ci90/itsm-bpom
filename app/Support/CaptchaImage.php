@@ -4,7 +4,8 @@ namespace App\Support;
 
 /**
  * Membuat gambar captcha (PNG) dari sebuah kata memakai ekstensi GD:
- * huruf miring-acak berwarna hijau, bergelombang, dengan garis & titik pengganggu.
+ * huruf berwarna hijau dengan garis dasar rata dan stabil, sedikit kemiringan halus,
+ * serta garis & titik pengganggu untuk keamanan.
  */
 class CaptchaImage
 {
@@ -61,18 +62,14 @@ class CaptchaImage
         $x = (int) (($width - $total) / 2);
         foreach ($chars as $i => $ch) {
             $box   = imagettfbbox($size, 0, $fontPath, $ch);
-            $base  = (int) ($height * 0.5 + $size * 0.36) + random_int(-5, 5);
-            $angle = random_int(-15, 15);
+            $base  = (int) ($height * 0.5 + $size * 0.36);
+            $angle = random_int(-6, 6);
 
             imagettftext($img, $size, $angle, $x - $box[0], $base, $greens[array_rand($greens)], $fontPath, $ch);
             $x += $advances[$i];
         }
 
-        // 5. Distorsi gelombang (vertikal lalu horizontal)
-        $img = self::wave($img, $width, $height, $bg, random_int(3, 5), random_int(70, 110), true);
-        $img = self::wave($img, $width, $height, $bg, random_int(2, 3), random_int(45, 70), false);
-
-        // 6. Titik pengganggu
+        // 5. Titik pengganggu
         for ($i = 0; $i < 120; $i++) {
             $c = imagecolorallocate($img, random_int(170, 220), random_int(200, 235), random_int(170, 220));
             imagesetpixel($img, random_int(0, $width - 1), random_int(0, $height - 1), $c);
@@ -84,27 +81,5 @@ class CaptchaImage
         imagedestroy($img);
 
         return $png;
-    }
-
-    private static function wave($src, int $w, int $h, int $bg, int $amp, int $period, bool $vertical)
-    {
-        $dst = imagecreatetruecolor($w, $h);
-        imagefilledrectangle($dst, 0, 0, $w, $h, $bg);
-        $phase = (mt_rand() / mt_getrandmax()) * 2 * M_PI;
-
-        if ($vertical) {
-            for ($x = 0; $x < $w; $x++) {
-                $dy = (int) round($amp * sin(2 * M_PI * $x / $period + $phase));
-                imagecopy($dst, $src, $x, $dy, $x, 0, 1, $h);
-            }
-        } else {
-            for ($y = 0; $y < $h; $y++) {
-                $dx = (int) round($amp * sin(2 * M_PI * $y / $period + $phase));
-                imagecopy($dst, $src, $dx, $y, 0, $y, $w, 1);
-            }
-        }
-
-        imagedestroy($src);
-        return $dst;
     }
 }

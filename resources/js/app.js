@@ -8,14 +8,12 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 // FullCalendar
 import { Calendar } from 'fullcalendar';
-//chartticket
+// chartticket
 import initTicketStatusChart from "./components/chart/ticket-charts";
 
-document.addEventListener("DOMContentLoaded", () => {
-    initTicketStatusChart();
-});
-
-
+// SPA & Live Table engines
+import { registerLiveTable } from './live-table';
+import { initSpaNav } from './spa-nav';
 
 window.Alpine = Alpine;
 window.createPopper = createPopper;
@@ -23,10 +21,22 @@ window.ApexCharts = ApexCharts;
 window.flatpickr = flatpickr;
 window.FullCalendar = Calendar;
 
+// Daftarkan komponen live table ke Alpine sebelum start
+registerLiveTable(Alpine);
 Alpine.start();
 
-// Initialize components on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
+// Hook global untuk inisialisasi ulang komponen dinamis pada setiap navigasi SPA & DOM load
+window.initPageComponents = function () {
+    initTicketStatusChart();
+
+    if (typeof window.renderDashboardCharts === 'function' && document.querySelector('#incidentTrendChart')) {
+        window.renderDashboardCharts();
+    }
+
+    if (typeof window.initTomSelect === 'function') {
+        window.initTomSelect();
+    }
+
     // Map imports
     if (document.querySelector('#mapOne')) {
         import('./components/map').then(module => module.initMap());
@@ -56,4 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('#calendar')) {
         import('./components/calendar-init').then(module => module.calendarInit());
     }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.initPageComponents();
+    initSpaNav();
 });

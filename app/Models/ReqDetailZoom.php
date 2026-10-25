@@ -9,9 +9,13 @@ class ReqDetailZoom extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'request_id', 'bidang_id', 'nama_acara', 'jam_mulai',
+        'request_id', 'bidang_id', 'tgl_acara', 'nama_acara', 'jam_mulai',
         'jam_selesai', 'jenis_acara', 'butuh_operator',
         'bentuk_ruangan', 'jumlah_kursi',
+    ];
+
+    protected $casts = [
+        'tgl_acara' => 'date',
     ];
 
     public function serviceRequest(): BelongsTo

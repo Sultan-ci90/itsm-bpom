@@ -7,6 +7,7 @@
     'endLabel' => 'End time:',
     'label' => null,
     'required' => true,
+    'alpineRequired' => null,
 ])
 
 @php
@@ -47,7 +48,11 @@
     @if($label)
         <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
             {{ $label }}
-            @if($required) <span class="text-meta-1 text-red-500">*</span> @endif
+            @if($alpineRequired)
+                <span class="text-meta-1 text-red-500" x-show="{{ $alpineRequired }}">*</span>
+            @elseif($required)
+                <span class="text-meta-1 text-red-500">*</span>
+            @endif
         </label>
     @endif
 
@@ -56,7 +61,13 @@
         <div>
             <label for="{{ $startId }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 {{ $startLabel }}
-                @if($required && !$label) <span class="text-meta-1 text-red-500">*</span> @endif
+                @if(!$label)
+                    @if($alpineRequired)
+                        <span class="text-meta-1 text-red-500" x-show="{{ $alpineRequired }}">*</span>
+                    @elseif($required)
+                        <span class="text-meta-1 text-red-500">*</span>
+                    @endif
+                @endif
             </label>
             <div class="relative">
                 <div class="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
@@ -71,7 +82,7 @@
                        value="{{ $initStart }}"
                        onclick="this.showPicker && this.showPicker()"
                        class="block w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-brand-500 dark:focus:border-brand-500 shadow-xs cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:end-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:bottom-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                       @if($required) required @endif />
+                       @if($alpineRequired) :required="{{ $alpineRequired }}" @elseif($required) required @endif />
             </div>
             @error($startName)
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -82,7 +93,13 @@
         <div>
             <label for="{{ $endId }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 {{ $endLabel }}
-                @if($required && !$label) <span class="text-meta-1 text-red-500">*</span> @endif
+                @if(!$label)
+                    @if($alpineRequired)
+                        <span class="text-meta-1 text-red-500" x-show="{{ $alpineRequired }}">*</span>
+                    @elseif($required)
+                        <span class="text-meta-1 text-red-500">*</span>
+                    @endif
+                @endif
             </label>
             <div class="relative">
                 <div class="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
@@ -98,7 +115,7 @@
                        onclick="this.showPicker && this.showPicker()"
                        class="block w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-brand-500 dark:focus:border-brand-500 shadow-xs cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:end-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:bottom-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                        :class="isInvalid ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500 dark:border-red-500 dark:text-red-400' : ''"
-                       @if($required) required @endif />
+                       @if($alpineRequired) :required="{{ $alpineRequired }}" @elseif($required) required @endif />
             </div>
             @error($endName)
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>

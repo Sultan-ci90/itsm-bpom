@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use App\Models\TicketResolution;
 use App\Models\ServiceRequest;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -107,6 +108,26 @@ class DashboardController extends Controller
             'data'   => array_map(fn ($s) => (int) ($requestByStatus[$s] ?? 0), self::STATUS_REQUEST),
         ];
 
+        // Chart 5: Jenis Kendala (Aset TIK vs Lainnya)
+        $kendalaCounts = Ticket::selectRaw('jenis_kendala, COUNT(*) as total')
+            ->groupBy('jenis_kendala')
+            ->pluck('total', 'jenis_kendala');
+
+        $jenisKendalaData = [
+            'labels' => ['Aset / Barang TIK', 'Lainnya (Non-Aset)'],
+            'data'   => [
+                (int) ($kendalaCounts['aset'] ?? 0),
+                (int) ($kendalaCounts['lainnya'] ?? 0),
+            ],
+        ];
+
+        // Daftar tahun untuk filter tren (minimal 3 tahun terakhir atau tahun min data)
+        $currentYear = (int) Carbon::now()->year;
+        $minTicketYear = Ticket::min('created_at') ? (int) Carbon::parse(Ticket::min('created_at'))->year : $currentYear;
+        $minRequestYear = ServiceRequest::min('created_at') ? (int) Carbon::parse(ServiceRequest::min('created_at'))->year : $currentYear;
+        $minYear = min($minTicketYear, $minRequestYear, $currentYear - 2);
+        $availableYears = range($currentYear, $minYear);
+
         // Kartu "Sudah Selesai": incident + request yang berstatus Selesai
         $selesaiIncident = (int) $statusIncident['Selesai'];
         $selesaiRequest  = (int) ($requestByStatus['Selesai'] ?? 0);
@@ -127,9 +148,50 @@ class DashboardController extends Controller
             'totalIncident', 'totalRequest', 'statusIncident', 'statsDelta',
             'totalSelesai', 'selesaiIncident', 'selesaiRequest',
             'last6Months', 'incidentTrend', 'requestTrend',
-            'resolutionData', 'layananData', 'requestStatusData',
-            'recentIncidents', 'recentRequests'
+            'resolutionData', 'layananData', 'requestStatusData', 'jenisKendalaData',
+            'availableYears', 'recentIncidents', 'recentRequests'
         ));
+    }
+
+    /**
+     * Endpoint API untuk data tren aduan & permintaan (filter 6 bulan / tahunan).
+     */
+    public function trendData(Request $request)
+    {
+        $period = $request->input('period', '6months');
+        $year = (int) $request->input('year', Carbon::now()->year);
+
+        $categories = [];
+        $incidentTrend = [];
+        $requestTrend = [];
+
+        if ($period === 'yearly') {
+            for ($month = 1; $month <= 12; $month++) {
+                $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth();
+                $endOfMonth   = $startOfMonth->copy()->endOfMonth();
+
+                $categories[]    = $startOfMonth->locale('id')->translatedFormat('M');
+                $incidentTrend[] = Ticket::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+                $requestTrend[]  = ServiceRequest::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+            }
+        } else {
+            // 6 bulan terakhir dinamis
+            for ($i = 5; $i >= 0; $i--) {
+                $date         = Carbon::now()->startOfMonth()->subMonths($i);
+                $startOfMonth = $date->copy()->startOfMonth();
+                $endOfMonth   = $date->copy()->endOfMonth();
+
+                $categories[]    = $date->copy()->locale('id')->translatedFormat('M Y');
+                $incidentTrend[] = Ticket::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+                $requestTrend[]  = ServiceRequest::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+            }
+        }
+
+        return response()->json([
+            'categories'    => $categories,
+            'incidentTrend' => $incidentTrend,
+            'requestTrend'  => $requestTrend,
+        ]);
     }
 
     /**

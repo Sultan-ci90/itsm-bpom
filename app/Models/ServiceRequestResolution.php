@@ -19,10 +19,6 @@ class ServiceRequestResolution extends Model
         'zoom_link',
         'zoom_meeting_id',
         'zoom_passcode',
-        'akun_password_baru',
-        'akun_instruksi_login',
-        'pinjam_perangkat_diserahkan',
-        'pinjam_catatan_pengembalian',
     ];
 
     protected $casts = [

@@ -60,7 +60,7 @@
     }" @click.outside="closeDropdown()">
         <!-- User Trigger -->
         <button
-            class="flex items-center text-gray-700 dark:text-gray-400"
+            class="flex items-center text-gray-700 dark:text-gray-400 cursor-pointer"
             type="button"
             @click="toggleDropdown()"
         >
@@ -93,6 +93,7 @@
         <!-- Dropdown Menu -->
         <div
             x-show="isOpen"
+            x-cloak
             x-transition:enter="transition ease-out duration-100"
             x-transition:enter-start="transform opacity-0 scale-95"
             x-transition:enter-end="transform opacity-100 scale-100"
@@ -130,7 +131,7 @@
             <form action="{{ route('logout') }}" method="POST" class="mt-2">
                 @csrf
                 <button type="submit"
-                    class="flex items-center w-full gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition"
+                    class="flex items-center w-full gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition cursor-pointer"
                     @click="closeDropdown()">
                     <span class="text-gray-500 group-hover:text-red-600 dark:group-hover:text-red-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
