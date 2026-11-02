@@ -150,8 +150,24 @@ sequenceDiagram
 
 ---
 
-### 4.2 Realtime Live Chat (Laravel Reverb & Echo)
-Komunikasi dua arah secara langsung antara pelapor dan teknisi penanggung jawab di dalam halaman tiket tanpa perlu me-refresh halaman web:
+### 4.2 Realtime Live Chat (Laravel Reverb & Echo — *Fitur Opsional*)
+Komunikasi dua arah langsung antara pelapor dan teknisi penanggung jawab di dalam halaman tiket:
+
+> [!NOTE]
+> **Status: Fitur WebSocket Ini Bersifat Opsional (Non-Wajib)**
+> - Fitur chat obrolan **tetap berfungsi normal 100%** dan riwayat pesan tetap tersimpan aman di database melalui request HTTP AJAX, meskipun server Reverb tidak dinyalakan.
+> - Di lingkungan server produksi / online saat ini, fitur Reverb WebSocket dinonaktifkan sementara (*tidak wajib online*) agar arsitektur server lebih ringan dan tidak memerlukan konfigurasi port WebSocket publik tambahan.
+> 
+> **Cara Mengaktifkan Jika Ingin Menggunakan Reverb:**
+> 1. Pastikan pada berkas `.env`:
+>    ```env
+>    BROADCAST_CONNECTION=reverb
+>    ```
+> 2. Jalankan server WebSocket Reverb di terminal terpisah:
+>    ```bash
+>    php artisan reverb:start
+>    ```
+> 3. Jika menggunakan domain produksi/HTTPS, arahkan proxy WebSocket port `8080` (lihat contoh konfigurasi Nginx di bagian Deployment).
 
 ```mermaid
 sequenceDiagram
@@ -164,9 +180,9 @@ sequenceDiagram
     Note over Pelapor,Teknisi: Berlangganan Private Channel: chat.service-request.{id}
     Pelapor->>App: Kirim Pesan Obrolan (AJAX)
     App->>App: Simpan ke tabel service_request_chats
-    App->>Reverb: Broadcast Event: ServiceRequestChatMessageSent
-    Reverb-->>Teknisi: Push WebSocket Notification
-    Note over Teknisi: Bubble pesan baru tampil seketika di layar!
+    App->>Reverb: Broadcast Event (Opsional via Reverb)
+    Reverb-->>Teknisi: Push WebSocket Notification Instan
+    Note over Teknisi: Bubble pesan baru tampil di layar
 ```
 
 ---
@@ -540,25 +556,25 @@ npm run build
 Anda dapat memilih salah satu dari dua metode di bawah ini:
 
 #### Opsi 1: Perintah Terpadu Satu Pintu (*Recommended*)
-Aplikasi telah dilengkapi skrip otomatis menggunakan pustaka `concurrently` untuk menyalakan **Web Server (Port 8000)**, **Queue Worker**, **WebSocket Reverb (Port 8080)**, **Log Pail**, dan **Vite Bundler** secara serentak dalam 1 perintah:
+Aplikasi telah dilengkapi skrip otomatis menggunakan pustaka `concurrently` untuk menyalakan komponen utama secara serentak (**Web Server PHP**, **Queue Worker**, **Log Pail**, dan **Vite Bundler**):
 ```bash
 composer run dev
 ```
 
 #### Opsi 2: Menjalankan Manual di Terminal Terpisah
-Jika Anda ingin memantau log masing-masing komponen secara individual, buka beberapa jendela terminal:
+Jika Anda ingin menjalankan atau memantau komponen secara individual:
 ```bash
-# Terminal 1: Web Server PHP
+# Terminal 1: Web Server PHP (Wajib)
 php artisan serve
 
-# Terminal 2: Vite Hot-Reload (Frontend Dev)
+# Terminal 2: Vite Hot-Reload / Frontend (Wajib saat pengembangan)
 npm run dev
 
-# Terminal 3: WebSocket Server Reverb (Fitur Live Chat)
-php artisan reverb:start
-
-# Terminal 4: Queue Worker (Fitur Notifikasi WhatsApp Bot)
+# Terminal 3: Queue Worker (Opsional: untuk pemrosesan pesan WhatsApp Fonnte)
 php artisan queue:work
+
+# Terminal 4: WebSocket Server Reverb (Opsional: hanya jika ingin menguji Live Chat realtime)
+php artisan reverb:start
 ```
 
 #### 10. Menjalankan Unit & Feature Test (Opsional)
