@@ -8,8 +8,10 @@
 
     <title>{{ $title ?? 'Dashboard' }} | ITSM</title>
 
-    <!-- TomSelect -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <!-- Google Fonts Preconnect & Stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -116,9 +118,6 @@ const checkMobile = () => {
 window.addEventListener('resize', checkMobile);">
 
     @yield('content')
-
-    <!-- TomSelect -->
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
 </body>
 

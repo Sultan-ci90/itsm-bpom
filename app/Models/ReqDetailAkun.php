@@ -9,7 +9,9 @@ class ReqDetailAkun extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'request_id', 'jenis_pengajuan', 'sistem_tujuan', 'nip_terkait', 'email', 'password',
+        'request_id',
+        'jenis_pengajuan',
+        'sistem_tujuan',
     ];
 
     public function serviceRequest(): BelongsTo

@@ -285,7 +285,6 @@ class FonnteService
                 . "👤 *Pemohon*: {$namaPemohon}\n"
                 . "🏢 *Bidang/Unit*: {$bidang}\n"
                 . "📋 *Jenis Layanan*: {$ticket->layanan}\n"
-                . "📍 *Lokasi*: " . ($ticket->lokasi ?? '-') . "\n"
                 . "📝 *Keterangan*:\n"
                 . "\"{$ticket->deskripsi}\"\n"
                 . "📅 *Waktu Pengajuan*: {$waktu}\n\n"
@@ -339,9 +338,8 @@ class FonnteService
                 'zoom' => 'Fasilitasi Zoom Meeting',
                 'reset_password' => 'Reset Password Akun',
                 'tambah_akun' => 'Pembuatan Akun Baru',
-                'peminjaman' => 'Peminjaman Perangkat IT',
                 'konsultasi' => 'Konsultasi IT',
-                'operator' => 'Operator Kegiatan',
+                'rapat', 'operator' => 'Permintaan Operator Rapat',
                 default => 'Layanan IT Lainnya'
             };
             $perihal = 'Permintaan Layanan IT (' . $namaLayanan . ')';
@@ -350,19 +348,6 @@ class FonnteService
 
             $solusi = $resolution?->tindak_lanjut 
                 ?? 'Permintaan layanan Anda telah selesai diproses oleh Tim IT.';
-
-            // Jika ada detail Zoom
-            if (in_array(strtolower($ticket->layanan), ['zoom', 'fasilitasi zoom']) && $resolution) {
-                if (!empty($resolution->zoom_link)) {
-                    $solusi .= "\n\n🔗 *Link Zoom*: " . $resolution->zoom_link;
-                }
-                if (!empty($resolution->zoom_meeting_id)) {
-                    $solusi .= "\n🆔 *Meeting ID*: " . $resolution->zoom_meeting_id;
-                }
-                if (!empty($resolution->zoom_passcode)) {
-                    $solusi .= "\n🔑 *Passcode*: " . $resolution->zoom_passcode;
-                }
-            }
 
             $url = route('requests.show', $ticket->id);
         }

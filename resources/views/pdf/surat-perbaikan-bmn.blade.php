@@ -14,9 +14,9 @@
     table.info td.sep { width: 12px; }
     .judul-box { margin-top: 14px; text-decoration: underline; font-weight: 500; }
     .box { border: 1px solid #000; min-height: 60px; padding: 6px; margin-bottom: 14px; }
-    table.ttd { width: 100%; margin-top: 20px; text-align: center; border-collapse: collapse; }
-    table.ttd td { width: 33.33%; vertical-align: middle; padding: 0 4px;   height: 72px; text-align: center}
-    .ttd-space {margin: 28px 0; font-size: 9pt; text-align: center; vertical-align: middle;}
+    table.ttd { width: 100%; margin-top: 20px; text-align: center; border-collapse: collapse;  }
+    table.ttd td {  vertical-align: middle; padding: 0 4px;   height: 84px; text-align: left}
+    .ttd-space {margin: 28px 0 28px 20px; font-size: 9pt; text-align: left; vertical-align: middle;}
     .nama { text-decoration: underline; font-weight: bold; }
 </style>
 </head>
@@ -71,21 +71,32 @@
 </div>
 <div class="box">{{ $ticket->resolution?->analisa_teknis ?? '-' }}</div>
 
+<div class="judul-box">
+    Tindak Lanjut : {{ $ticket->resolution?->tgl_tindak_lanjut ? \Carbon\Carbon::parse($ticket->resolution->tgl_tindak_lanjut)->translatedFormat('d F Y') : '-' }}
+</div>
+<div class="box">{{ $ticket->resolution?->tindak_lanjut_teknis ?? '-' }}</div>
+
 <table class="ttd">
     <tr>
-        <td>Mengetahui,<br>Kepala Bagian Tata Usaha</td>
-        <td>Pemeriksa</td>
-        <td>Yang meminta</td>
+        <td width="250px" class="">Mengetahui,<br>Kepala Bagian Tata Usaha</td>
+        <td width=""></td> <!-- GAP -->
+        <td width="200px" class="text-center">Pemeriksa</td>
+        <td width=""></td> <!-- GAP -->
+        <td width="">Yang meminta</td>
     </tr>
     <tr>
-        <td class="ttd-space">${ttd_pengirim1}</td>
-        <td class="ttd-space">${ttd_pengirim2}</td>
-        <td class="ttd-space">${ttd_pengirim3}</td>
+        <td class="ttd-space">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${ttd_pengirim3}</td>
+           <td></td>
+        <td class="ttd-space">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${ttd_pengirim2}</td>
+           <td></td>
+        <td class="ttd-space">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${ttd_pengirim1}</td>
     </tr>
     <tr>
-        <td><span class="nama">{{ $kabag->nama }}</span><br>{{ $kabag->nip }}</td>
-        <td><span class="nama">{{ $pemeriksa->nama ?? '-' }}</span><br>{{ $pemeriksa->nip ?? '-' }}</td>
-        <td><span class="nama">{{ $ticket->pelapor->nama ?? '-' }}</span><br>{{ $ticket->pelapor->nip ?? '-' }}</td>
+        <td><span class="nama">{{ $kabag->nama }}</span><br>NIP.{{ $kabag->nip }}</td>
+           <td></td>
+        <td><span class="nama">{{ $pemeriksa->nama ?? '-' }}</span><br>NIP.{{ $pemeriksa->nip ?? '-' }}</td>
+           <td></td>
+        <td><span class="nama">{{ $ticket->pelapor->nama ?? '-' }}</span><br>NIP.{{ $ticket->pelapor->nip ?? '-' }}</td>
     </tr>
 </table>
 

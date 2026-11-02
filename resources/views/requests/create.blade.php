@@ -132,29 +132,13 @@
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Layanan <span class="text-meta-1">*</span></label>
                             <select x-model="layanan" name="layanan" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="lainnya" {{ old('layanan', 'lainnya') == 'lainnya' ? 'selected' : '' }}>Lainnya (Permintaan Layanan Umum)</option>
+                                <option value="konsultasi" {{ old('layanan') == 'konsultasi' ? 'selected' : '' }}>Konsultasi / Asistensi IT</option>
                                 <option value="zoom" {{ old('layanan') == 'zoom' ? 'selected' : '' }}>Permintaan Link Zoom Meeting</option>
+                                <option value="rapat" {{ old('layanan') == 'rapat' ? 'selected' : '' }}>Permintaan Operator Rapat</option>
                                 <option value="reset_password" {{ old('layanan') == 'reset_password' ? 'selected' : '' }}>Reset Password Akun Aplikasi</option>
                                 <option value="tambah_akun" {{ old('layanan') == 'tambah_akun' ? 'selected' : '' }}>Tambah / Pembuatan Akun Baru</option>
-                                <option value="peminjaman" {{ old('layanan') == 'peminjaman' ? 'selected' : '' }}>Peminjaman Perangkat IT</option>
-                                <option value="konsultasi" {{ old('layanan') == 'konsultasi' ? 'selected' : '' }}>Konsultasi / Asistensi IT</option>
-                                <option value="operator" {{ old('layanan') == 'operator' ? 'selected' : '' }}>Permintaan Operator Kegiatan</option>
                             </select>
                             @error('layanan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <!-- Lokasi Ruangan -->
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
-                                Lokasi Ruangan <span class="text-meta-1">*</span>
-                            </label>
-                            <select id="lokasi_select" name="lokasi" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                                @foreach($lokasis as $lokasi)
-                                    <option value="{{ $lokasi }}" {{ old('lokasi', $defaultLokasi) == $lokasi ? 'selected' : '' }}>
-                                        {{ $lokasi }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('lokasi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
@@ -174,17 +158,16 @@
                             </select>
                             @error('bidang_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
+                        <div class="mb-2.5 block text-sm font-medium text-black dark:text-white">
+                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Acara <span class="text-meta-1">*</span></label>
+                            <x-form.date-picker id="tgl_acara" name="tgl_acara" :defaultDate="old('tgl_acara')" placeholder="Pilih Tanggal Acara" />
+                            @error('tgl_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
+                        </div>
 
                         <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Nama Acara <span class="text-meta-1">*</span></label>
                             <input type="text" name="nama_acara" value="{{ old('nama_acara') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             @error('nama_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Acara <span class="text-meta-1">*</span></label>
-                            <x-form.date-picker id="tgl_acara" name="tgl_acara" :defaultDate="old('tgl_acara')" placeholder="Pilih Tanggal Acara" />
-                            @error('tgl_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="sm:col-span-2">
@@ -196,17 +179,7 @@
                                 :alpineRequired="'layanan === \'zoom\''" />
                         </div>
 
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Acara <span class="text-meta-1">*</span></label>
-                            <select name="jenis_acara" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                                <option value="Rapat" {{ old('jenis_acara') == 'Rapat' ? 'selected' : '' }}>Rapat</option>
-                                <option value="Webinar" {{ old('jenis_acara') == 'Webinar' ? 'selected' : '' }}>Webinar</option>
-                                <option value="Hybrid" {{ old('jenis_acara') == 'Hybrid' ? 'selected' : '' }}>Hybrid</option>
-                            </select>
-                            @error('jenis_acara') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
+                        <div class="sm:col-span-2">
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Butuh Operator? <span class="text-meta-1">*</span></label>
                             <select name="butuh_operator" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 <option value="Tidak" {{ old('butuh_operator') == 'Tidak' ? 'selected' : '' }}>Tidak</option>
@@ -237,55 +210,19 @@
                     </div>
                 </div>
 
-                <!-- SECTION 4: Form Dinamis Peminjaman -->
-                <div x-show="layanan === 'peminjaman'" x-cloak x-transition class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
-                    <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Peminjaman Perangkat</h4>
-                    <div class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
-                        <div class="sm:col-span-2">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Jenis Perangkat <span class="text-meta-1">*</span></label>
-                            <input type="text" name="jenis_perangkat" value="{{ old('jenis_perangkat') }}" placeholder="Contoh: Laptop, Proyektor, Sound System" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                            @error('jenis_perangkat') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Mulai <span class="text-meta-1">*</span></label>
-                            <x-form.date-picker id="tgl_mulai" name="tgl_mulai" :defaultDate="old('tgl_mulai')" placeholder="Pilih Tanggal Mulai" />
-                            @error('tgl_mulai') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Tanggal Kembali <span class="text-meta-1">*</span></label>
-                            <x-form.date-picker id="tgl_kembali" name="tgl_kembali" :defaultDate="old('tgl_kembali')" placeholder="Pilih Tanggal Kembali" />
-                            @error('tgl_kembali') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Keperluan <span class="text-meta-1">*</span></label>
-                            <textarea name="keperluan" rows="2" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">{{ old('keperluan') }}</textarea>
-                            @error('keperluan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Lokasi Penggunaan <span class="text-meta-1">*</span></label>
-                            <input type="text" name="lokasi_penggunaan" value="{{ old('lokasi_penggunaan') }}" class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                            @error('lokasi_penggunaan') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-
-                    <!-- Deskripsi / Keterangan Permintaan (Posisi Paling Bawah) -->
+                <!-- Deskripsi / Keterangan Permintaan (Posisi Paling Bawah) -->
                 <div class="mb-6 rounded-lg border border-stroke p-5 dark:border-gray-800">
                     <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
                         Deskripsi / Penjelasan Permintaan
-                        <span class="text-meta-1" x-show="layanan === 'lainnya'">*</span>
+                        <span class="text-meta-1" x-show="layanan === 'lainnya' || layanan === 'konsultasi'">*</span>
                     </label>
                     <textarea name="deskripsi" rows="4"
-                        :required="layanan === 'lainnya'"
+                        :required="layanan === 'lainnya' || layanan === 'konsultasi'"
                         placeholder="Jelaskan kebutuhan atau permohonan layanan Anda secara rinci (contoh: bantuan instalasi software, setting email, perbaikan koneksi, dll)..."
                         class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">{{ old('deskripsi') }}</textarea>
                     @error('deskripsi') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                     <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                        Catatan tambahan atau uraian rinci permohonan layanan. Wajib diisi bila memilih jenis layanan "Lainnya".
+                        Catatan tambahan atau uraian rinci permohonan layanan. Wajib diisi bila memilih jenis layanan "Lainnya" atau "Konsultasi / Asistensi IT".
                     </p>
                 </div>
 
@@ -309,7 +246,6 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const pelaporEl = document.getElementById('pelapor_select_request');
-        const lokasiSelect = document.getElementById('lokasi_select');
         const zoomBidangSelect = document.querySelector('select[name="bidang_id"]');
 
         const initPelaporSelect = () => {

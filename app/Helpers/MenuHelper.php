@@ -33,7 +33,7 @@ class MenuHelper
 
             $mainItems[] = [
                 'icon' => 'support-ticket',
-                'name' => 'semua Aduan Kendala TIK',
+                'name' => 'Semua Aduan Kendala TIK',
                 'path' => '/incidents/all',
             ];
 

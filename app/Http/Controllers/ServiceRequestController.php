@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\ServiceRequest;
 use App\Models\ReqDetailZoom;
 use App\Models\ReqDetailAkun;
-use App\Models\ReqDetailPeminjaman;
 use App\Models\Bidang;
 use App\Models\Lokasi;
 use Illuminate\Http\Request;
@@ -74,13 +73,12 @@ class ServiceRequestController extends Controller
 
         $validStatuses = ['Diajukan', 'Diproses', 'Selesai', 'Ditolak'];
         $layananOptions = [
+            'lainnya'        => 'Lainnya (Permintaan Layanan Umum)',
+            'konsultasi'     => 'Konsultasi / Asistensi IT',
             'zoom'           => 'Permintaan Link Zoom Meeting',
+            'rapat'          => 'Permintaan Operator Rapat',
             'reset_password' => 'Reset Password Akun Aplikasi',
             'tambah_akun'    => 'Tambah / Pembuatan Akun Baru',
-            'peminjaman'     => 'Peminjaman Perangkat IT',
-            'konsultasi'     => 'Konsultasi / Asistensi IT',
-            'operator'       => 'Permintaan Operator Kegiatan',
-            'lainnya'        => 'Lainnya',
         ];
 
         if ($request->filled('status')) {
@@ -120,24 +118,14 @@ class ServiceRequestController extends Controller
     public function create()
     {
         $bidangs = Bidang::all();
-
-        // 1. Ambil master lokasi urut alfabetis A-Z (independen, tanpa keterikatan bidang)
         $user = auth()->user();
-        $lokasis = Lokasi::orderBy('nama_lokasi', 'asc')->pluck('nama_lokasi')->toArray();
-
-        // Jika database belum memiliki lokasi, fallback ke daftar default
-        if (empty($lokasis)) {
-            $lokasis = ['Ruang Staff Tata Usaha', 'Aula BPOM', 'Ruang Rapat Utama'];
-        }
-        $defaultLokasi = $lokasis[0] ?? '';
-
         $isStaff = $user->isTeknisi() || $user->isAdmin();
 
         $users = $isStaff
             ? User::with('bidang')->select('id', 'nama', 'nip', 'bidang_id')->orderBy('nama')->get()
             : collect();
 
-        return view('requests.create', compact('bidangs', 'lokasis', 'defaultLokasi', 'isStaff', 'users'));
+        return view('requests.create', compact('bidangs', 'isStaff', 'users'));
     }
 
     /**
@@ -151,9 +139,8 @@ class ServiceRequestController extends Controller
         // 1. Validasi Bersyarat ('lainnya' adalah default layanan)
         $validated = $request->validate([
             'pelapor_id' => 'nullable|exists:users,id',
-            'layanan' => 'required|in:lainnya,zoom,reset_password,tambah_akun,akun,peminjaman,konsultasi,operator',
-            'lokasi' => 'required|string|max:100',
-            'deskripsi' => 'required_if:layanan,lainnya|nullable|string',
+            'layanan' => 'required|in:lainnya,konsultasi,zoom,rapat,reset_password,tambah_akun,akun',
+            'deskripsi' => 'required_if:layanan,lainnya,konsultasi|nullable|string',
 
             // Validasi khusus Zoom
             'bidang_id' => "required_if:layanan,zoom|nullable|exists:{$bidangTable},id",
@@ -161,27 +148,14 @@ class ServiceRequestController extends Controller
             'tgl_acara' => 'required_if:layanan,zoom|nullable|date',
             'jam_mulai' => 'required_if:layanan,zoom|nullable|date_format:H:i',
             'jam_selesai' => 'required_if:layanan,zoom|nullable|date_format:H:i|after:jam_mulai',
-            'jenis_acara' => 'required_if:layanan,zoom|nullable|in:Rapat,Webinar,Hybrid',
             'butuh_operator' => 'required_if:layanan,zoom|nullable|in:Ya,Tidak',
 
             // Validasi khusus Akun (Reset Password / Tambah Akun)
             'sistem_tujuan' => 'required_if:layanan,reset_password,tambah_akun,akun|nullable|string|max:100',
-            'nip_terkait' => 'required_if:layanan,reset_password,tambah_akun,akun|nullable|regex:/^[0-9]+$/|max:50',
-            'email' => 'required_if:layanan,reset_password,tambah_akun|nullable|email|max:150',
-            'password' => 'required_if:layanan,reset_password,tambah_akun|nullable|string|max:255',
-
-            // Validasi khusus Peminjaman
-            'jenis_perangkat' => 'required_if:layanan,peminjaman|nullable|string|max:255',
-            'tgl_mulai' => 'required_if:layanan,peminjaman|nullable|date',
-            'tgl_kembali' => 'required_if:layanan,peminjaman|nullable|date|after_or_equal:tgl_mulai',
-            'keperluan' => 'required_if:layanan,peminjaman|nullable|string',
-            'lokasi_penggunaan' => 'required_if:layanan,peminjaman|nullable|string|max:100',
         ], [
-            'deskripsi.required_if' => 'Mohon jelaskan rincian permintaan atau kebutuhan Anda pada kolom deskripsi.',
-            'lokasi.required' => 'Lokasi wajib dipilih.',
+            'deskripsi.required_if' => 'Mohon jelaskan rincian topik konsultasi atau kebutuhan layanan Anda pada kolom deskripsi.',
             'layanan.required' => 'Jenis layanan wajib dipilih.',
-            'nip_terkait.regex' => 'NIP hanya boleh berisi angka.',
-            'email.email' => 'Format email tidak valid.',
+            'sistem_tujuan.required_if' => 'Sistem / Aplikasi tujuan wajib dipilih.',
         ]);
 
         // 2. Database Transaction
@@ -218,7 +192,6 @@ class ServiceRequestController extends Controller
                 'reported_by' => $reportedById,
                 'layanan' => $validated['layanan'],
                 'tgl_request' => Carbon::now(),
-                'lokasi' => $validated['lokasi'],
                 'deskripsi' => $validated['deskripsi'] ?? null,
                 'status' => 'Diajukan',
             ]);
@@ -232,7 +205,6 @@ class ServiceRequestController extends Controller
                     'nama_acara' => $validated['nama_acara'],
                     'jam_mulai' => $validated['jam_mulai'],
                     'jam_selesai' => $validated['jam_selesai'],
-                    'jenis_acara' => $validated['jenis_acara'],
                     'butuh_operator' => $validated['butuh_operator'],
                 ]);
             } elseif (in_array($validated['layanan'], ['reset_password', 'tambah_akun', 'akun'])) {
@@ -246,18 +218,6 @@ class ServiceRequestController extends Controller
                     'request_id' => $serviceRequest->id,
                     'jenis_pengajuan' => $jenisPengajuan,
                     'sistem_tujuan' => $validated['sistem_tujuan'] ?? $request->input('sistem_tujuan'),
-                    'nip_terkait' => $validated['nip_terkait'] ?? $request->input('nip_terkait'),
-                    'email' => $request->input('email'),
-                    'password' => $request->input('password'),
-                ]);
-            } elseif ($validated['layanan'] === 'peminjaman') {
-                ReqDetailPeminjaman::create([
-                    'request_id' => $serviceRequest->id,
-                    'jenis_perangkat' => $validated['jenis_perangkat'],
-                    'tgl_mulai' => $validated['tgl_mulai'],
-                    'tgl_kembali' => $validated['tgl_kembali'],
-                    'keperluan' => $validated['keperluan'],
-                    'lokasi_penggunaan' => $validated['lokasi_penggunaan'],
                 ]);
             }
 
@@ -322,11 +282,7 @@ class ServiceRequestController extends Controller
         }
 
         $bidangs = \App\Models\Bidang::all();
-        $lokasis = Lokasi::orderBy('nama_lokasi', 'asc')->pluck('nama_lokasi')->toArray();
-        if (empty($lokasis)) {
-            $lokasis = ['Ruang Staff Tata Usaha', 'Aula BPOM', 'Ruang Rapat Utama'];
-        }
-        return view('requests.edit', compact('req', 'bidangs', 'lokasis'));
+        return view('requests.edit', compact('req', 'bidangs'));
     }
 
     /**
@@ -348,7 +304,6 @@ class ServiceRequestController extends Controller
 
         $validated = $request->validate([
             'layanan' => 'required|string',
-            'lokasi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
         ]);
 
@@ -363,7 +318,6 @@ class ServiceRequestController extends Controller
                     'nama_acara' => 'required|string|max:255',
                     'tgl_acara' => 'required|date',
                     'bidang_id' => 'required|exists:bidang,id',
-                    'jenis_acara' => 'required|string',
                     'jam_mulai' => 'required',
                     'jam_selesai' => 'required',
                     'butuh_operator' => 'required|string',
@@ -376,12 +330,8 @@ class ServiceRequestController extends Controller
             } elseif (in_array($validated['layanan'], ['reset_password', 'tambah_akun', 'akun'])) {
                 $akunData = $request->validate([
                     'sistem_tujuan' => 'required|string|max:100',
-                    'nip_terkait' => 'required|regex:/^[0-9]+$/|max:50',
-                    'email' => 'nullable|email|max:150',
-                    'password' => 'nullable|string|max:255',
                 ], [
-                    'nip_terkait.regex' => 'NIP hanya boleh berisi angka.',
-                    'email.email' => 'Format email tidak valid.',
+                    'sistem_tujuan.required' => 'Sistem / Aplikasi tujuan wajib dipilih.',
                 ]);
 
                 $akunData['jenis_pengajuan'] = match($validated['layanan']) {
@@ -394,19 +344,6 @@ class ServiceRequestController extends Controller
                     $req->detailAkun->update($akunData);
                 } else {
                     $req->detailAkun()->create($akunData);
-                }
-            } elseif ($validated['layanan'] === 'peminjaman') {
-                $pinjamData = $request->validate([
-                    'jenis_perangkat' => 'required|string',
-                    'tgl_mulai' => 'required|date',
-                    'tgl_kembali' => 'required|date|after_or_equal:tgl_mulai',
-                    'keperluan' => 'required|string',
-                    'lokasi_penggunaan' => 'nullable|string',
-                ]);
-                if ($req->detailPeminjaman) {
-                    $req->detailPeminjaman->update($pinjamData);
-                } else {
-                    $req->detailPeminjaman()->create($pinjamData);
                 }
             }
 
@@ -428,7 +365,6 @@ class ServiceRequestController extends Controller
             'user.bidang',
             'detailZoom.bidang',
             'detailAkun',
-            'detailPeminjaman',
             'resolution.petugas',
             'chats.user.bidang',
             'closedByUser'
@@ -438,6 +374,9 @@ class ServiceRequestController extends Controller
         if (auth()->user()->isPelapor() && $req->user_id !== auth()->id()) {
             abort(403, 'Anda tidak memiliki akses ke request ini.');
         }
+
+        // Cek dan simpan konfirmasi otomatis jika batas waktu 2 hari telah terlampaui
+        $req->autoConfirmIfExpired();
 
         // Daftar teknisi/admin untuk dropdown petugas
         $petugasList = (auth()->user()->isTeknisi() || auth()->user()->isAdmin())
@@ -510,16 +449,10 @@ class ServiceRequestController extends Controller
             'tgl_tindak_lanjut' => 'required|date',
             'tindak_lanjut' => 'required_unless:status,Ditolak|nullable|string',
             'alasan_penolakan' => 'required_if:status,Ditolak|nullable|string',
-
-            // Layanan Zoom (opsional/kondisional)
-            'zoom_link' => 'nullable|string|max:500',
-            'zoom_meeting_id' => 'nullable|string|regex:/^[0-9\s-]+$/|max:50',
-            'zoom_passcode' => 'nullable|string|max:100',
         ], [
             'tgl_tindak_lanjut.required' => 'Tanggal tindak lanjut wajib diisi.',
             'tindak_lanjut.required_unless' => 'Catatan tindakan tim IT wajib diisi jika tidak ditolak.',
             'alasan_penolakan.required_if' => 'Alasan penolakan wajib diisi jika status Ditolak.',
-            'zoom_meeting_id.regex' => 'Meeting ID Zoom hanya boleh berisi angka, spasi, atau tanda strip (-).',
         ]);
 
         DB::beginTransaction();
@@ -532,9 +465,6 @@ class ServiceRequestController extends Controller
                     'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
                     'tindak_lanjut' => $validated['tindak_lanjut'] ?? null,
                     'alasan_penolakan' => $validated['alasan_penolakan'] ?? null,
-                    'zoom_link' => $validated['zoom_link'] ?? null,
-                    'zoom_meeting_id' => $validated['zoom_meeting_id'] ?? null,
-                    'zoom_passcode' => $validated['zoom_passcode'] ?? null,
                 ]
             );
 
@@ -611,7 +541,7 @@ class ServiceRequestController extends Controller
                 ->with('error', 'Hanya request dengan status Selesai yang tindak lanjutnya dapat diedit melalui rute ini.');
         }
 
-        $req->load(['user.bidang', 'detailZoom.bidang', 'detailAkun', 'detailPeminjaman', 'resolution.petugas']);
+        $req->load(['user.bidang', 'detailZoom.bidang', 'detailAkun', 'resolution.petugas']);
 
         $petugasList = User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama']);
 
@@ -640,13 +570,6 @@ class ServiceRequestController extends Controller
             'petugas_id' => 'nullable|exists:users,id',
             'tgl_tindak_lanjut' => 'required|date',
             'tindak_lanjut' => 'required|string',
-
-            // Layanan Zoom
-            'zoom_link' => 'nullable|string|max:500',
-            'zoom_meeting_id' => 'nullable|string|regex:/^[0-9\s-]+$/|max:50',
-            'zoom_passcode' => 'nullable|string|max:100',
-        ], [
-            'zoom_meeting_id.regex' => 'Meeting ID Zoom hanya boleh berisi angka, spasi, atau tanda strip (-).',
         ]);
 
         DB::beginTransaction();
@@ -657,9 +580,6 @@ class ServiceRequestController extends Controller
                     'petugas_id' => $req->resolution?->petugas_id ?? auth()->id(),
                     'tgl_tindak_lanjut' => $validated['tgl_tindak_lanjut'],
                     'tindak_lanjut' => $validated['tindak_lanjut'],
-                    'zoom_link' => $validated['zoom_link'] ?? null,
-                    'zoom_meeting_id' => $validated['zoom_meeting_id'] ?? null,
-                    'zoom_passcode' => $validated['zoom_passcode'] ?? null,
                 ]
             );
 
@@ -903,9 +823,16 @@ class ServiceRequestController extends Controller
             return back()->with('error', 'Konfirmasi penyelesaian hanya dapat dilakukan jika permohonan berstatus Selesai.');
         }
 
+        if ($req->isConfirmationExpired()) {
+            $req->autoConfirmIfExpired();
+            return redirect()->route('requests.show', $req->id)
+                             ->with('info', 'Batas waktu konfirmasi 2 hari telah berakhir. Permohonan ini telah otomatis dikonfirmasi selesai oleh sistem.');
+        }
+
         try {
             $req->update([
                 'konfirmasi_selesai_at' => now(),
+                'is_konfirmasi_otomatis' => false,
             ]);
 
             return redirect()->route('requests.show', $req->id)

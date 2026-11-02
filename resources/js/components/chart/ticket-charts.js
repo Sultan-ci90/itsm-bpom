@@ -61,7 +61,12 @@ export default function initTicketStatusChart() {
         ],
     };
 
-    const chart = new ApexCharts(chartElement, options);
+    const ApexConstructor = window.ApexCharts || (typeof ApexCharts !== 'undefined' ? ApexCharts : null);
+    if (!ApexConstructor) {
+        console.warn('ApexCharts belum siap untuk ticket status chart.');
+        return;
+    }
+    const chart = new ApexConstructor(chartElement, options);
 
     chart.render();
 }

@@ -143,6 +143,7 @@
                      @click="showImageModal = true">
                     <img src="{{ asset('storage/' . $panduan->gambar) }}"
                          alt="{{ $panduan->judul }}"
+                         loading="lazy" decoding="async"
                          class="w-full max-h-[420px] object-contain transition hover:scale-[1.01]">
                 </div>
                 <p class="mt-1.5 text-center text-[11px] text-gray-400">Klik gambar untuk melihat ukuran penuh</p>
@@ -157,7 +158,7 @@
                     <button @click="showImageModal = false" class="cursor-pointer absolute -top-10 end-0 text-white hover:text-gray-300 text-sm font-semibold">
                         &times; Tutup
                     </button>
-                    <img src="{{ asset('storage/' . $panduan->gambar) }}" alt="{{ $panduan->judul }}" class="max-h-[85vh] w-auto rounded-lg shadow-2xl">
+                    <img src="{{ asset('storage/' . $panduan->gambar) }}" alt="{{ $panduan->judul }}" loading="lazy" decoding="async" class="max-h-[85vh] w-auto rounded-lg shadow-2xl">
                 </div>
             </div>
         @endif

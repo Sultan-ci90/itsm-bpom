@@ -9,8 +9,14 @@
     <title>{{ $title ?? 'ITSM' }} | BPOM</title>
 
     
-    <!-- TomSelect -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <!-- Google Fonts Preconnect & Stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- TomSelect CSS & JS (Searchable Selects) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/css/tom-select.default.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"></script>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -151,14 +157,14 @@
 
 </head>
 
-<body>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <div class="min-h-screen xl:flex sidebar-expanded" x-data :class="{ 'sidebar-expanded': $store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen }">
         @include('layouts.backdrop')
         @include('layouts.sidebar')
 
         {{-- transition-all duration-300 ease-in-out --}}
-        <div class="flex-1 ml-0 ltr:xl:ml-[90px] rtl:xl:ml-0 rtl:xl:mr-[90px] [.sidebar-expanded_&]:ltr:xl:ml-[290px] [.sidebar-expanded_&]:rtl:xl:ml-0 [.sidebar-expanded_&]:rtl:xl:mr-[290px] transition-all duration-300 ease-in-out">
+        <div class="flex-1 min-w-0 ml-0 ltr:xl:ml-[90px] rtl:xl:ml-0 rtl:xl:mr-[90px] [.sidebar-expanded_&]:ltr:xl:ml-[290px] [.sidebar-expanded_&]:rtl:xl:ml-0 [.sidebar-expanded_&]:rtl:xl:mr-[290px] transition-all duration-300 ease-in-out">
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
@@ -169,20 +175,6 @@
         </div>
 
     </div>
-
-    <!-- TomSelect -->
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-    <script>
-        // Inisialisasi TomSelect dipanggil ulang setiap DOMContentLoaded & turboload.
-        function initTomSelect() {
-            if (typeof TomSelect === 'undefined') return;
-            document.querySelectorAll('select.tom-select').forEach((el) => {
-                if (!el.tomselect) new TomSelect(el, { create: false });
-            });
-        }
-        window.initTomSelect = initTomSelect;
-        document.addEventListener('DOMContentLoaded', initTomSelect);
-    </script>
 
     {{-- Fallback: jika Vite build belum dijalankan (`npm run build`) ATAU CDN Alpine mati,
          load Alpine dari CDN agar x-data/x-show/submit handler tetap berfungsi.

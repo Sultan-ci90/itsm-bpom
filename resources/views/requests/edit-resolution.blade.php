@@ -123,44 +123,6 @@
                     </div>
                 </div>
 
-                @if($req->layanan === 'zoom')
-                <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
-                    <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                        <span>🎥 Informasi Link Zoom Meeting:</span>
-                    </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="{{ $label }}">Link / URL Zoom Meeting</label>
-                            <input type="url" name="zoom_link" 
-                                   value="{{ old('zoom_link', $res?->zoom_link ?? '') }}" 
-                                   placeholder="https://us02web.zoom.us/j/..." 
-                                   class="{{ $input }}">
-                            @error('zoom_link') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="{{ $label }}">Meeting ID</label>
-                                <input type="text" name="zoom_meeting_id" 
-                                       inputmode="numeric"
-                                       oninput="this.value = this.value.replace(/[^0-9\s-]/g, '')"
-                                       value="{{ old('zoom_meeting_id', $res?->zoom_meeting_id ?? '') }}" 
-                                       placeholder="Contoh: 812 3456 7890" 
-                                       class="{{ $input }}">
-                                @error('zoom_meeting_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="{{ $label }}">Passcode</label>
-                                <input type="text" name="zoom_passcode" 
-                                       value="{{ old('zoom_passcode', $res?->zoom_passcode ?? '') }}" 
-                                       placeholder="Contoh: bpom2026" 
-                                       class="{{ $input }}">
-                                @error('zoom_passcode') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 <div class="mb-5">
                     <label class="{{ $label }}">
                         Tindakan yang Dilakukan / Solusi Tim IT <span class="text-meta-1">*</span>

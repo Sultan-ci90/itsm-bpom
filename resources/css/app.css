@@ -1,10 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap') layer(base);
-@import 'prismjs/themes/prism.min.css';
 @import 'tailwindcss';
 
-
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
@@ -311,6 +307,36 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #344054;
 }
+
+@utility custom-scrollbar-floating {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full dark:bg-gray-600 transition-colors;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+.dark .custom-scrollbar-floating {
+  scrollbar-color: #4b5563 transparent;
+}
+.dark .custom-scrollbar-floating::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+.dark .custom-scrollbar-floating::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
 @layer utilities {
   /* For Remove Date Icon */
   input[type='date']::-webkit-inner-spin-button,
@@ -411,37 +437,6 @@
 
 #chartSixteen .apexcharts-legend {
   @apply !p-0 !pl-6;
-}
-
-.jvm-container {
-  @apply !bg-gray-50 dark:!bg-gray-900;
-}
-.jvm-region.jvm-element {
-  @apply !fill-gray-300 hover:!fill-brand-500 dark:!fill-gray-700 dark:hover:!fill-brand-500;
-}
-.jvm-marker.jvm-element {
-  @apply !stroke-gray-200 dark:!stroke-gray-800;
-}
-
-.stocks-slider-outer .swiper-button-next:after,
-.stocks-slider-outer .swiper-button-prev:after {
-  @apply hidden;
-}
-
-.stocks-slider-outer .swiper-button-next,
-.stocks-slider-outer .swiper-button-prev {
-  @apply static! mt-0 h-8 w-9 rounded-full border border-gray-200 !text-gray-700 transition hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-400!;
-}
-
-.stocks-slider-outer .swiper-button-next.swiper-button-disabled,
-.stocks-slider-outer .swiper-button-prev.swiper-button-disabled {
-  @apply bg-white opacity-50 dark:bg-gray-900;
-}
-
-.stocks-slider-outer .swiper-button-next svg,
-.stocks-slider-outer .swiper-button-prev svg {
-  @apply !h-auto !w-auto;
-  fill: none;
 }
 
 .flatpickr-wrapper {
@@ -582,6 +577,40 @@ span.flatpickr-weekday,
 }
 .flatpickr-calendar.hasTime {
   width: 300px !important;
+}
+.flatpickr-calendar.hasTime.noCalendar {
+  width: auto !important;
+  min-width: 170px !important;
+  max-width: 220px !important;
+  padding: 0.5rem 0.75rem !important;
+}
+.flatpickr-calendar.hasTime.noCalendar .flatpickr-time {
+  height: 44px !important;
+  line-height: 44px !important;
+  max-height: 44px !important;
+}
+.flatpickr-calendar.hasTime.noCalendar .flatpickr-time input {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  background-color: transparent !important;
+  color: #1f2937 !important;
+}
+.dark .flatpickr-calendar.hasTime.noCalendar .flatpickr-time input {
+  color: #f9fafb !important;
+}
+.flatpickr-calendar.hasTime.noCalendar .flatpickr-time .flatpickr-time-separator {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+}
+.dark .flatpickr-calendar.hasTime.noCalendar .flatpickr-time .flatpickr-time-separator {
+  color: #f9fafb !important;
+}
+.flatpickr-calendar.hasTime.noCalendar .flatpickr-time .numInputWrapper span.arrowUp:after {
+  border-bottom-color: currentColor !important;
+}
+.flatpickr-calendar.hasTime.noCalendar .flatpickr-time .numInputWrapper span.arrowDown:after {
+  border-top-color: currentColor !important;
 }
 .flatpickr-calendar.hasTime .flatpickr-time {
   border: transparent !important;
@@ -1147,11 +1176,13 @@ pre[class*='language-'] {
 .dark .token.punctuation {
   color: #98a2b3;
 }
-.custom-datepicker .flatpickr-calendar.static.open {
+.custom-datepicker .flatpickr-calendar.static.open,
+.custom-timepicker .flatpickr-calendar.static.open {
   left: 0;
   right: auto;
 }
-[dir="rtl"] .custom-datepicker .flatpickr-calendar.static.open {
+[dir="rtl"] .custom-datepicker .flatpickr-calendar.static.open,
+[dir="rtl"] .custom-timepicker .flatpickr-calendar.static.open {
   right: 0;
   left: auto;
 }
@@ -1315,16 +1346,83 @@ pre[class*='language-'] {
   box-shadow: 0px 1px 3px rgba(16, 24, 40, 0.1), 0px 1px 2px rgba(16, 24, 40, 0.06);
 }
 
-/* ---- TomSelect & Native Select styling (Dark Mode fix) ---- */
+/* ---- TomSelect Base & TailAdmin Integration ---- */
+.ts-wrapper {
+  width: 100% !important;
+}
+
+.ts-control {
+  width: 100% !important;
+  min-height: 48px !important;
+  padding: 0.75rem 1.25rem !important;
+  border-radius: 0.5rem !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background-color: transparent !important;
+  font-size: 0.875rem !important;
+  color: #101828 !important;
+  display: flex !important;
+  align-items: center !important;
+  box-shadow: none !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.ts-wrapper.focus .ts-control {
+  border-color: #465fff !important;
+  outline: none !important;
+}
+
+.ts-control > input {
+  font-size: 0.875rem !important;
+  color: #101828 !important;
+}
+
+.ts-control > input::placeholder {
+  color: #98a2b3 !important;
+}
+
+.ts-dropdown {
+  border-radius: 0.5rem !important;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+  margin-top: 4px !important;
+  z-index: 9999 !important;
+  font-size: 0.875rem !important;
+  overflow: hidden !important;
+}
+
+.ts-dropdown .option {
+  padding: 0.625rem 1.25rem !important;
+  color: #344054 !important;
+  cursor: pointer !important;
+}
+
+.ts-dropdown .active,
+.ts-dropdown .highlighted,
+.ts-dropdown .option:hover {
+  background-color: #f2f4f7 !important;
+  color: #101828 !important;
+}
+
+.ts-dropdown .selected {
+  background-color: #465fff !important;
+  color: #ffffff !important;
+}
+
+/* ---- TomSelect Dark Mode styling ---- */
 .dark .ts-wrapper .ts-control,
 .dark .ts-control,
 html.dark .ts-wrapper.single .ts-control,
 html.dark .ts-control {
-  background-color: var(--color-form-input) !important;
-  background: var(--color-form-input) !important;
-  border-color: var(--color-strokedark) !important;
+  background-color: #101828 !important;
+  background: #101828 !important;
+  border-color: #1f2a37 !important;
   color: rgb(255 255 255 / 0.9) !important;
-  border-radius: 0.5rem;
+}
+
+.dark .ts-wrapper.focus .ts-control,
+html.dark .ts-wrapper.focus .ts-control {
+  border-color: #465fff !important;
 }
 
 .dark .ts-wrapper.single .ts-control .item,
@@ -1346,11 +1444,10 @@ html.dark .ts-control > input::placeholder {
 
 .dark .ts-dropdown,
 html.dark .ts-dropdown {
-  background-color: var(--color-form-input) !important;
-  background: var(--color-form-input) !important;
-  border-color: var(--color-strokedark) !important;
+  background-color: #101828 !important;
+  background: #101828 !important;
+  border-color: #1f2a37 !important;
   color: rgb(255 255 255 / 0.9) !important;
-  border-radius: 0.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5) !important;
 }
 
@@ -1366,19 +1463,19 @@ html.dark .ts-dropdown .option {
 html.dark .ts-dropdown .active,
 html.dark .ts-dropdown .highlighted,
 html.dark .ts-dropdown .option:hover {
-  background-color: var(--color-boxdark) !important;
+  background-color: #1d2939 !important;
   color: #ffffff !important;
 }
 
 .dark .ts-dropdown .selected,
 html.dark .ts-dropdown .selected {
-  background-color: var(--color-brand-600) !important;
+  background-color: #465fff !important;
   color: #ffffff !important;
 }
 
 .dark .ts-wrapper.multi .ts-control > div,
 html.dark .ts-wrapper.multi .ts-control > div {
-  background-color: var(--color-boxdark) !important;
+  background-color: #1d2939 !important;
   color: #ffffff !important;
   border-radius: 0.25rem;
 }
@@ -1390,13 +1487,10 @@ html.dark select option {
   color: #ffffff !important;
 }
 
-/* Force code blocks and syntax highlighting to always remain LTR */
+/* Force code blocks to always remain LTR */
 pre,
 code,
-pre code,
-.line-numbers,
-[class*="language-"],
-.prism-code {
+pre code {
   direction: ltr !important;
   text-align: left !important;
   unicode-bidi: isolate;

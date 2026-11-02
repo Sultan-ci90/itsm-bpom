@@ -2,7 +2,8 @@
 
 @section('content')
 <div x-data="{
-    periode: '{{ old('periode', 'triwulan') }}'
+    periode: '{{ old('periode', 'triwulan') }}',
+    jenis: '{{ old('jenis', 'kerusakan') }}'
 }">
     {{-- Breadcrumb --}}
     <x-common.page-breadcrumb pageTitle="Laporan & Rekapitulasi" />
@@ -52,10 +53,9 @@
                     </label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition"
-                               :class="'{{ old('jenis', 'kerusakan') }}' === 'kerusakan' ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-950/20' : 'border-gray-200 dark:border-gray-800'">
-                            <input type="radio" name="jenis" value="kerusakan"
-                                   class="mt-1 text-brand-500 focus:ring-brand-500"
-                                   {{ old('jenis', 'kerusakan') === 'kerusakan' ? 'checked' : '' }}>
+                               :class="jenis === 'kerusakan' ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-950/20' : 'border-gray-200 dark:border-gray-800'">
+                            <input type="radio" name="jenis" value="kerusakan" x-model="jenis"
+                                   class="mt-1 text-brand-500 focus:ring-brand-500">
                             <div>
                                 <span class="block text-sm font-semibold text-gray-900 dark:text-white">
                                     Laporan Kerusakan Aset
@@ -67,10 +67,9 @@
                         </label>
 
                         <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition"
-                               :class="'{{ old('jenis') }}' === 'layanan' ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-950/20' : 'border-gray-200 dark:border-gray-800'">
-                            <input type="radio" name="jenis" value="layanan"
-                                   class="mt-1 text-brand-500 focus:ring-brand-500"
-                                   {{ old('jenis') === 'layanan' ? 'checked' : '' }}>
+                               :class="jenis === 'layanan' ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-950/20' : 'border-gray-200 dark:border-gray-800'">
+                            <input type="radio" name="jenis" value="layanan" x-model="jenis"
+                                   class="mt-1 text-brand-500 focus:ring-brand-500">
                             <div>
                                 <span class="block text-sm font-semibold text-gray-900 dark:text-white">
                                     Laporan Layanan TI
@@ -124,7 +123,10 @@
                     {{-- A. Panel Per 3 Bulan (Triwulan) --}}
                     <div x-show="periode === 'triwulan'" x-cloak class="space-y-3">
                         <div class="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            <span>📊 Laporan Per 3 Bulan (Triwulan)</span>
+                            <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            <span>Laporan Per 3 Bulan (Triwulan)</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -167,7 +169,10 @@
                     {{-- B. Panel Per Bulan --}}
                     <div x-show="periode === 'bulan'" x-cloak class="space-y-3">
                         <div class="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            <span>🗓️ Rentang Bulan (Maksimal 24 Bulan)</span>
+                            <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>Rentang Bulan (Maksimal 24 Bulan)</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -190,7 +195,10 @@
                     {{-- C. Panel Per 6 Bulan (Semester) --}}
                     <div x-show="periode === 'semester'" x-cloak class="space-y-3">
                         <div class="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            <span>📊 Laporan Semester (6 Bulan)</span>
+                            <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            <span>Laporan Semester (6 Bulan)</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -224,7 +232,10 @@
                     {{-- D. Panel Per Tahun --}}
                     <div x-show="periode === 'tahun'" x-cloak class="space-y-3">
                         <div class="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            <span>📅 Laporan Tahunan Penuh (1 Januari - 31 Desember)</span>
+                            <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>Laporan Tahunan Penuh (1 Januari - 31 Desember)</span>
                         </div>
                         <div>
                             <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
@@ -265,7 +276,12 @@
                 </h4>
                 <div class="space-y-3.5 text-xs text-gray-600 dark:text-gray-400">
                     <div class="rounded-xl border border-gray-100 p-3 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40">
-                        <span class="font-bold text-gray-800 dark:text-gray-200 block mb-1">📄 Sheet 1: Ringkasan</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 mb-1">
+                            <svg class="h-3.5 w-3.5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span>Sheet 1: Ringkasan</span>
+                        </span>
                         <ul class="list-disc ps-4 space-y-0.5">
                             <li>Judul laporan & identitas instansi</li>
                             <li>Periode & tanggal cetak</li>
@@ -277,7 +293,12 @@
                     </div>
 
                     <div class="rounded-xl border border-gray-100 p-3 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40">
-                        <span class="font-bold text-gray-800 dark:text-gray-200 block mb-1">📋 Sheet 2: Detail</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 mb-1">
+                            <svg class="h-3.5 w-3.5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>Sheet 2: Detail</span>
+                        </span>
                         <ul class="list-disc ps-4 space-y-0.5">
                             <li>Daftar lengkap seluruh tiket/permohonan</li>
                             <li>Header kolom beku (Freeze Top Row)</li>

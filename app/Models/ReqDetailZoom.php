@@ -10,7 +10,7 @@ class ReqDetailZoom extends Model
 
     protected $fillable = [
         'request_id', 'bidang_id', 'tgl_acara', 'nama_acara', 'jam_mulai',
-        'jam_selesai', 'jenis_acara', 'butuh_operator',
+        'jam_selesai', 'butuh_operator',
         'bentuk_ruangan', 'jumlah_kursi',
     ];
 

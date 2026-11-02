@@ -1,14 +1,24 @@
 @extends('layouts.fullscreen-layout')
 
 @section('content')
-    <div class="relative z-1 bg-white p-6 sm:p-0 dark:bg-gray-900">
-        <div class="relative flex h-screen w-full flex-col justify-center sm:p-0 lg:flex-row dark:bg-gray-900">
+    <div class="relative z-1 bg-white dark:bg-gray-900">
+        <div class="relative flex min-h-screen lg:h-screen w-full flex-col justify-center lg:flex-row dark:bg-gray-900">
             <!-- Form -->
-            <div class="flex w-full flex-1 flex-col lg:w-1/2">
+            <div class="flex w-full flex-1 flex-col justify-center px-4 py-8 sm:px-6 sm:py-10 lg:w-1/2 lg:h-full lg:overflow-y-auto lg:px-8 lg:py-0">
 
-                <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
+                <div class="mx-auto flex w-full max-w-md flex-col justify-center">
                     <div>
-                        <div class="mb-8 sm:mb-8">
+                        {{-- Logo khusus mobile (< lg) --}}
+                        <div class="mb-6 flex items-center gap-3 lg:hidden">
+                            <img src="{{ asset('images/logo/itsmfavicon.svg') }}" alt="Logo BPOM" class="h-10 w-auto dark:hidden" />
+                            <img src="{{ asset('images/logo/itsmfaviconlight.svg') }}" alt="Logo BPOM" class="h-10 w-auto hidden dark:block" />
+                            <div>
+                                <span class="block text-xs font-bold tracking-wider text-brand-500 uppercase">ITSM BBPOM</span>
+                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">Banjarbaru</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-6 sm:mb-8">
                             <h1 class="text-title-sm sm:text-title-md mb-2 font-semibold text-gray-800 dark:text-white/90">
                                 Login
                             </h1>
@@ -16,9 +26,18 @@
                                 Masukkan Email dan Password anda
                             </p>
                         </div>
+
+                        @if ($errors->has('email') && $errors->first('email') === 'Email atau password salah.')
+                            <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-600 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400 flex items-center gap-2">
+                                <svg class="h-4 w-4 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>{{ $errors->first('email') }}</span>
+                            </div>
+                        @endif
+
                         <div>
-                            
-                            <form action="{{ route('login') }}" method="POST" >
+                            <form action="{{ route('login') }}" method="POST">
                                 @csrf
                                 <div class="space-y-5">
                                     <!-- Email -->
@@ -28,6 +47,9 @@
                                         </label>
                                         <input type="email" id="email" name="email" placeholder="info@gmail.com" value="{{ old('email') }}" required autofocus
                                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
+                                        @if ($errors->has('email') && $errors->first('email') !== 'Email atau password salah.')
+                                            <p class="mt-1 text-xs text-red-500">{{ $errors->first('email') }}</p>
+                                        @endif
                                     </div>
                                     <!-- Password -->
                                     <div>
@@ -90,12 +112,14 @@
                                             <label for="captcha" class="text-sm font-medium text-gray-700 dark:text-gray-400">
                                                 Captcha<span class="text-error-500">*</span>
                                             </label>
-                                            <span class="text-xs font-mono text-gray-400 dark:text-gray-500" title="Batas waktu captcha">
-                                                ⏱ <span x-text="formatTime()"></span>
+                                            <span class="inline-flex items-center gap-1 text-xs font-mono text-gray-400 dark:text-gray-500" title="Batas waktu captcha">
+                                                <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                <span x-text="formatTime()"></span>
                                             </span>
                                         </div>
                                         <div class="mb-2 flex items-center gap-3">
-                                            {{-- src diisi langsung dari server (tidak bergantung pada Alpine) --}}
                                             <img src="{{ route('captcha.image') }}?t={{ time() }}" x-ref="captchaImg"
                                                 x-on:error="failed = true" x-on:load="failed = false"
                                                 alt="Captcha" width="240" height="80" draggable="false"
@@ -107,8 +131,11 @@
                                                 </svg>
                                             </button>
                                         </div>
-                                        <p x-show="expiredWarning" x-cloak class="mb-2 text-xs font-medium text-amber-600 dark:text-amber-400">
-                                            ⚠️ Captcha diperbarui otomatis karena batas waktu habis (2 menit).
+                                        <p x-show="expiredWarning" x-cloak class="mb-2 text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                            <svg class="h-4 w-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            <span>Captcha diperbarui otomatis karena batas waktu habis (2 menit).</span>
                                         </p>
                                         <p x-show="failed" x-cloak class="mb-2 text-sm text-error-500">Gambar captcha gagal dimuat. Klik tombol refresh di samping gambar.</p>
                                         <input type="text" id="captcha" name="captcha" x-ref="captchaInput" required
@@ -144,11 +171,6 @@
                                         </a>
                                     </div>
 
-                                        @error('email')
-                                            <div class="text-red-500">
-                                                {{ $message }}
-                                            </div>
-                                        @enderror
                                     <!-- Button -->
                                     <div>
                                         <button type="submit"
@@ -158,32 +180,35 @@
                                     </div>
                                 </div>
                             </form>
-
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-brand-950 relative hidden h-full w-full items-center lg:grid lg:w-1/2 dark:bg-white/5">
-                <div class="z-1 flex items-center justify-center">
-                    <!-- ===== Common Grid Shape Start ===== -->
-                    <x-common.common-grid-shape/>
-                    <div class="flex max-w-xs flex-col items-center">
-                        <a href="https://www.pom.go.id/" target="_blank" class="mb-4 block">
-                            <img src="{{ asset('images/logo/itsmfaviconlight.svg') }}" alt="Logo" class="h-30 w-auto" />
-                        </a>
-                        <p class="text-center text-gray-400 dark:text-white/60">
-                            Aplikasi IT Service Management (ITSM) Badan Pengawas Obat dan Makanan Republik Indonesia
-                        </p>
-                    </div>
+            <!-- Right Banner (Desktop) -->
+            <div class="bg-brand-950 relative hidden lg:flex lg:w-1/2 lg:h-full items-center justify-center overflow-hidden dark:bg-white/5">
+                <!-- ===== Common Grid Shape Start ===== -->
+                <x-common.common-grid-shape/>
+                <div class="relative z-1 flex max-w-xs flex-col items-center text-center px-6">
+                    <a href="https://www.pom.go.id/" target="_blank" class="mb-6 block transition hover:opacity-90">
+                        <img src="{{ asset('images/logo/itsmfaviconlight.svg') }}" alt="Logo" class="h-28 w-auto max-w-full drop-shadow-md" />
+                    </a>
+                    <p class="text-sm leading-relaxed text-gray-300 dark:text-white/60">
+                        Aplikasi IT Service Management (ITSM)<br>
+                        Balai Besar Pengawas Obat dan Makanan di Banjarbaru
+                    </p>
                 </div>
             </div>
-            <!-- Toggler -->
-            <div class="fixed right-6 bottom-6 z-50">
+
+            <!-- Toggler Tema (Light/Dark) -->
+            <div class="fixed right-4 bottom-4 sm:right-6 sm:bottom-6 z-50">
                 <button
-                    class="bg-brand-500 hover:bg-brand-600 inline-flex size-14 items-center justify-center rounded-full text-white transition-colors cursor-pointer"
-                    @click.prevent="$store.theme.toggle()">
-                    <svg class="hidden fill-current dark:block" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"> <path fill-rule="evenodd" clip-rule="evenodd" d="M9.99998 1.5415C10.4142 1.5415 10.75 1.87729 10.75 2.2915V3.5415C10.75 3.95572 10.4142 4.2915 9.99998 4.2915C9.58577 4.2915 9.24998 3.95572 9.24998 3.5415V2.2915C9.24998 1.87729 9.58577 1.5415 9.99998 1.5415ZM10.0009 6.79327C8.22978 6.79327 6.79402 8.22904 6.79402 10.0001C6.79402 11.7712 8.22978 13.207 10.0009 13.207C11.772 13.207 13.2078 11.7712 13.2078 10.0001C13.2078 8.22904 11.772 6.79327 10.0009 6.79327ZM5.29402 10.0001C5.29402 7.40061 7.40135 5.29327 10.0009 5.29327C12.6004 5.29327 14.7078 7.40061 14.7078 10.0001C14.7078 12.5997 12.6004 14.707 10.0009 14.707C7.40135 14.707 5.29402 12.5997 5.29402 10.0001ZM15.9813 5.08035C16.2742 4.78746 16.2742 4.31258 15.9813 4.01969C15.6884 3.7268 15.2135 3.7268 14.9207 4.01969L14.0368 4.90357C13.7439 5.19647 13.7439 5.67134 14.0368 5.96423C14.3297 6.25713 14.8045 6.25713 15.0974 5.96423L15.9813 5.08035ZM18.4577 10.0001C18.4577 10.4143 18.1219 10.7501 17.7077 10.7501H16.4577C16.0435 10.7501 15.7077 10.4143 15.7077 10.0001C15.7077 9.58592 16.0435 9.25013 16.4577 9.25013H17.7077C18.1219 9.25013 18.4577 9.58592 18.4577 10.0001ZM14.9207 15.9806C15.2135 16.2735 15.6884 16.2735 15.9813 15.9806C16.2742 15.6877 16.2742 15.2128 15.9813 14.9199L15.0974 14.036C14.8045 13.7431 14.3297 13.7431 14.0368 14.036C13.7439 14.3289 13.7439 14.8038 14.0368 15.0967L14.9207 15.9806ZM9.99998 15.7088C10.4142 15.7088 10.75 16.0445 10.75 16.4588V17.7088C10.75 18.123 10.4142 18.4588 9.99998 18.4588C9.58577 18.4588 9.24998 18.123 9.24998 17.7088V16.4588C9.24998 16.0445 9.58577 15.7088 9.99998 15.7088ZM5.96356 15.0972C6.25646 14.8043 6.25646 14.3295 5.96356 14.0366C5.67067 13.7437 5.1958 13.7437 4.9029 14.0366L4.01902 14.9204C3.72613 15.2133 3.72613 15.6882 4.01902 15.9811C4.31191 16.274 4.78679 16.274 5.07968 15.9811L5.96356 15.0972ZM4.29224 10.0001C4.29224 10.4143 3.95645 10.7501 3.54224 10.7501H2.29224C1.87802 10.7501 1.54224 10.4143 1.54224 10.0001C1.54224 9.58592 1.87802 9.25013 2.29224 9.25013H3.54224C3.95645 9.25013 4.29224 9.58592 4.29224 10.0001ZM4.9029 5.9637C5.1958 6.25659 5.67067 6.25659 5.96356 5.9637C6.25646 5.6708 6.25646 5.19593 5.96356 4.90303L5.07968 4.01915C4.78679 3.72626 4.31191 3.72626 4.01902 4.01915C3.72613 4.31204 3.72613 4.78692 4.01902 5.07981L4.9029 5.9637Z" fill="" />
+                    class="bg-brand-500 hover:bg-brand-600 inline-flex size-11 sm:size-14 items-center justify-center rounded-full text-white transition-colors cursor-pointer shadow-lg"
+                    @click.prevent="$store.theme.toggle()"
+                    title="Ubah tema (Terang / Gelap)"
+                    aria-label="Toggle Theme">
+                    <svg class="hidden fill-current dark:block" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M9.99998 1.5415C10.4142 1.5415 10.75 1.87729 10.75 2.2915V3.5415C10.75 3.95572 10.4142 4.2915 9.99998 4.2915C9.58577 4.2915 9.24998 3.95572 9.24998 3.5415V2.2915C9.24998 1.87729 9.58577 1.5415 9.99998 1.5415ZM10.0009 6.79327C8.22978 6.79327 6.79402 8.22904 6.79402 10.0001C6.79402 11.7712 8.22978 13.207 10.0009 13.207C11.772 13.207 13.2078 11.7712 13.2078 10.0001C13.2078 8.22904 11.772 6.79327 10.0009 6.79327ZM5.29402 10.0001C5.29402 7.40061 7.40135 5.29327 10.0009 5.29327C12.6004 5.29327 14.7078 7.40061 14.7078 10.0001C14.7078 12.5997 12.6004 14.707 10.0009 14.707C7.40135 14.707 5.29402 12.5997 5.29402 10.0001ZM15.9813 5.08035C16.2742 4.78746 16.2742 4.31258 15.9813 4.01969C15.6884 3.7268 15.2135 3.7268 14.9207 4.01969L14.0368 4.90357C13.7439 5.19647 13.7439 5.67134 14.0368 5.96423C14.3297 6.25713 14.8045 6.25713 15.0974 5.96423L15.9813 5.08035ZM18.4577 10.0001C18.4577 10.4143 18.1219 10.7501 17.7077 10.7501H16.4577C16.0435 10.7501 15.7077 10.4143 15.7077 10.0001C15.7077 9.58592 16.0435 9.25013 16.4577 9.25013H17.7077C18.1219 9.25013 18.4577 9.58592 18.4577 10.0001ZM14.9207 15.9806C15.2135 16.2735 15.6884 16.2735 15.9813 15.9806C16.2742 15.6877 16.2742 15.2128 15.9813 14.9199L15.0974 14.036C14.8045 13.7431 14.3297 13.7431 14.0368 14.036C13.7439 14.3289 13.7439 14.8038 14.0368 15.0967L14.9207 15.9806ZM9.99998 15.7088C10.4142 15.7088 10.75 16.0445 10.75 16.4588V17.7088C10.75 18.123 10.4142 18.4588 9.99998 18.4588C9.58577 18.4588 9.24998 18.123 9.24998 17.7088V16.4588C9.24998 16.0445 9.58577 15.7088 9.99998 15.7088ZM5.96356 15.0972C6.25646 14.8043 6.25646 14.3295 5.96356 14.0366C5.67067 13.7437 5.1958 13.7437 4.9029 14.0366L4.01902 14.9204C3.72613 15.2133 3.72613 15.6882 4.01902 15.9811C4.31191 16.274 4.78679 16.274 5.07968 15.9811L5.96356 15.0972ZM4.29224 10.0001C4.29224 10.4143 3.95645 10.7501 3.54224 10.7501H2.29224C1.87802 10.7501 1.54224 10.4143 1.54224 10.0001C1.54224 9.58592 1.87802 9.25013 2.29224 9.25013H3.54224C3.95645 9.25013 4.29224 9.58592 4.29224 10.0001ZM4.9029 5.9637C5.1958 6.25659 5.67067 6.25659 5.96356 5.9637C6.25646 5.6708 6.25646 5.19593 5.96356 4.90303L5.07968 4.01915C4.78679 3.72626 4.31191 3.72626 4.01902 4.01915C3.72613 4.31204 3.72613 4.78692 4.01902 5.07981L4.9029 5.9637Z" fill="" />
                     </svg>
                     <svg class="fill-current dark:hidden" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M17.4547 11.97L18.1799 12.1611C18.265 11.8383 18.1265 11.4982 17.8401 11.3266C17.5538 11.1551 17.1885 11.1934 16.944 11.4207L17.4547 11.97ZM8.0306 2.5459L8.57989 3.05657C8.80718 2.81209 8.84554 2.44682 8.67398 2.16046C8.50243 1.8741 8.16227 1.73559 7.83948 1.82066L8.0306 2.5459ZM12.9154 13.0035C9.64678 13.0035 6.99707 10.3538 6.99707 7.08524H5.49707C5.49707 11.1823 8.81835 14.5035 12.9154 14.5035V13.0035ZM16.944 11.4207C15.8869 12.4035 14.4721 13.0035 12.9154 13.0035V14.5035C14.8657 14.5035 16.6418 13.7499 17.9654 12.5193L16.944 11.4207ZM16.7295 11.7789C15.9437 14.7607 13.2277 16.9586 10.0003 16.9586V18.4586C13.9257 18.4586 17.2249 15.7853 18.1799 12.1611L16.7295 11.7789ZM10.0003 16.9586C6.15734 16.9586 3.04199 13.8433 3.04199 10.0003H1.54199C1.54199 14.6717 5.32892 18.4586 10.0003 18.4586V16.9586ZM3.04199 10.0003C3.04199 6.77289 5.23988 4.05695 8.22173 3.27114L7.83948 1.82066C4.21532 2.77574 1.54199 6.07486 1.54199 10.0003H3.04199ZM6.99707 7.08524C6.99707 5.52854 7.5971 4.11366 8.57989 3.05657L7.48132 2.03522C6.25073 3.35885 5.49707 5.13487 5.49707 7.08524H6.99707Z" fill="" />

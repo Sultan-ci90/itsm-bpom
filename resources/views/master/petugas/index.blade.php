@@ -386,8 +386,11 @@
                                name="email"
                                placeholder="nama@bpom.go.id"
                                class="w-full rounded-xl border border-stroke bg-transparent py-2.5 px-4 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                            🔑 Password default saat pendaftaran adalah: <code class="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">password</code>
+                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <svg class="h-3.5 w-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                            </svg>
+                            <span>Password default saat pendaftaran adalah: <code class="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">password</code></span>
                         </p>
                     </div>
                 </div>
@@ -409,8 +412,11 @@
                             @endforeach
                         </select>
                         @if($availablePegawai->isEmpty())
-                            <p class="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
-                                💡 Seluruh pegawai saat ini sudah memiliki peran. Gunakan tab <strong>"+ Daftarkan Pegawai Baru"</strong> di atas untuk menambah pegawai baru.
+                            <p class="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+                                <svg class="h-4 w-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>Seluruh pegawai saat ini sudah memiliki peran. Gunakan tab <strong>"+ Daftarkan Pegawai Baru"</strong> di atas untuk menambah pegawai baru.</span>
                             </p>
                         @endif
                     </div>

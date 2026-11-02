@@ -1,6 +1,29 @@
 # 🏛️ ITSM BPOM — Sistem Manajemen Layanan Teknologi Informasi
 
+<p align="center">
+  <img src="public/images/logo/logo.svg" alt="Logo ITSM BPOM" width="160">
+</p>
+
+<p align="center">
+  <a href="docs-site/"><img src="https://img.shields.io/badge/Dokumentasi-Docusaurus%20v3-25c2a0?style=for-the-badge&logo=docusaurus" alt="Dokumentasi"></a>
+  <a href="https://laravel.com"><img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel" alt="Laravel 12"></a>
+  <a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss" alt="Tailwind CSS v4"></a>
+  <a href="https://reverb.laravel.com"><img src="https://img.shields.io/badge/WebSocket-Laravel_Reverb-FF2D20?style=for-the-badge" alt="Reverb"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License"></a>
+</p>
+
 > **Aplikasi IT Service Management (ITSM)** berbasis standar praktik terbaik ITIL untuk pengelolaan gangguan teknis (*Incident Management*) dan permohonan fasilitas TI (*Service Request Management*) di lingkungan **Balai Besar POM**.
+
+---
+
+### 📖 Portal Dokumentasi Resmi (Docusaurus v3)
+
+Situs dokumentasi interaktif lengkap kini tersedia di subfolder [`docs-site/`](docs-site/):
+- 👤 **[Panduan Pengguna (Pelapor, Teknisi, Administrator)](docs-site/docs/panduan-pengguna/pelapor.md)**
+- ⚙️ **[Arsitektur Sistem, Skema Basis Data & ERD](docs-site/docs/arsitektur-teknis/gambaran-umum.md)**
+- 🛡️ **[Inovasi Captcha Kamus Banjar (>130 Kosakata)](docs-site/docs/arsitektur-teknis/captcha-banjar.md)**
+- ⚡ **[Realtime Live Chat (Laravel Reverb) & WhatsApp Gateway](docs-site/docs/arsitektur-teknis/realtime-reverb.md)**
+- 🚀 **[Panduan Deployment VPS Linux & Hosting Vercel](docs-site/docs/deployment/server-produksi.md)**
 
 ---
 

@@ -36,7 +36,7 @@
                 + Lapor Aduan Kendala
             </a>
 
-            <form x-ref="form" @submit.prevent="applyFilter()" method="GET" action="{{ route('incidents.index') }}" class="flex flex-col gap-3 sm:flex-row">
+            <form x-ref="form" @submit.prevent="applyFilter()" method="GET" action="{{ route('incidents.index') }}" class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nomor / deskripsi..."
                        @input.debounce.350ms="applyFilter()"
                        class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white sm:w-64">
@@ -81,8 +81,9 @@
 
             <!-- Konten Dinamis yang di-swap via AJAX -->
             <div x-ref="tableWrapper">
-                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                    <div class="overflow-x-auto">
+                <div class="w-full max-w-full overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                    {{-- Tampilan Desktop Table (>= sm) --}}
+                    <div x-ref="tableContainer" class="hidden sm:block w-full max-w-full overflow-x-auto custom-scrollbar">
                         <table class="w-full text-left">
                             <thead>
                                 <tr class="border-b border-gray-200 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
@@ -118,8 +119,13 @@
                                         <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-400">{{ $ticket->tgl_pelaporan?->format('d/m/Y') ?? '-' }}</td>
                                         <td class="max-w-xs truncate px-5 py-4 text-gray-600 dark:text-gray-400">{{ $ticket->deskripsi_masalah }}</td>
                                         <td class="px-5 py-4">
-                                            <span class="inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}">
-                                                {{ $ticket->status }}
+                                            <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}" @if($ticket->needsConfirmationAlert()) title="Belum dikonfirmasi oleh pelapor" @endif>
+                                                <span>{{ $ticket->status }}</span>
+                                                @if($ticket->needsConfirmationAlert())
+                                                    <svg class="h-3.5 w-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                    </svg>
+                                                @endif
                                             </span>
                                             @if($ticket->resolution?->jenis_penyelesaian)
                                                 <div class="mt-1">
@@ -160,8 +166,8 @@
                                                 @endif
 
                                                 @if($isStaff)
-                                                    {{-- Proses / tindak lanjut (status bukan Ditolak) --}}
-                                                    @if($ticket->status !== 'Ditolak')
+                                                    {{-- Proses / tindak lanjut (status belum Selesai dan bukan Ditolak) --}}
+                                                    @if(!in_array($ticket->status, ['Selesai', 'Ditolak']))
                                                         <a href="{{ route('incidents.show', $ticket) }}?proses=1#proses" title="Proses / Tindak Lanjut" aria-label="Proses"
                                                            class="cursor-pointer inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-success hover:text-success dark:border-gray-800 dark:text-gray-400">
                                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -200,11 +206,129 @@
                             </tbody>
                         </table>
                     </div>
+
+                    {{-- Tampilan Mobile Cards (< sm) --}}
+                    <div class="block sm:hidden divide-y divide-gray-100 dark:divide-gray-800">
+                        @forelse ($tickets as $ticket)
+                            @php $final = in_array($ticket->status, ['Selesai', 'Ditolak']); @endphp
+                            <div class="p-4 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition cursor-pointer"
+                                 onclick="window.location='{{ route('incidents.show', $ticket) }}'">
+                                {{-- Baris 1: Nomor & Status Badge --}}
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <span class="font-semibold text-sm text-gray-900 dark:text-white">
+                                        {{ $ticket->nomor_aduan }}
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}"
+                                          @if($ticket->needsConfirmationAlert()) title="Belum dikonfirmasi oleh pelapor" @endif>
+                                        <span>{{ $ticket->status }}</span>
+                                        @if($ticket->needsConfirmationAlert())
+                                            <svg class="h-3 w-3 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </div>
+
+                                {{-- Baris 2: Pelapor (jika staff) / Aset & Tanggal --}}
+                                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                    <span>
+                                        @if($isStaff)
+                                            <strong class="text-gray-700 dark:text-gray-300">{{ $ticket->pelapor->nama ?? '-' }}</strong> • 
+                                        @endif
+                                        {{ $ticket->asset ? $ticket->asset->nama_barang : 'Lainnya (Non-Aset)' }}
+                                    </span>
+                                    <span>{{ $ticket->tgl_pelaporan?->format('d/m/Y') ?? '-' }}</span>
+                                </div>
+
+                                {{-- Baris 3: Cuplikan Deskripsi --}}
+                                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+                                    {{ $ticket->deskripsi_masalah }}
+                                </p>
+
+                                {{-- Baris 4: Resolusi & Tombol Aksi --}}
+                                <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-800/60 pt-2.5" onclick="event.stopPropagation()">
+                                    @if($ticket->resolution?->jenis_penyelesaian)
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-medium {{ $ticket->resolution->jenis_penyelesaian === 'Pihak ke-3' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' }}">
+                                            {{ $ticket->resolution->jenis_penyelesaian }}
+                                        </span>
+                                    @else
+                                        <span></span>
+                                    @endif
+
+                                    <div class="flex items-center gap-1.5">
+                                        <a href="{{ route('incidents.show', $ticket) }}" title="Detail" aria-label="Detail"
+                                           class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-primary hover:text-primary dark:border-gray-800 dark:text-gray-400">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        </a>
+
+                                        @php
+                                            $isAdmin = auth()->user()->isAdmin();
+                                        @endphp
+
+                                        @if($isAdmin || $isStaff || (!$isStaff && $ticket->status === 'Belum diperiksa'))
+                                            @php
+                                                $editLink = $isAdmin 
+                                                    ? route('incidents.edit', $ticket) 
+                                                    : (($isStaff && $ticket->status === 'Selesai') ? route('incidents.editResolution', $ticket) : route('incidents.edit', $ticket));
+                                            @endphp
+                                            <a href="{{ $editLink }}" title="Edit" aria-label="Edit"
+                                               class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                                </svg>
+                                            </a>
+                                        @endif
+
+                                        @if($isStaff)
+                                            @if(!in_array($ticket->status, ['Selesai', 'Ditolak']))
+                                                <a href="{{ route('incidents.show', $ticket) }}?proses=1#proses" title="Proses / Tindak Lanjut" aria-label="Proses"
+                                                   class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-success hover:text-success dark:border-gray-800 dark:text-gray-400">
+                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
+                                                    </svg>
+                                                </a>
+                                            @endif
+
+                                            <form action="{{ route('incidents.destroy', $ticket) }}" method="POST"
+                                                  onsubmit="return confirm('Hapus aduan {{ $ticket->nomor_aduan }}? Data tetap tersimpan sebagai arsip.')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" title="Hapus" aria-label="Hapus"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-danger hover:text-danger dark:border-gray-800 dark:text-gray-400 cursor-pointer">
+                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                @if(request()->filled('q') || request()->filled('status'))
+                                    Tidak ada aduan yang cocok dengan filter.
+                                @else
+                                    Belum ada aduan. Klik "Lapor Kendala Baru" untuk membuat laporan.
+                                @endif
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
 
                 <div class="mt-6">
                     {{ $tickets->links() }}
                 </div>
+            </div>
+
+            {{-- Sticky Floating Bottom Horizontal Scrollbar --}}
+            <div x-ref="floatingScroll"
+                 x-cloak
+                 class="hidden sm:block fixed bottom-0 z-30 overflow-x-auto custom-scrollbar-floating bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-t border-gray-200/80 dark:border-gray-800/80 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] py-1"
+                 style="display: none;">
+                <div x-ref="floatingScrollContent" style="height: 1px;"></div>
             </div>
         </div>
     </div>

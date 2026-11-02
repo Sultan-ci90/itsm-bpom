@@ -16,9 +16,6 @@ class ServiceRequestResolution extends Model
         'tgl_tindak_lanjut',
         'tindak_lanjut',
         'alasan_penolakan',
-        'zoom_link',
-        'zoom_meeting_id',
-        'zoom_passcode',
     ];
 
     protected $casts = [

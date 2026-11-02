@@ -17,13 +17,13 @@
 
     $layananLabel = [
         'lainnya'        => 'Lainnya (Permintaan Layanan Umum)',
+        'konsultasi'     => 'Konsultasi / Asistensi IT',
         'zoom'           => 'Link Zoom Meeting',
+        'rapat'          => 'Permintaan Operator Rapat',
+        'operator'       => 'Permintaan Operator Rapat',
         'reset_password' => 'Reset Password Akun Aplikasi',
         'tambah_akun'    => 'Tambah / Pembuatan Akun Baru',
         'akun'           => 'Reset Password / Akun Aplikasi',
-        'peminjaman'     => 'Peminjaman Perangkat IT',
-        'konsultasi'     => 'Konsultasi / Asistensi IT',
-        'operator'       => 'Operator Kegiatan',
     ];
 
     $input = 'w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white';
@@ -39,8 +39,8 @@
     $isHandler = empty($res?->petugas_id) || ($res->petugas_id === $user->id);
     $handledByOther = !empty($res?->petugas_id) && ($res->petugas_id !== $user->id);
 
-    // Staff dapat memproses/menindaklanjuti selama status bukan 'Ditolak' DAN bukan ditangani teknisi lain
-    $canProcess = $isStaff && $req->status !== 'Ditolak' && $isHandler;
+    // Staff dapat memproses/menindaklanjuti selama status bukan 'Ditolak' / 'Selesai' DAN bukan ditangani teknisi lain
+    $canProcess = $isStaff && !in_array($req->status, ['Selesai', 'Ditolak']) && $isHandler;
 
     // Detail resolusi ditampilkan jika ada data resolusi dan (tiket sudah ditolak / dilihat pelapor / tidak dalam mode proses / ditangani teknisi lain)
     $showResolutionDetail = $res && ($req->status === 'Ditolak' || !$isStaff || !$isProsesMode || $handledByOther);
@@ -191,8 +191,14 @@
     <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="flex items-center justify-between border-b border-stroke px-6.5 py-4 dark:border-gray-800">
             <h3 class="font-medium text-black dark:text-white">Informasi Permintaan</h3>
-            <span class="inline-flex rounded-full px-3 py-1 text-xs font-medium {{ $badge[$req->status] ?? $badge['Diajukan'] }}">
-                {{ $req->status }}
+            <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium {{ $badge[$req->status] ?? $badge['Diajukan'] }}"
+                  @if($req->needsConfirmationAlert()) title="Belum dikonfirmasi oleh pemohon" @endif>
+                <span>{{ $req->status }}</span>
+                @if($req->needsConfirmationAlert())
+                    <svg class="h-3.5 w-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                @endif
             </span>
         </div>
         <div class="p-6.5">
@@ -212,10 +218,6 @@
                 <div>
                     <dt class="mb-1 font-medium text-gray-500 dark:text-gray-400">Bidang Pemohon</dt>
                     <dd class="text-black dark:text-white">{{ $req->user->bidang->nama_bidang ?? 'Umum' }}</dd>
-                </div>
-                <div>
-                    <dt class="mb-1 font-medium text-gray-500 dark:text-gray-400">Lokasi / Ruangan</dt>
-                    <dd class="text-black dark:text-white">{{ $req->lokasi }}</dd>
                 </div>
                 <div>
                     <dt class="mb-1 font-medium text-gray-500 dark:text-gray-400">Jenis Layanan</dt>
@@ -249,14 +251,10 @@
                             <dd class="text-black dark:text-white">{{ $req->detailZoom->bidang->nama_bidang ?? '-' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-gray-500 dark:text-gray-400">Jenis Acara:</dt>
-                            <dd class="text-black dark:text-white">{{ $req->detailZoom->jenis_acara }}</dd>
-                        </div>
-                        <div>
                             <dt class="text-gray-500 dark:text-gray-400">Waktu:</dt>
                             <dd class="text-black dark:text-white">{{ $req->detailZoom->jam_mulai }} - {{ $req->detailZoom->jam_selesai }} WITA</dd>
                         </div>
-                        <div>
+                        <div class="sm:col-span-2">
                             <dt class="text-gray-500 dark:text-gray-400">Bantuan Operator:</dt>
                             <dd class="text-black dark:text-white">{{ $req->detailZoom->butuh_operator }}</dd>
                         </div>
@@ -283,35 +281,6 @@
                     </dl>
                 </div>
             @endif
-
-            {{-- Detail Spesifik: Peminjaman --}}
-            @if($req->layanan === 'peminjaman' && $req->detailPeminjaman)
-                <div class="mt-6 border-t border-stroke pt-5 dark:border-gray-800">
-                    <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Rincian Peminjaman:</h4>
-                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
-                        <div class="sm:col-span-2">
-                            <dt class="text-gray-500 dark:text-gray-400">Jenis Perangkat:</dt>
-                            <dd class="font-medium text-black dark:text-white">{{ $req->detailPeminjaman->jenis_perangkat }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-gray-500 dark:text-gray-400">Tanggal Mulai:</dt>
-                            <dd class="text-black dark:text-white">{{ $req->detailPeminjaman->tgl_mulai ? \Carbon\Carbon::parse($req->detailPeminjaman->tgl_mulai)->format('d/m/Y') : '-' }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-gray-500 dark:text-gray-400">Tanggal Kembali:</dt>
-                            <dd class="text-black dark:text-white">{{ $req->detailPeminjaman->tgl_kembali ? \Carbon\Carbon::parse($req->detailPeminjaman->tgl_kembali)->format('d/m/Y') : '-' }}</dd>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <dt class="text-gray-500 dark:text-gray-400">Keperluan:</dt>
-                            <dd class="text-black dark:text-white whitespace-pre-line">{{ $req->detailPeminjaman->keperluan }}</dd>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <dt class="text-gray-500 dark:text-gray-400">Lokasi Penggunaan:</dt>
-                            <dd class="text-black dark:text-white">{{ $req->detailPeminjaman->lokasi_penggunaan ?? '-' }}</dd>
-                        </div>
-                    </dl>
-                </div>
-            @endif
         </div>
     </div>
 
@@ -323,10 +292,19 @@
     <div class="rounded-2xl border border-primary/20 bg-primary/5 p-6.5 shadow-default dark:border-primary/30 dark:bg-primary/10">
         <div class="mb-4 flex items-center justify-between border-b border-primary/20 pb-3 dark:border-primary/30">
             <h3 class="text-lg font-semibold text-black dark:text-white flex items-center gap-2">
-                <span>ðŸ“‹ Hasil Tindak Lanjut Tim IT</span>
+                <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                <span>Hasil Tindak Lanjut Tim IT</span>
             </h3>
-            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $badge[$req->status] ?? $badge['Diajukan'] }}">
-                Status: {{ $req->status }}
+            <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold {{ $badge[$req->status] ?? $badge['Diajukan'] }}"
+                  @if($req->needsConfirmationAlert()) title="Belum dikonfirmasi oleh pemohon" @endif>
+                <span>Status: {{ $req->status }}</span>
+                @if($req->needsConfirmationAlert())
+                    <svg class="h-3.5 w-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                @endif
             </span>
         </div>
 
@@ -360,112 +338,7 @@
                 <dd class="rounded-lg bg-white p-4 text-black dark:bg-gray-900 dark:text-white border border-stroke dark:border-gray-800 whitespace-pre-line">{{ $res->tindak_lanjut }}</dd>
             </div>
             @endif
-
-            {{-- OUTPUT LAYANAN ZOOM --}}
-            @if($req->layanan === 'zoom' && ($res->zoom_link || $res->zoom_meeting_id))
-            <div class="sm:col-span-2 rounded-xl border border-green-200 bg-green-50/70 p-5 dark:border-green-900/50 dark:bg-green-950/20 space-y-3">
-                <h4 class="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2">
-                    <span>ðŸŽ¥ Link & Informasi Zoom Meeting</span>
-                </h4>
-                @if($res->zoom_link)
-                <div>
-                    <dt class="text-xs uppercase font-medium text-gray-500 dark:text-gray-400">Link Zoom:</dt>
-                    <dd class="mt-1">
-                        <a href="{{ $res->zoom_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 font-medium text-primary hover:underline break-all">
-                            {{ $res->zoom_link }}
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                        </a>
-                    </dd>
-                </div>
-                @endif
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    @if($res->zoom_meeting_id)
-                    <div>
-                        <dt class="text-xs uppercase font-medium text-gray-500 dark:text-gray-400">Meeting ID:</dt>
-                        <dd class="mt-0.5 font-mono font-semibold text-black dark:text-white">{{ $res->zoom_meeting_id }}</dd>
-                    </div>
-                    @endif
-                    @if($res->zoom_passcode)
-                    <div>
-                        <dt class="text-xs uppercase font-medium text-gray-500 dark:text-gray-400">Passcode:</dt>
-                        <dd class="mt-0.5 font-mono font-semibold text-black dark:text-white">{{ $res->zoom_passcode }}</dd>
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @endif
         </dl>
-    </div>
-    @endif
-
-    {{-- ========================================================= --}}
-    {{-- KONFIRMASI PENYELESAIAN LAYANAN OLEH PEMOHON              --}}
-    {{-- Hanya aktif dan muncul jika status permohonan 'Selesai'   --}}
-    {{-- ========================================================= --}}
-    @if($req->status === 'Selesai')
-    <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $req->konfirmasi_selesai_at ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400' }}">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-semibold text-black dark:text-white">
-                        Konfirmasi Penyelesaian Layanan
-                    </h3>
-                    @if($req->konfirmasi_selesai_at)
-                        <p class="text-xs text-green-700 dark:text-green-400 font-medium mt-0.5">
-                            ✓ Layanan telah dikonfirmasi selesai diterima oleh Pemohon pada {{ $req->konfirmasi_selesai_at->translatedFormat('d F Y, H:i') }} WIB.
-                        </p>
-                    @else
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            @if(auth()->id() === $req->user_id || auth()->id() === $req->reported_by)
-                                Apakah permintaan layanan TI Anda telah diselesaikan dan diterima dengan baik? Silakan tekan tombol konfirmasi selesai di samping.
-                            @else
-                                Menunggu konfirmasi penerimaan layanan selesai dari pemohon ({{ $req->user?->nama ?? 'Pegawai' }}).
-                            @endif
-                        </p>
-                    @endif
-                </div>
-            </div>
-
-            <div class="shrink-0">
-                @if(auth()->id() === $req->user_id || auth()->id() === $req->reported_by)
-                    @if(!$req->konfirmasi_selesai_at)
-                        <form action="{{ route('requests.confirmCompleted', $req->id) }}" method="POST"
-                              onsubmit="return confirm('Apakah Anda yakin ingin mengonfirmasi bahwa permohonan layanan ini telah selesai diterima dengan baik?')">
-                            @csrf
-                            <button type="submit"
-                                    class="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-800 cursor-pointer">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Konfirmasi Selesai
-                            </button>
-                        </form>
-                    @else
-                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            Telah Dikonfirmasi
-                        </span>
-                    @endif
-                @else
-                    @if($req->konfirmasi_selesai_at)
-                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
-                            ✓ Dikonfirmasi Pemohon
-                        </span>
-                    @else
-                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400">
-                            Menunggu Konfirmasi Pemohon
-                        </span>
-                    @endif
-                @endif
-            </div>
-        </div>
     </div>
     @endif
 
@@ -671,8 +544,11 @@
                                 <span>Tiket berstatus <strong>Selesai</strong>. Jika Anda mengirim kendala/komplain, silahkan chat jika masih ada kendala.</span>
                             </div>
                             <template x-if="countdownText">
-                                <span class="shrink-0 font-mono font-medium text-[11px] text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-2 py-0.5 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                                    ⏳ Batas aktif: <strong x-text="countdownText"></strong>
+                                <span class="shrink-0 inline-flex items-center gap-1 font-mono font-medium text-[11px] text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-2 py-0.5 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                    <svg class="h-3 w-3 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span>Batas aktif: <strong x-text="countdownText"></strong></span>
                                 </span>
                             </template>
                         </div>
@@ -775,45 +651,6 @@
                     @error('tgl_tindak_lanjut') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
                 </div>
 
-                {{-- FORM DINAMIS: LAYANAN ZOOM --}}
-                @if($req->layanan === 'zoom')
-                <div class="mb-5 rounded-xl border border-stroke bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/40">
-                    <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                        <span>📹 Informasi Link Zoom Meeting:</span>
-                    </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="{{ $label }}">Link / URL Zoom Meeting</label>
-                            <input type="url" name="zoom_link" 
-                                   value="{{ old('zoom_link', $res?->zoom_link ?? '') }}" 
-                                   placeholder="https://us02web.zoom.us/j/..." 
-                                   class="{{ $input }}">
-                            @error('zoom_link') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="{{ $label }}">Meeting ID</label>
-                                <input type="text" name="zoom_meeting_id" 
-                                       inputmode="numeric"
-                                       oninput="this.value = this.value.replace(/[^0-9\s-]/g, '')"
-                                       value="{{ old('zoom_meeting_id', $res?->zoom_meeting_id ?? '') }}" 
-                                       placeholder="Contoh: 812 3456 7890" 
-                                       class="{{ $input }}">
-                                @error('zoom_meeting_id') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="{{ $label }}">Passcode</label>
-                                <input type="text" name="zoom_passcode" 
-                                       value="{{ old('zoom_passcode', $res?->zoom_passcode ?? '') }}" 
-                                       placeholder="Contoh: bpom2026" 
-                                       class="{{ $input }}">
-                                @error('zoom_passcode') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 {{-- Tindakan / Solusi Tim IT (Wajib jika tidak ditolak) --}}
                 <div class="mb-5" x-show="status !== 'Ditolak'" x-cloak x-transition>
                     <label class="{{ $label }}">
@@ -847,6 +684,165 @@
         </div>
     </div>
     @endif
+
+    {{-- ========================================================= --}}
+    {{-- 4. KONFIRMASI PENYELESAIAN LAYANAN OLEH PEMOHON           --}}
+    {{-- Hanya aktif dan muncul jika status permohonan 'Selesai'   --}}
+    {{-- ========================================================= --}}
+    @if($req->status === 'Selesai')
+    @php
+        $isAuto = $req->isAutoConfirmed();
+        $isConfirmed = $req->isConfirmed();
+        $deadline = $req->confirmationDeadline();
+    @endphp
+    <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $isConfirmed ? ($isAuto ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400') : 'bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400' }}">
+                    @if($isAuto)
+                        {{-- Icon Sistem Otomatis --}}
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    @elseif($isConfirmed)
+                        {{-- Icon Dikonfirmasi Pemohon --}}
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    @else
+                        {{-- Icon Menunggu Konfirmasi --}}
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    @endif
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-black dark:text-white">
+                        Konfirmasi Penyelesaian Layanan
+                    </h3>
+
+                    @if($isAuto)
+                        <p class="text-xs text-blue-700 dark:text-blue-400 font-medium mt-1 flex items-start gap-1.5">
+                            <svg class="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>Layanan telah dikonfirmasi selesai secara otomatis oleh sistem (melewati batas waktu konfirmasi 2 hari) pada {{ ($req->konfirmasi_selesai_at ?? $deadline)->translatedFormat('d F Y, H:i') }} WIB.</span>
+                        </p>
+                    @elseif($isConfirmed)
+                        <p class="text-xs text-green-700 dark:text-green-400 font-medium mt-1 flex items-center gap-1.5">
+                            <svg class="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Layanan telah dikonfirmasi selesai diterima oleh Pemohon pada {{ $req->konfirmasi_selesai_at->translatedFormat('d F Y, H:i') }} WIB.</span>
+                        </p>
+                    @else
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            @if(auth()->id() === $req->user_id || auth()->id() === $req->reported_by)
+                                Apakah permintaan layanan TI Anda telah diselesaikan dan diterima dengan baik? Silakan tekan tombol konfirmasi selesai di samping.
+                            @else
+                                Menunggu konfirmasi penerimaan layanan selesai dari pemohon ({{ $req->user?->nama ?? 'Pegawai' }}).
+                            @endif
+                        </p>
+                        @if($deadline)
+                            <div class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
+                                <svg class="h-3.5 w-3.5 text-amber-600 shrink-0 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>Batas konfirmasi: s.d. <strong>{{ $deadline->translatedFormat('d M Y, H:i') }} WIB</strong> (tersisa {{ now()->diffForHumans($deadline, ['parts' => 1, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]) }} lagi, setelah itu otomatis dianggap selesai).</span>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+            </div>
+
+            <div class="shrink-0">
+                @if(auth()->id() === $req->user_id || auth()->id() === $req->reported_by)
+                    @if(!$isConfirmed)
+                        <form action="{{ route('requests.confirmCompleted', $req->id) }}" method="POST"
+                              onsubmit="return confirm('Apakah Anda yakin ingin mengonfirmasi bahwa permohonan layanan ini telah selesai diterima dengan baik?')">
+                            @csrf
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-800 cursor-pointer">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Konfirmasi Selesai
+                            </button>
+                        </form>
+                    @elseif($isAuto)
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Dikonfirmasi Otomatis
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Telah Dikonfirmasi
+                        </span>
+                    @endif
+                @else
+                    @if($isAuto)
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Dikonfirmasi Otomatis</span>
+                        </span>
+                    @elseif($isConfirmed)
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Dikonfirmasi Pemohon</span>
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400">
+                            <svg class="h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Menunggu Konfirmasi</span>
+                        </span>
+                    @endif
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ========================================================= --}}
+    {{-- 5. KARTU INFORMASI BANTUAN IT                             --}}
+    {{-- ========================================================= --}}
+    <div class="rounded-2xl border border-stroke bg-white p-5 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
+                    Informasi Bantuan IT
+                </h4>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Untuk informasi lebih lanjut mengenai tiket ini, silakan hubungi Tim IT BPOM.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {{-- ========================================================= --}}
+    {{-- 6. TOMBOL KEMBALI DI BAWAH                                --}}
+    {{-- ========================================================= --}}
+    <div class="flex justify-end">
+        <a href="{{ $isStaff ? route('requests.all') : route('requests.index') }}"
+           class="inline-flex items-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100 dark:border-gray-800 dark:text-white dark:hover:bg-meta-4">
+            Kembali
+        </a>
+    </div>
 
 </div>
 @endsection

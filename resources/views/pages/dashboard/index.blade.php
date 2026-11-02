@@ -49,7 +49,7 @@
     </div>
 
     {{-- 1. STAT CARDS (gaya CRM TailAdmin) --}}
-    <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
         @foreach($cards as $card)
         <div class="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
             <div class="flex h-11.5 w-11.5 items-center justify-center rounded-full"
@@ -140,7 +140,7 @@
                     <div x-show="period === 'yearly'" x-cloak x-transition.opacity.duration.200ms>
                         <select :value="year"
                                 @change="changeYear($event.target.value)"
-                                class="rounded-lg border border-stroke bg-gray-50 px-3 py-1.5 text-xs font-medium text-black outline-none transition focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white cursor-pointer">
+                                class="rounded-lg border border-stroke bg-white px-3 py-1.5 text-xs font-medium text-black outline-none transition focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white cursor-pointer">
                             @foreach($availableYears as $y)
                                 <option value="{{ $y }}" @selected($y == date('Y'))>Tahun {{ $y }}</option>
                             @endforeach
@@ -224,12 +224,19 @@
                     </thead>
                     <tbody>
                         @forelse ($recentIncidents as $ticket)
-                        <tr class="border-t border-stroke text-sm dark:border-strokedark">
+                        <tr class="border-t border-stroke text-sm dark:border-strokedark cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                            onclick="window.location='{{ route('incidents.show', $ticket) }}'">
                             <td class="px-6 py-4 font-medium text-black dark:text-white sm:px-7.5">{{ $ticket->nomor_aduan }}</td>
                             <td class="px-4 py-4 text-gray-600 dark:text-gray-400">{{ $ticket->pelapor->nama ?? '-' }}</td>
                             <td class="px-4 py-4">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}">
-                                    {{ $ticket->status }}
+                                <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}"
+                                      @if($ticket->needsConfirmationAlert()) title="Belum dikonfirmasi oleh pelapor" @endif>
+                                    <span>{{ $ticket->status }}</span>
+                                    @if($ticket->needsConfirmationAlert())
+                                        <svg class="h-3.5 w-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                    @endif
                                 </span>
                             </td>
                         </tr>
@@ -254,17 +261,39 @@
                             <th class="px-6 py-3 font-medium text-black dark:text-white sm:px-7.5">Nomor</th>
                             <th class="px-4 py-3 font-medium text-black dark:text-white">Pemohon</th>
                             <th class="px-4 py-3 font-medium text-black dark:text-white">Layanan</th>
+                            <th class="px-4 py-3 font-medium text-black dark:text-white">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($recentRequests as $request)
-                        <tr class="border-t border-stroke text-sm dark:border-strokedark">
+                        <tr class="border-t border-stroke text-sm dark:border-strokedark cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                            onclick="window.location='{{ route('requests.show', $request->id) }}'">
                             <td class="px-6 py-4 font-medium text-black dark:text-white sm:px-7.5">{{ $request->nomor_request }}</td>
                             <td class="px-4 py-4 text-gray-600 dark:text-gray-400">{{ $request->user->nama ?? '-' }}</td>
                             <td class="px-4 py-4 text-gray-600 dark:text-gray-400">{{ ucfirst($request->layanan) }}</td>
+                            <td class="px-4 py-4">
+                                @php
+                                    $statusBadge = match ($request->status) {
+                                        'Selesai' => 'bg-green-100 text-green-700 dark:bg-green-800/20 dark:text-green-400',
+                                        'Diproses' => 'bg-blue-100 text-blue-700 dark:bg-blue-800/20 dark:text-blue-400',
+                                        'Diajukan' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800/20 dark:text-yellow-400',
+                                        'Ditolak' => 'bg-red-200 text-red-600 dark:bg-red-800/20 dark:text-red-300',
+                                        default => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+                                    };
+                                @endphp
+                                <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium capitalize {{ $statusBadge }}"
+                                      @if($request->needsConfirmationAlert()) title="Belum dikonfirmasi oleh pemohon" @endif>
+                                    <span>{{ $request->status }}</span>
+                                    @if($request->needsConfirmationAlert())
+                                        <svg class="h-3.5 w-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                    @endif
+                                </span>
+                            </td>
                         </tr>
                         @empty
-                        <tr><td colspan="3" class="px-6 py-6 text-center text-sm text-gray-500 dark:text-gray-400">Belum ada data.</td></tr>
+                        <tr><td colspan="4" class="px-6 py-6 text-center text-sm text-gray-500 dark:text-gray-400">Belum ada data.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -312,7 +341,11 @@
 
         const ApexConstructor = window.ApexCharts || (typeof ApexCharts !== 'undefined' ? ApexCharts : null);
         if (!ApexConstructor) {
-            console.warn('[Dashboard] ApexCharts belum tersedia.');
+            if (typeof window.ensureApexCharts === 'function') {
+                window.ensureApexCharts().then(renderCharts);
+            } else {
+                console.warn('[Dashboard] ApexCharts belum tersedia.');
+            }
             return;
         }
 
@@ -352,6 +385,15 @@
                 itemMargin: { horizontal: 12, vertical: 8 },
             },
             grid: { ...base.grid, xaxis: { lines: { show: false } } },
+            responsive: [{
+                breakpoint: 640,
+                options: {
+                    chart: { height: 280 },
+                    plotOptions: { bar: { columnWidth: '60%' } },
+                    xaxis: { labels: { rotate: -45, style: { fontSize: '10px' } } },
+                    legend: { position: 'bottom', fontSize: '11px', itemMargin: { horizontal: 6, vertical: 4 } }
+                }
+            }],
         });
 
         apexInstances.layanan = new ApexConstructor(document.querySelector('#requestLayananChart'), {
@@ -363,6 +405,15 @@
             xaxis: { categories: @json($layananData['labels']), labels: axisLabels },
             yaxis: { labels: axisLabels },
             grid: { ...base.grid, yaxis: { lines: { show: false } } },
+            responsive: [{
+                breakpoint: 640,
+                options: {
+                    chart: { height: 280 },
+                    plotOptions: { bar: { barHeight: '65%' } },
+                    yaxis: { labels: { style: { fontSize: '11px' } } },
+                    xaxis: { labels: { style: { fontSize: '10px' } } }
+                }
+            }],
         });
 
         apexInstances.status = new ApexConstructor(document.querySelector('#requestStatusChart'), {
@@ -373,6 +424,14 @@
             colors: [c.warning, c.sky, c.success, c.danger],
             stroke: { show: false },
             plotOptions: { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: c.text } } } } },
+            responsive: [{
+                breakpoint: 640,
+                options: {
+                    chart: { height: 280 },
+                    legend: { position: 'bottom', fontSize: '11px', itemMargin: { horizontal: 6, vertical: 2 } },
+                    plotOptions: { pie: { donut: { size: '68%', labels: { total: { fontSize: '12px' } } } } }
+                }
+            }],
         });
 
         apexInstances.jenisKendala = new ApexConstructor(document.querySelector('#jenisKendalaChart'), {
@@ -383,6 +442,14 @@
             colors: ['#465FFF', '#A855F7'],
             stroke: { show: false },
             plotOptions: { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: c.text } } } } },
+            responsive: [{
+                breakpoint: 640,
+                options: {
+                    chart: { height: 280 },
+                    legend: { position: 'bottom', fontSize: '11px', itemMargin: { horizontal: 6, vertical: 2 } },
+                    plotOptions: { pie: { donut: { size: '68%', labels: { total: { fontSize: '12px' } } } } }
+                }
+            }],
         });
 
         apexInstances.resolution = new ApexConstructor(document.querySelector('#resolutionChart'), {
@@ -394,6 +461,14 @@
             stroke: { show: false },
             dataLabels: { enabled: false },
             plotOptions: { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '14px', color: c.text } } } } },
+            responsive: [{
+                breakpoint: 640,
+                options: {
+                    chart: { height: 280 },
+                    legend: { position: 'bottom', fontSize: '11px', itemMargin: { horizontal: 6, vertical: 2 } },
+                    plotOptions: { pie: { donut: { size: '68%', labels: { total: { fontSize: '12px' } } } } }
+                }
+            }],
         });
 
         Object.values(apexInstances).forEach(ch => ch.render());

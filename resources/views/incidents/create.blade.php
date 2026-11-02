@@ -21,7 +21,7 @@
                 </li>
                 <li>
                     <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
+                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -206,17 +206,6 @@
                         this.lokasi = ASSET_LOKASI[select.value] ?? '';
                     }
 
-                    this.$watch('jenisKendala', (val) => {
-                        if (val !== 'aset') {
-                            if (select && select.tomselect) {
-                                select.tomselect.clear();
-                            } else if (select) {
-                                select.value = '';
-                            }
-                            this.lokasi = '';
-                        }
-                    });
-
                     const setupTomSelect = () => {
                         if (typeof TomSelect === 'undefined') return;
 
@@ -225,8 +214,9 @@
                             new TomSelect(select, {
                                 create: false,
                                 sortField: { field: 'text', direction: 'asc' },
-                                placeholder: 'Ketik untuk mencari aset...',
-                                maxOptions: 200,
+                                placeholder: 'Ketik Kode Barang, NUP, atau Nama Aset...',
+                                maxOptions: 1000,
+                                allowEmptyOption: true,
                                 onChange: (value) => {
                                     this.lokasi = value ? (ASSET_LOKASI[value] ?? 'Lokasi tidak diketahui') : '';
                                 },
@@ -240,17 +230,38 @@
                                 create: false,
                                 sortField: { field: 'text', direction: 'asc' },
                                 placeholder: 'Ketik Nama atau NIP pegawai...',
-                                maxOptions: 500,
+                                maxOptions: 1000,
+                                allowEmptyOption: true,
                             });
                         }
                     };
 
+                    this.$watch('jenisKendala', (val) => {
+                        if (val === 'aset') {
+                            this.$nextTick(() => {
+                                if (select && select.tomselect) {
+                                    select.tomselect.sync();
+                                } else {
+                                    setupTomSelect();
+                                }
+                            });
+                        } else {
+                            if (select && select.tomselect) {
+                                select.tomselect.clear();
+                            } else if (select) {
+                                select.value = '';
+                            }
+                            this.lokasi = '';
+                        }
+                    });
+
                     if (typeof TomSelect !== 'undefined') {
-                        setupTomSelect();
+                        this.$nextTick(() => setupTomSelect());
                     } else {
                         window.addEventListener('load', setupTomSelect);
                         document.addEventListener('DOMContentLoaded', setupTomSelect);
                     }
+                    window.addEventListener('spa:navigated', setupTomSelect);
                 },
             };
         }

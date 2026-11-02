@@ -13,7 +13,7 @@
 @php
     $rawStart = old($startName, $startValue ?? '');
     $rawEnd = old($endName, $endValue ?? '');
-    // Sanitize H:i:s from DB to H:i for HTML5 time input compatibility
+    // Sanitize H:i:s from DB to H:i for time format compatibility
     $initStart = $rawStart ? substr($rawStart, 0, 5) : '';
     $initEnd = $rawEnd ? substr($rawEnd, 0, 5) : '';
     $startId = $startName . '_' . uniqid();
@@ -23,11 +23,67 @@
 <div x-data="{
     start: @js($initStart),
     end: @js($initEnd),
+    fpStart: null,
+    fpEnd: null,
+
+    init() {
+        this.$nextTick(() => {
+            const commonConfig = {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: 'H:i',
+                time_24hr: true,
+                allowInput: true,
+                minuteIncrement: 5,
+                static: true,
+            };
+
+            if (this.$refs.startInput && typeof flatpickr !== 'undefined') {
+                this.fpStart = flatpickr(this.$refs.startInput, {
+                    ...commonConfig,
+                    defaultDate: this.start ? this.start : null,
+                    onChange: (selectedDates, dateStr) => {
+                        this.start = dateStr;
+                    },
+                    onClose: (selectedDates, dateStr) => {
+                        this.start = dateStr;
+                    }
+                });
+            }
+
+            if (this.$refs.endInput && typeof flatpickr !== 'undefined') {
+                this.fpEnd = flatpickr(this.$refs.endInput, {
+                    ...commonConfig,
+                    defaultDate: this.end ? this.end : null,
+                    onChange: (selectedDates, dateStr) => {
+                        this.end = dateStr;
+                    },
+                    onClose: (selectedDates, dateStr) => {
+                        this.end = dateStr;
+                    }
+                });
+            }
+        });
+    },
+
+    destroy() {
+        if (this.fpStart) { this.fpStart.destroy(); this.fpStart = null; }
+        if (this.fpEnd) { this.fpEnd.destroy(); this.fpEnd = null; }
+    },
+
+    syncManual(type, value) {
+        this[type] = value;
+        const fp = type === 'start' ? this.fpStart : this.fpEnd;
+        if (fp && value && /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
+            fp.setDate(value, false, 'H:i');
+        }
+    },
 
     get durationText() {
         if (!this.start || !this.end) return null;
         const [h1, m1] = this.start.split(':').map(Number);
         const [h2, m2] = this.end.split(':').map(Number);
+        if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return null;
         const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
         if (diff <= 0) return null;
         const hours = Math.floor(diff / 60);
@@ -42,9 +98,10 @@
         if (!this.start || !this.end) return false;
         const [h1, m1] = this.start.split(':').map(Number);
         const [h2, m2] = this.end.split(':').map(Number);
+        if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return false;
         return (h2 * 60 + m2) <= (h1 * 60 + m1);
     }
-}" class="w-full">
+}" x-init="init()" x-destroy="destroy()" class="w-full">
     @if($label)
         <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">
             {{ $label }}
@@ -56,7 +113,7 @@
         </label>
     @endif
 
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {{-- Start Time Input --}}
         <div>
             <label for="{{ $startId }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -69,20 +126,27 @@
                     @endif
                 @endif
             </label>
-            <div class="relative">
-                <div class="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                    </svg>
-                </div>
-                <input type="time"
+            <div class="relative custom-timepicker">
+                <input type="text"
+                       x-ref="startInput"
                        id="{{ $startId }}"
                        name="{{ $startName }}"
-                       x-model="start"
-                       value="{{ $initStart }}"
-                       onclick="this.showPicker && this.showPicker()"
-                       class="block w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-brand-500 dark:focus:border-brand-500 shadow-xs cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:end-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:bottom-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                       :value="start"
+                       @input="syncManual('start', $event.target.value)"
+                       @change="syncManual('start', $event.target.value)"
+                       placeholder="JJ:MM (cth: 09:00)"
+                       class="h-11 w-full rounded-lg border appearance-none ltr:pl-4 ltr:pr-11 rtl:pr-4 rtl:pl-11 py-2.5 text-sm font-medium shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:focus:border-brand-800"
+                       autocomplete="off"
                        @if($alpineRequired) :required="{{ $alpineRequired }}" @elseif($required) required @endif />
+                <button type="button"
+                        @click="fpStart ? fpStart.toggle() : null"
+                        title="Buka pemilih waktu"
+                        tabindex="-1"
+                        class="absolute text-gray-500 -translate-y-1/2 ltr:right-3.5 rtl:left-3.5 top-1/2 dark:text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </button>
             </div>
             @error($startName)
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -101,21 +165,28 @@
                     @endif
                 @endif
             </label>
-            <div class="relative">
-                <div class="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                    </svg>
-                </div>
-                <input type="time"
+            <div class="relative custom-timepicker">
+                <input type="text"
+                       x-ref="endInput"
                        id="{{ $endId }}"
                        name="{{ $endName }}"
-                       x-model="end"
-                       value="{{ $initEnd }}"
-                       onclick="this.showPicker && this.showPicker()"
-                       class="block w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-brand-500 dark:focus:border-brand-500 shadow-xs cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:end-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:bottom-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                       :value="end"
+                       @input="syncManual('end', $event.target.value)"
+                       @change="syncManual('end', $event.target.value)"
+                       placeholder="JJ:MM (cth: 11:30)"
+                       class="h-11 w-full rounded-lg border appearance-none ltr:pl-4 ltr:pr-11 rtl:pr-4 rtl:pl-11 py-2.5 text-sm font-medium shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:focus:border-brand-800"
                        :class="isInvalid ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500 dark:border-red-500 dark:text-red-400' : ''"
+                       autocomplete="off"
                        @if($alpineRequired) :required="{{ $alpineRequired }}" @elseif($required) required @endif />
+                <button type="button"
+                        @click="fpEnd ? fpEnd.toggle() : null"
+                        title="Buka pemilih waktu"
+                        tabindex="-1"
+                        class="absolute text-gray-500 -translate-y-1/2 ltr:right-3.5 rtl:left-3.5 top-1/2 dark:text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </button>
             </div>
             @error($endName)
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -128,7 +199,7 @@
         <template x-if="durationText && !isInvalid">
             <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 Durasi Acara: <span x-text="durationText"></span>
             </span>

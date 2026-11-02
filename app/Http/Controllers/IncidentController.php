@@ -24,7 +24,7 @@ class IncidentController extends Controller
 {
     public function index(Request $request)
     {
-        // Admin & Teknisi selalu diarahkan ke semua Aduan Kendala TIK
+        // Admin & Teknisi selalu diarahkan ke Semua Aduan Kendala TIK
         if (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) {
             return redirect()->route('incidents.all', $request->query());
         }
@@ -225,6 +225,9 @@ class IncidentController extends Controller
             'histories' => fn($q) => $q->latest('created_at'),
         ]);
 
+        // Cek dan simpan konfirmasi otomatis jika batas waktu 2 hari telah terlampaui
+        $ticket->autoConfirmIfExpired();
+
         // Daftar pemeriksa (dropdown) hanya dibutuhkan oleh teknisi/admin
         $pemeriksas = (auth()->user()->isTeknisi() || auth()->user()->isAdmin())
             ? User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama'])
@@ -320,7 +323,11 @@ class IncidentController extends Controller
 
             // 2. Update status sesuai pilihan aksi
             $oldStatus = $ticket->status;
-            $ticket->update(['status' => $newStatus]);
+            $ticketUpdate = ['status' => $newStatus];
+            if ($newStatus === 'Selesai' && !$ticket->completed_at) {
+                $ticketUpdate['completed_at'] = now();
+            }
+            $ticket->update($ticketUpdate);
 
             // 3. Catat history
             if ($oldStatus !== $newStatus) {
@@ -624,5 +631,41 @@ class IncidentController extends Controller
     public function cetakSurat(Ticket $ticket)
     {
         return $this->justifikasi($ticket);
+    }
+
+    /**
+     * Konfirmasi penyelesaian kendala oleh Pelapor / Pembuat aduan.
+     */
+    public function confirmCompleted(Ticket $ticket)
+    {
+        $userId = auth()->id();
+
+        // Hanya pelapor atau yang membuat tiket atas nama yang boleh mengonfirmasi
+        if ($ticket->pelapor_id !== $userId && $ticket->reported_by !== $userId && !auth()->user()->isAdmin()) {
+            abort(403, 'Hanya pelapor yang dapat mengonfirmasi penyelesaian aduan kendala.');
+        }
+
+        if ($ticket->status !== 'Selesai') {
+            return back()->with('error', 'Konfirmasi penyelesaian hanya dapat dilakukan jika aduan berstatus Selesai.');
+        }
+
+        if ($ticket->isConfirmationExpired()) {
+            $ticket->autoConfirmIfExpired();
+            return redirect()->route('incidents.show', $ticket)
+                             ->with('info', 'Batas waktu konfirmasi 2 hari telah berakhir. Aduan ini telah otomatis dikonfirmasi selesai oleh sistem.');
+        }
+
+        try {
+            $ticket->update([
+                'konfirmasi_selesai_at' => now(),
+                'is_konfirmasi_otomatis' => false,
+            ]);
+
+            return redirect()->route('incidents.show', $ticket)
+                             ->with('success', 'Terima kasih! Anda telah berhasil mengonfirmasi bahwa kendala telah selesai ditangani dengan baik.');
+        } catch (\Throwable $e) {
+            Log::error('Gagal konfirmasi selesai tiket incident', ['ticket_id' => $ticket->id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memproses konfirmasi: ' . $e->getMessage());
+        }
     }
 }

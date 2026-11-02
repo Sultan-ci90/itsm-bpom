@@ -22,3 +22,13 @@ scratch/
 .commandcode/
 .agents/
 untitled-project/
+
+# Docusaurus
+docs-site/node_modules/
+docs-site/.docusaurus/
+docs-site/build/
+
+# Internship materials & agent lock
+bahan laporan magang/
+skills-lock.json
+

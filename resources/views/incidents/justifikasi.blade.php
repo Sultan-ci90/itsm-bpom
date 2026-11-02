@@ -52,7 +52,7 @@
             <tr><td>Penanggung Jawab</td><td>:</td><td>{{ $ticket->asset?->penanggungJawab?->nama ?? '-' }}</td></tr>
             <tr><td>Pelapor</td><td>:</td><td>{{ $ticket->pelapor->nama ?? '-' }} ({{ $ticket->pelapor->bidang->nama_bidang ?? '-' }})</td></tr>
             <tr><td>Tanggal Pelaporan</td><td>:</td><td>{{ $ticket->tgl_pelaporan->format('d/m/Y') }}</td></tr>
-            <tr><td>Deskripsi Masalah</td><td>:</td><td>{{ $ticket->deskripsi_masalah }}</td></tr>
+            <tr><td>Deskripsi Kendala</td><td>:</td><td>{{ $ticket->deskripsi_masalah }}</td></tr>
             <tr><td>Hasil Analisa Tim Teknis</td><td>:</td><td>{{ $res->analisa_teknis ?: '-' }}</td></tr>
             <tr><td>Tindak Lanjut</td><td>:</td><td>{{ $res->tindak_lanjut_teknis ?: '-' }}</td></tr>
         </table>

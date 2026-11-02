@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-6xl py-10">
-    <div class="text-center mb-10">
-        <h1 class="text-3xl font-bold text-black dark:text-white">Selamat Datang, {{ auth()->user()->nama }}</h1>
-        <p class="mt-2 text-gray-500 dark:text-gray-400">Silakan pilih jenis layanan IT atau temukan solusi mandiri yang Anda butuhkan:</p>
+<div class="mx-auto max-w-6xl px-4 py-6 sm:px-0 sm:py-10">
+    <div class="text-center mb-8 sm:mb-10">
+        <h1 class="text-2xl sm:text-3xl font-bold text-black dark:text-white">Selamat Datang, {{ auth()->user()->nama }}</h1>
+        <p class="mt-2 text-sm sm:text-base text-gray-500 dark:text-gray-400">Silakan pilih jenis layanan IT atau temukan solusi mandiri yang Anda butuhkan:</p>
     </div>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
         {{-- TOMBOL 1: INCIDENT (ADUAN KENDALA) --}}
-        <a href="{{ route('incidents.create') }}" class="group relative flex flex-col items-center justify-between rounded-2xl border border-stroke bg-white p-8 shadow-default transition-all hover:-translate-y-1 hover:border-red-500 hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03]">
+        <a href="{{ route('incidents.index') }}" class="group relative flex flex-col items-center justify-between rounded-2xl border border-stroke bg-white p-6 sm:p-8 shadow-default transition-all hover:-translate-y-1 hover:border-red-500 hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex flex-col items-center text-center">
                 <div class="mb-6 flex h-18 w-18 items-center justify-center rounded-2xl bg-red-100 text-red-600 transition-colors group-hover:bg-red-600 group-hover:text-white dark:bg-red-900/30 dark:text-red-400 dark:group-hover:bg-red-600 dark:group-hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-9 w-9">
@@ -27,7 +27,7 @@
         </a>
 
         {{-- TOMBOL 2: REQUEST (PERMINTAAN LAYANAN) --}}
-        <a href="{{ route('requests.create') }}" class="group relative flex flex-col items-center justify-between rounded-2xl border border-stroke bg-white p-8 shadow-default transition-all hover:-translate-y-1 hover:border-blue-500 hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03]">
+        <a href="{{ route('requests.index') }}" class="group relative flex flex-col items-center justify-between rounded-2xl border border-stroke bg-white p-6 sm:p-8 shadow-default transition-all hover:-translate-y-1 hover:border-blue-500 hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex flex-col items-center text-center">
                 <div class="mb-6 flex h-18 w-18 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-900/30 dark:text-blue-400 dark:group-hover:bg-blue-600 dark:group-hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-9 w-9">
@@ -36,7 +36,7 @@
                 </div>
                 <h3 class="mb-2 text-xl font-bold text-black dark:text-white">Permintaan Layanan</h3>
                 <p class="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    Permohonan layanan IT seperti link Zoom, reset sandi akun, penambahan akun, atau peminjaman perangkat.
+                    Permohonan layanan IT seperti link Zoom, operator rapat, reset sandi akun, penambahan akun, atau konsultasi IT.
                 </p>
             </div>
             <span class="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 transition-transform group-hover:translate-x-1 dark:text-blue-400">
@@ -45,7 +45,7 @@
         </a>
 
         {{-- TOMBOL 3: KNOWLEDGE BASE / PANDUAN MANDIRI --}}
-        <a href="{{ route('panduan.index') }}" class="group relative flex flex-col items-center justify-between rounded-2xl border border-stroke bg-white p-8 shadow-default transition-all hover:-translate-y-1 hover:border-[#10B981] hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03]">
+        <a href="{{ route('panduan.index') }}" class="group relative flex flex-col items-center justify-between rounded-2xl border border-stroke bg-white p-6 sm:p-8 shadow-default transition-all hover:-translate-y-1 hover:border-[#10B981] hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex flex-col items-center text-center">
                 <div class="mb-6 flex h-18 w-18 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-[#10B981] group-hover:text-white dark:bg-emerald-900/30 dark:text-emerald-400 dark:group-hover:bg-[#10B981] dark:group-hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-9 w-9">
@@ -63,15 +63,6 @@
         </a>
     </div>
 
-    {{-- Link cepat ke riwayat untuk pelapor --}}
-    <div class="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm">
-        <a href="{{ route('incidents.index') }}" class="font-medium text-gray-600 hover:text-primary dark:text-gray-400">
-            Riwayat Aduan Saya &rarr;
-        </a>
-        <span class="text-gray-300 dark:text-gray-700">&bull;</span>
-        <a href="{{ route('requests.index') }}" class="font-medium text-gray-600 hover:text-primary dark:text-gray-400">
-            Riwayat Permintaan Saya &rarr;
-        </a>
-    </div>
+    
 </div>
 @endsection

@@ -52,11 +52,11 @@
     $isHandler = empty($res?->pemeriksa_id) || ($res->pemeriksa_id === $user->id);
     $handledByOther = !empty($res?->pemeriksa_id) && ($res->pemeriksa_id !== $user->id);
 
-    // Staff dapat memproses/menindaklanjuti selama status bukan 'Ditolak' DAN bukan ditangani teknisi lain
-    $canProcess = $isStaff && $ticket->status !== 'Ditolak' && $isHandler;
+    // Staff dapat memproses/menindaklanjuti selama status bukan 'Ditolak' / 'Selesai' DAN bukan ditangani teknisi lain
+    $canProcess = $isStaff && !in_array($ticket->status, ['Selesai', 'Ditolak']) && $isHandler;
 
     // Detail service (read-only) tampil jika ada resolusi dan (tiket sudah final / dilihat pelapor / teknisi lain)
-    $showDetail = $res && ($ticket->status === 'Ditolak' || !$isStaff || !$isProsesMode || $handledByOther);
+    $showDetail = $res && (in_array($ticket->status, ['Selesai', 'Ditolak']) || !$isStaff || !$isProsesMode || $handledByOther);
 @endphp
 
 <div class="mx-auto max-w-4xl">
@@ -81,7 +81,7 @@
                 </li>
                 <li>
                     <a href="{{ $isStaff ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ $isStaff ? 'semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
+                        {{ $isStaff ? 'Semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -116,16 +116,14 @@
             <div class="flex flex-wrap items-center gap-2">
                 @if($canTake)
                     <form action="{{ route('incidents.take', $ticket) }}" method="POST"
-                          onsubmit="return confirm('Apakah Anda yakin ingin mengambil dan menangani aduan kendala ini?')">
+                          onsubmit="return confirm('Apakah Anda yakin ingin mengambil dan mulai memproses aduan kendala ini?')">
                         @csrf
                         <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-opacity-90 cursor-pointer">
+                                class="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-opacity-90 cursor-pointer">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <polyline points="16 11 18 13 22 9"></polyline>
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>
                             </svg>
-                            Ambil Aduan
+                            Ambil & Proses Tiket
                         </button>
                     </form>
                 @endif
@@ -139,7 +137,7 @@
                     </div>
                 @endif
 
-                @if($canProcess)
+                @if(!$canTake && $canProcess)
                     <div>
                         @if(!$isProsesMode)
                             <a href="{{ route('incidents.show', $ticket) }}?proses=1#proses"
@@ -204,8 +202,14 @@
         <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex items-center justify-between border-b border-stroke px-6.5 py-4 dark:border-gray-800">
                 <h3 class="font-medium text-black dark:text-white">{{ $isAset ? 'Informasi Perangkat / Aset' : 'Informasi Aduan Kendala' }}</h3>
-                <span class="inline-flex rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}">
-                    {{ $ticket->status }}
+                <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}"
+                      @if($ticket->needsConfirmationAlert()) title="Belum dikonfirmasi oleh pelapor" @endif>
+                    <span>{{ $ticket->status }}</span>
+                    @if($ticket->needsConfirmationAlert())
+                        <svg class="h-3.5 w-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    @endif
                 </span>
             </div>
             <div class="p-6.5">
@@ -216,8 +220,8 @@
                             <dd class="text-black dark:text-white">{{ $v }}</dd>
                         </div>
                     @endforeach
-                    <div class="sm:col-span-2">
-                        <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Deskripsi Masalah</dt>
+                    <!-- <div class="sm:col-span-2">
+                        <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Deskripsi Kendala</dt>
                         <dd class="whitespace-pre-line text-black dark:text-white">{{ $ticket->deskripsi_masalah }}</dd>
                     </div>
                 </dl>
@@ -226,17 +230,40 @@
                     <div class="mt-5">
                         <p class="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">Foto Kendala</p>
                         <img src="{{ asset('storage/' . $ticket->foto_kendala) }}" alt="Foto Kendala"
+                             loading="lazy" decoding="async"
+                             class="max-h-72 rounded-lg border border-stroke dark:border-gray-800">
+                    </div>
+                @endif -->
+            </div>
+        </div>
+        <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03] mb-6">
+            <div class="flex items-center justify-between border-b border-stroke px-6.5 py-4 dark:border-gray-800">
+                <h3 class="font-medium text-black dark:text-white">{{ $isAset ? 'Deskripsi masalah' : 'Informasi Aduan Kendala' }}</h3>
+                
+            </div>
+            <div class="p-6.5">
+                <dl class="grid grid-cols-1 gap-4.5">
+                    <div>
+                        <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Deskripsi Kendala</dt>
+                        <dd class="whitespace-pre-line text-black dark:text-white">{{ $ticket->deskripsi_masalah }}</dd>
+                    </div>
+                </dl>
+
+                @if($ticket->foto_kendala)
+                    <div class="mt-5">
+                        <p class="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">Foto Kendala</p>
+                        <img src="{{ asset('storage/' . $ticket->foto_kendala) }}" alt="Foto Kendala"
+                             loading="lazy" decoding="async"
                              class="max-h-72 rounded-lg border border-stroke dark:border-gray-800">
                     </div>
                 @endif
             </div>
         </div>
-
         {{-- 2. FORM PROSES TIKET (teknisi/admin, status bukan Ditolak) --}}
         @if($canProcess && $isProsesMode)
         <div id="proses" class="rounded-2xl border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-stroke px-6.5 py-4 dark:border-gray-800">
-                <h3 class="font-medium text-black dark:text-white">Proses Tiket</h3>
+                <h3 class="font-medium text-black dark:text-white">Proses Kendala</h3>
             </div>
 
             <div class="p-6.5">
@@ -259,12 +286,12 @@
                         <span class="text-xs text-gray-400">Isi analisa & tindak lanjut untuk draft, atau lengkapi hasil untuk menyelesaikan.</span>
                     </div>
 
-                    <!-- deskripsi -->
+                    <!-- deskripsi
                     <div class="mb-5">
                         <label class="{{ $label }}">Deskripsi Kendala <span class="text-meta-1">*</span></label>
                         <textarea name="deskripsi_masalah" rows="3" placeholder="Deskripsi kendala yang dialami..." class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black" readonly>{{ $ticket->deskripsi_masalah }}</textarea>
                         @error('deskripsi_masalah') <p class="mt-1 text-sm text-meta-1">{{ $message }}</p> @enderror
-                    </div>
+                    </div> -->
 
 
                     {{-- Bagian 1: Analisa & Tindak Lanjut --}}
@@ -408,24 +435,40 @@
         <div class="rounded-2xl border border-primary/20 bg-primary/5 p-6.5 shadow-default dark:border-primary/30 dark:bg-primary/10">
             <h3 class="mb-4 text-lg font-semibold text-black dark:text-white">Detail Kendala</h3>
             <dl class="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
-                <div>
-                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Jenis Penyelesaian</dt>
-                    <dd class="text-black dark:text-white">{{ $res->jenis_penyelesaian }}</dd>
-                </div>
-                <div>
-                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Teknisi</dt>
-                    <dd class="text-black dark:text-white">{{ $res->pemeriksa ? $res->pemeriksa->nip . ' || ' . $res->pemeriksa->nama : '-' }}</dd>
-                </div>
+                <!-- <div class="sm:col-span-2">
+                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Deskripsi Kendala</dt>
+                    <dd class="whitespace-pre-line text-black dark:text-white">{{ $ticket->deskripsi_masalah ?: '-' }}</dd>
+                </div> -->
+
                 <div>
                     <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Tgl Analisa</dt>
                     <dd class="text-black dark:text-white">{{ $res->tgl_analisa?->format('d/m/Y') ?? '-' }}</dd>
                 </div>
                 <div>
-                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Tgl Perbaikan</dt>
-                    <dd class="text-black dark:text-white">{{ ($res->tgl_hasil ?? $res->tgl_tindak_lanjut)?->format('d/m/Y') ?? '-' }}</dd>
+                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Jenis Penyelesaian</dt>
+                    <dd class="text-black dark:text-white">{{ $res->jenis_penyelesaian }}</dd>
+                </div>
+                
+                <div class="sm:col-span-2">
+                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">hasil analisa</dt>
+                    <dd class="whitespace-pre-line text-black dark:text-white">{{ $res->analisa_teknis ?: '-' }}</dd>
                 </div>
 
-                @if($res->jenis_penyelesaian === 'Pihak ke-3')
+                <div>
+                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Tgl Tindak Lanjut</dt>
+                    <dd class="text-black dark:text-white">{{ ($res->tgl_hasil ?? $res->tgl_tindak_lanjut)?->format('d/m/Y') ?? '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Teknisi</dt>
+                    <dd class="text-black dark:text-white">{{ $res->pemeriksa ? $res->pemeriksa->nip . ' || ' . $res->pemeriksa->nama : '-' }}</dd>
+                </div>
+            
+                <div class="sm:col-span-2">
+                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Tindak Lanjut</dt>
+                    <dd class="whitespace-pre-line text-black dark:text-white">{{ $res->tindak_lanjut_teknis ?: '-' }}</dd>
+                </div>
+
+                @if($res->jenis_penyelesaian === 'Pihak ke-3' && $isStaff)
                     <div class="sm:col-span-2 mt-2">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
                             <div class="flex items-center gap-3">
@@ -450,15 +493,9 @@
                         </div>
                     </div>
                 @endif
-                <div class="sm:col-span-2">
-                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">hasil analisa</dt>
-                    <dd class="whitespace-pre-line text-black dark:text-white">{{ $res->analisa_teknis ?: '-' }}</dd>
-                </div>
 
-                <div class="sm:col-span-2">
-                    <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Tindak Lanjut</dt>
-                    <dd class="whitespace-pre-line text-black dark:text-white">{{ $res->tindak_lanjut_teknis ?: '-' }}</dd>
-                </div>
+
+
                 <div class="sm:col-span-2">
                     <dt class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Solusi / Hasil</dt>
                     <dd class="whitespace-pre-line text-black dark:text-white">{{ $res->hasil ?: '-' }}</dd>
@@ -487,6 +524,151 @@
                     @empty
                         <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada riwayat.</p>
                     @endforelse
+                </div>
+            </div>
+        </div>
+
+        {{-- 3.5 KONFIRMASI PENYELESAIAN KENDALA OLEH PELAPOR --}}
+        {{-- Hanya aktif dan muncul jika status kendala 'Selesai' --}}
+        @if($ticket->status === 'Selesai')
+        @php
+            $isAuto = $ticket->isAutoConfirmed();
+            $isConfirmed = $ticket->isConfirmed();
+            $deadline = $ticket->confirmationDeadline();
+        @endphp
+        <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex items-start gap-3.5">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $isConfirmed ? ($isAuto ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400') : 'bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400' }}">
+                        @if($isAuto)
+                            {{-- Icon Sistem Otomatis --}}
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                        @elseif($isConfirmed)
+                            {{-- Icon Dikonfirmasi Pelapor --}}
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        @else
+                            {{-- Icon Menunggu Konfirmasi --}}
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        @endif
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-black dark:text-white">
+                            Konfirmasi Penyelesaian Kendala
+                        </h3>
+
+                        @if($isAuto)
+                            <p class="text-xs text-blue-700 dark:text-blue-400 font-medium mt-1 flex items-start gap-1.5">
+                                <svg class="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>Aduan kendala telah dikonfirmasi selesai secara otomatis oleh sistem (melewati batas waktu konfirmasi 2 hari) pada {{ ($ticket->konfirmasi_selesai_at ?? $deadline)->translatedFormat('d F Y, H:i') }} WIB.</span>
+                            </p>
+                        @elseif($isConfirmed)
+                            <p class="text-xs text-green-700 dark:text-green-400 font-medium mt-1 flex items-center gap-1.5">
+                                <svg class="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Aduan kendala telah dikonfirmasi selesai diterima oleh Pelapor pada {{ $ticket->konfirmasi_selesai_at->translatedFormat('d F Y, H:i') }} WIB.</span>
+                            </p>
+                        @else
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                @if(auth()->id() === $ticket->pelapor_id || auth()->id() === $ticket->reported_by)
+                                    Apakah penanganan kendala ini telah diselesaikan dengan baik oleh Tim IT? Silakan tekan tombol konfirmasi selesai di samping.
+                                @else
+                                    Menunggu konfirmasi penyelesaian kendala dari pelapor ({{ $ticket->pelapor?->nama ?? 'Pegawai' }}).
+                                @endif
+                            </p>
+                            @if($deadline)
+                                <div class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
+                                    <svg class="h-3.5 w-3.5 text-amber-600 shrink-0 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <span>Batas konfirmasi: s.d. <strong>{{ $deadline->translatedFormat('d M Y, H:i') }} WIB</strong> (tersisa {{ now()->diffForHumans($deadline, ['parts' => 1, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]) }} lagi, setelah itu otomatis dianggap selesai).</span>
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+                </div>
+
+                <div class="shrink-0">
+                    @if(auth()->id() === $ticket->pelapor_id || auth()->id() === $ticket->reported_by)
+                        @if(!$isConfirmed)
+                            <form action="{{ route('incidents.confirmCompleted', $ticket->id) }}" method="POST"
+                                  onsubmit="return confirm('Apakah Anda yakin ingin mengonfirmasi bahwa penanganan kendala ini telah selesai dengan baik?')">
+                                @csrf
+                                <button type="submit"
+                                        class="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-800 cursor-pointer">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Konfirmasi Selesai
+                                </button>
+                            </form>
+                        @elseif($isAuto)
+                            <span class="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Dikonfirmasi Otomatis
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Telah Dikonfirmasi
+                            </span>
+                        @endif
+                    @else
+                        @if($isAuto)
+                            <span class="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Dikonfirmasi Otomatis</span>
+                            </span>
+                        @elseif($isConfirmed)
+                            <span class="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Dikonfirmasi Pelapor</span>
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400">
+                                <svg class="h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Menunggu Konfirmasi</span>
+                            </span>
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- KARTU INFORMASI BANTUAN IT --}}
+        <div class="rounded-2xl border border-stroke bg-white p-5 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
+                        Informasi Bantuan IT
+                    </h4>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        Untuk informasi lebih lanjut mengenai tiket ini, silakan hubungi Tim IT BPOM.
+                    </p>
                 </div>
             </div>
         </div>
