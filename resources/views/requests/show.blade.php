@@ -962,9 +962,11 @@ function serviceRequestChat(config) {
         },
 
         setupEcho() {
-            if (window.Echo && !this.hasLoadedEcho) {
+            if (this.hasLoadedEcho) return;
+            const echo = window.initEcho ? window.initEcho() : window.Echo;
+            if (echo) {
                 this.hasLoadedEcho = true;
-                window.Echo.private(`service-request.${this.requestId}`)
+                echo.private(`service-request.${this.requestId}`)
                     .listen('ServiceRequestChatMessageSent', (e) => {
                         this.appendMessage({
                             id: e.id,
@@ -990,8 +992,6 @@ function serviceRequestChat(config) {
                             this.startCountdown();
                         }
                     });
-            } else if (!window.Echo) {
-                setTimeout(() => this.setupEcho(), 500);
             }
         },
 
