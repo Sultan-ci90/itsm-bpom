@@ -1,6 +1,16 @@
 @php
-    $unreadCount = auth()->user() ? auth()->user()->unreadNotifications()->count() : 0;
-    $notifications = auth()->user() ? auth()->user()->notifications()->take(10)->get() : collect();
+    $user = auth()->user();
+    if ($user) {
+        $unreadCount = cache()->remember("user_{$user->id}_unread_notifs_count", 30, function () use ($user) {
+            return $user->unreadNotifications()->count();
+        });
+        $notifications = cache()->remember("user_{$user->id}_recent_notifs", 30, function () use ($user) {
+            return $user->notifications()->take(10)->get();
+        });
+    } else {
+        $unreadCount = 0;
+        $notifications = collect();
+    }
 @endphp
 
 <div class="relative" x-data="{

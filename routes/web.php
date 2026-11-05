@@ -40,14 +40,20 @@ Route::middleware('auth')->group(function () {
     // NOTIFICATIONS
     // =========================
     Route::post('/notifications/read-all', function () {
-        auth()->user()->unreadNotifications->markAsRead();
+        $user = auth()->user();
+        $user->unreadNotifications->markAsRead();
+        cache()->forget("user_{$user->id}_unread_notifs_count");
+        cache()->forget("user_{$user->id}_recent_notifs");
         return back()->with('success', 'Semua notifikasi ditandai sudah dibaca.');
     })->name('notifications.readAll');
 
     Route::get('/notifications/{id}/read', function ($id) {
-        $notification = auth()->user()->notifications()->findOrFail($id);
+        $user = auth()->user();
+        $notification = $user->notifications()->findOrFail($id);
         if ($notification->unread()) {
             $notification->markAsRead();
+            cache()->forget("user_{$user->id}_unread_notifs_count");
+            cache()->forget("user_{$user->id}_recent_notifs");
         }
         $targetUrl = $notification->data['url'] ?? route('home');
         return redirect($targetUrl);
