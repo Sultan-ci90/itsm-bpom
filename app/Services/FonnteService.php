@@ -332,6 +332,7 @@ class FonnteService
             // ServiceRequest
             $ticket->loadMissing(['resolution.petugas']);
             $resolution = $ticket->resolution;
+            $nomorTiket = $ticket->nomor_request ?? ('SR-' . $ticket->id);
 
             // Format perihal layanan
             $namaLayanan = match(strtolower($ticket->layanan)) {
