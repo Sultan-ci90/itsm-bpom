@@ -17,7 +17,7 @@ class DummyDataSeeder extends Seeder
         $assetIds = DB::table('assets')->pluck('id')->toArray();
         $userIds = DB::table('users')->pluck('id')->toArray();
         $bidangIds = DB::table('bidang')->pluck('id')->toArray();
-        $teknisiIds = DB::table('users')->whereIn('role', ['admin', 'teknisi'])->pluck('id')->toArray();
+        $teknisiIds = DB::table('users')->where('role', 'admin')->pluck('id')->toArray();
 
         // Distribusi status yang realistis
         $ticketStatuses = ['Belum diperiksa', 'Sedang diproses', 'Selesai', 'Ditolak'];

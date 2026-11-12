@@ -21,6 +21,7 @@ export default defineConfig({
                         if (id.includes('apexcharts')) return 'vendor-charts';
                         if (id.includes('fullcalendar')) return 'vendor-calendar';
                         if (id.includes('alpinejs')) return 'vendor-alpine';
+                        if (id.includes('tom-select')) return 'vendor-tomselect';
                         if (id.includes('pusher-js') || id.includes('laravel-echo')) return 'vendor-echo';
                     }
                 }

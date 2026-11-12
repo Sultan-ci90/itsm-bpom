@@ -20,8 +20,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
+                    <a href="{{ (auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isAdmin() ? 'Semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -37,7 +37,7 @@
 
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex items-center gap-3">
-            <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}"
+            <a href="{{ (auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}"
                title="Kembali ke Daftar Aduan Kendala"
                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                 <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,11 +52,6 @@
             </div>
         </div>
     </div>
-
-    {{-- Preload peta lokasi aset sekali saja; hindari fetch API setiap ganti pilihan --}}
-    <script>
-        const ASSET_LOKASI = @json($assets->pluck('lokasi', 'id'));
-    </script>
 
     <div class="mx-auto w-full max-w-3xl">
         <div class="rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
@@ -83,10 +78,12 @@
                             Nama Pelapor <span class="text-red-500">*</span>
                         </label>
                         <select id="pelapor_select" name="pelapor_id" x-ref="pelaporSelect" required
+                                data-searchable-select
+                                data-placeholder="Ketik Nama atau NIP pegawai..."
                                 class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             @foreach($users as $userItem)
                                 <option value="{{ $userItem->id }}" class="bg-white text-black dark:bg-gray-900 dark:text-white" @selected(old('pelapor_id', auth()->id()) == $userItem->id)>
-                                    {{ $userItem->nama }} (NIP: {{ $userItem->nip ?? '-' }} • {{ $userItem->bidang->nama_bidang ?? 'Umum' }}){{ $userItem->id === auth()->id() ? ' ★ (Anda)' : '' }}
+                                    {{ $userItem->displayLabel() }}
                                 </option>
                             @endforeach
                         </select>
@@ -100,7 +97,7 @@
                     @else
                     <div>
                         <label class="mb-3 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
-                        <input type="text" value="{{ auth()->user()->nama }} ({{ auth()->user()->nip }})" readonly
+                        <input type="text" value="{{ auth()->user()->displayLabel() }}" readonly
                                class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black outline-none transition disabled:cursor-default dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:disabled:bg-black">
                     </div>
                     @endif
@@ -132,11 +129,17 @@
                             Pilih Aset / Barang <span class="text-red-500">*</span>
                         </label>
                         <select id="asset_select" name="asset_id" x-ref="assetSelect" :required="jenisKendala === 'aset'"
-                                @change="lokasi = ASSET_LOKASI[$event.target.value] ?? ''"
+                                data-searchable-select
+                                data-placeholder="Ketik Kode Barang, NUP, atau Nama Aset..."
+                                data-allow-empty="true"
+                                @change="updateLokasiFromSelect($event.target)"
                                 class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             <option value="" class="bg-white text-black dark:bg-gray-900 dark:text-white">-- Cari Kode Barang, NUP, atau Nama --</option>
                             @foreach ($assets as $asset)
-                                <option value="{{ $asset->id }}" class="bg-white text-black dark:bg-gray-900 dark:text-white" @selected(old('asset_id') == $asset->id)>
+                                <option value="{{ $asset->id }}"
+                                        data-lokasi="{{ $asset->lokasi ?? '' }}"
+                                        class="bg-white text-black dark:bg-gray-900 dark:text-white"
+                                        @selected(old('asset_id') == $asset->id)>
                                     {{ $asset->kode_barang }} - {{ $asset->nama_barang }} (NUP: {{ $asset->nup }})
                                 </option>
                             @endforeach
@@ -178,7 +181,7 @@
                 </div>
 
                 <div class="mt-8 flex justify-end gap-3">
-                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}"
+                    <a href="{{ (auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}"
                        class="inline-flex items-center rounded-md border border-gray-300 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
                         Batal
                     </a>
@@ -198,52 +201,26 @@
                 jenisKendala: @js(old('jenis_kendala', 'lainnya')),
                 lokasi: '',
                 submitting: false,
+                updateLokasiFromSelect(select) {
+                    if (!select || !select.value) {
+                        this.lokasi = '';
+                        return;
+                    }
+                    const selectedOpt = select.options?.[select.selectedIndex];
+                    this.lokasi = selectedOpt?.dataset?.lokasi || 'Lokasi tidak diketahui';
+                },
                 init() {
                     const select = this.$refs.assetSelect;
 
                     // Retensi lokasi jika form gagal validasi dan asset_id lama terpilih kembali
                     if (select && select.value) {
-                        this.lokasi = ASSET_LOKASI[select.value] ?? '';
+                        this.updateLokasiFromSelect(select);
                     }
-
-                    const setupTomSelect = () => {
-                        if (typeof TomSelect === 'undefined') return;
-
-                        // Setup Asset Select
-                        if (select && !select.tomselect) {
-                            new TomSelect(select, {
-                                create: false,
-                                sortField: { field: 'text', direction: 'asc' },
-                                placeholder: 'Ketik Kode Barang, NUP, atau Nama Aset...',
-                                maxOptions: 1000,
-                                allowEmptyOption: true,
-                                onChange: (value) => {
-                                    this.lokasi = value ? (ASSET_LOKASI[value] ?? 'Lokasi tidak diketahui') : '';
-                                },
-                            });
-                        }
-
-                        // Setup Pelapor Select (Khusus Staff) — sama persis seperti asset_select
-                        const pelaporSelect = this.$refs.pelaporSelect;
-                        if (pelaporSelect && !pelaporSelect.tomselect) {
-                            new TomSelect(pelaporSelect, {
-                                create: false,
-                                sortField: { field: 'text', direction: 'asc' },
-                                placeholder: 'Ketik Nama atau NIP pegawai...',
-                                maxOptions: 1000,
-                                allowEmptyOption: true,
-                            });
-                        }
-                    };
 
                     this.$watch('jenisKendala', (val) => {
                         if (val === 'aset') {
                             this.$nextTick(() => {
-                                if (select && select.tomselect) {
-                                    select.tomselect.sync();
-                                } else {
-                                    setupTomSelect();
-                                }
+                                window.initSearchableSelects?.(this.$el);
                             });
                         } else {
                             if (select && select.tomselect) {
@@ -255,13 +232,7 @@
                         }
                     });
 
-                    if (typeof TomSelect !== 'undefined') {
-                        this.$nextTick(() => setupTomSelect());
-                    } else {
-                        window.addEventListener('load', setupTomSelect);
-                        document.addEventListener('DOMContentLoaded', setupTomSelect);
-                    }
-                    window.addEventListener('spa:navigated', setupTomSelect);
+                    this.$nextTick(() => window.initSearchableSelects?.(this.$el));
                 },
             };
         }

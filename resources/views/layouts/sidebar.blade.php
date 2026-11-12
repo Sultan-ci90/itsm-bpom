@@ -20,12 +20,18 @@
             @foreach ($menuGroups as $groupIndex => $menuGroup)
                 @foreach ($menuGroup['items'] as $itemIndex => $item)
                     @if (isset($item['subItems']))
-                        // Check if any submenu item matches current path
+                        // Check if any submenu item matches current path or its nested detail route
                         @foreach ($item['subItems'] as $subItem)
-                            if (currentPath === '{{ ltrim($subItem['path'], '/') }}' ||
-                                window.location.pathname === '{{ $subItem['path'] }}') {
+                            @php
+                                $subCleanPath = ltrim($subItem['path'], '/');
+                            @endphp
+                            if (currentPath === '{{ $subCleanPath }}' ||
+                                currentPath.startsWith('{{ $subCleanPath }}/') ||
+                                window.location.pathname === '{{ $subItem['path'] }}' ||
+                                window.location.pathname.startsWith('{{ $subItem['path'] }}/')) {
                                 this.openSubmenus['{{ $groupIndex }}-{{ $itemIndex }}'] = true;
-                            } @endforeach
+                            }
+                        @endforeach
             @endif
             @endforeach
             @endforeach
@@ -46,7 +52,14 @@
             return this.openSubmenus[key] || false;
         },
         isActive(path) {
-            return window.location.pathname === path || '{{ $currentPath }}' === path.replace(/^\//, '');
+            const clean = path.replace(/^\//, '');
+            if (clean === '') {
+                return window.location.pathname === '/' || '{{ $currentPath }}' === '';
+            }
+            return window.location.pathname === path
+                || window.location.pathname.startsWith(path + '/')
+                || '{{ $currentPath }}' === clean
+                || '{{ $currentPath }}'.startsWith(clean + '/');
         }
     }"
     :class="{

@@ -3,7 +3,7 @@
 @section('content')
 @php
     $user    = auth()->user();
-    $isStaff = $user->isTeknisi() || $user->isAdmin();
+    $isStaff = $user->isAdmin();
 
     $badge = [
         'Belum diperiksa' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800/20 dark:text-yellow-400',
@@ -150,14 +150,9 @@
                                                     $isAdmin = auth()->user()->isAdmin();
                                                 @endphp
 
-                                                {{-- Edit data aduan / resolusi --}}
+                                                {{-- Edit data aduan --}}
                                                 @if($isAdmin || $isStaff || (!$isStaff && $ticket->status === 'Belum diperiksa'))
-                                                    @php
-                                                        $editLink = $isAdmin 
-                                                            ? route('incidents.edit', $ticket) 
-                                                            : (($isStaff && $ticket->status === 'Selesai') ? route('incidents.editResolution', $ticket) : route('incidents.edit', $ticket));
-                                                    @endphp
-                                                    <a href="{{ $editLink }}" title="Edit" aria-label="Edit"
+                                                    <a href="{{ route('incidents.edit', $ticket) }}" title="Edit Data" aria-label="Edit Data"
                                                        class="cursor-pointer inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                             <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -268,12 +263,7 @@
                                         @endphp
 
                                         @if($isAdmin || $isStaff || (!$isStaff && $ticket->status === 'Belum diperiksa'))
-                                            @php
-                                                $editLink = $isAdmin 
-                                                    ? route('incidents.edit', $ticket) 
-                                                    : (($isStaff && $ticket->status === 'Selesai') ? route('incidents.editResolution', $ticket) : route('incidents.edit', $ticket));
-                                            @endphp
-                                            <a href="{{ $editLink }}" title="Edit" aria-label="Edit"
+                                            <a href="{{ route('incidents.edit', $ticket) }}" title="Edit Data" aria-label="Edit Data"
                                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
                                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>

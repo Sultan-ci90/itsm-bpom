@@ -509,6 +509,10 @@ DB_PORT=3306
 DB_DATABASE=itsm_bpom
 DB_USERNAME=root
 DB_PASSWORD=
+
+# Driver Session & Cache (Gunakan 'file' untuk performa lokal instan)
+SESSION_DRIVER=file
+CACHE_STORE=file
 ```
 
 Pastikan juga konfigurasi Broadcast dan Reverb sudah terisi:
@@ -585,7 +589,16 @@ composer test
 php artisan test
 ```
 
-#### 11. Buka Aplikasi di Peramban Web
+#### 11. Skrip Akselerasi Performa Lokal (*Local Speedup*)
+Jika aplikasi terasa lambat saat dijalankan di Windows/Laragon, jalankan skrip pembantu untuk meng-cache konfigurasi dan membersihkan buffer:
+```bash
+# Klik dua kali atau jalankan lewat terminal Windows:
+.\scripts\optimize-local.bat
+```
+> [!TIP]
+> **Aktifkan OPcache di Laragon:** Klik kanan Laragon ➔ **PHP** ➔ **Quick Settings** ➔ centang **`opcache`**. Ini akan mempercepat *load-time* Laravel di Windows hingga 300%-500%!
+
+#### 12. Buka Aplikasi di Peramban Web
 Buka browser pilihan Anda dan akses alamat:
 👉 **`http://127.0.0.1:8000`** atau domain virtual Laragon Anda (misal `http://itsm-bpom.test`).
 
@@ -601,6 +614,7 @@ Buka browser pilihan Anda dan akses alamat:
 | `Vite manifest not found at .../manifest.json` | Aset frontend belum dikompilasi. | Jalankan perintah `npm run build` atau `npm run dev`. |
 | Foto kendala / avatar tidak tampil (gambar pecah) | Storage symlink belum dibuat. | Jalankan perintah `php artisan storage:link`. |
 | Pesan chat tidak bertambah tanpa reload halaman | Server WebSocket Reverb belum hidup. | Jalankan `php artisan reverb:start` di terminal latar belakang. |
+| Halaman web terasa lambat di Laragon / Windows | Cache belum optimal & OPcache mati. | Jalankan `.\scripts\optimize-local.bat` dan aktifkan `opcache` di Laragon. |
 
 ---
 

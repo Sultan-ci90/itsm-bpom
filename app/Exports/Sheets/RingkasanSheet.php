@@ -15,6 +15,7 @@ class RingkasanSheet implements FromArray, WithTitle, WithStyles, ShouldAutoSize
 {
     protected array $data;
     protected array $styleRanges = [];
+    protected int $metaEndRow = 6;
 
     public function __construct(array $summaryData)
     {
@@ -37,6 +38,13 @@ class RingkasanSheet implements FromArray, WithTitle, WithStyles, ShouldAutoSize
         $rows[] = ['Tanggal Cetak', $this->data['tgl_cetak'] ?? '-'];
         $rows[] = ['Dicetak Oleh', $this->data['dicetak_oleh'] ?? '-'];
         $rows[] = ['Total Laporan', (string) ($this->data['total_laporan'] ?? 0)];
+
+        foreach (($this->data['extra_metadata'] ?? []) as $metaRow) {
+            if (is_array($metaRow) && count($metaRow) >= 2) {
+                $rows[] = [(string) $metaRow[0], (string) $metaRow[1]];
+            }
+        }
+        $this->metaEndRow = count($rows);
         $rows[] = ['']; // Empty row
 
         // 2. Rekapitulasi Berdasarkan Status
@@ -115,9 +123,10 @@ class RingkasanSheet implements FromArray, WithTitle, WithStyles, ShouldAutoSize
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0F172A'));
         $sheet->getRowDimension(1)->setRowHeight(26);
 
-        // 2. Info Metadata (Baris 2 - 6)
-        $sheet->getStyle('A2:A6')->getFont()->setBold(true);
-        $sheet->getStyle('B2:B6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        // 2. Info Metadata (Baris 2 - metaEndRow)
+        $metaEndRow = max(6, $this->metaEndRow);
+        $sheet->getStyle("A2:A{$metaEndRow}")->getFont()->setBold(true);
+        $sheet->getStyle("B2:B{$metaEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
         // Styling untuk tiap blok tabel
         foreach ($this->styleRanges as $table) {

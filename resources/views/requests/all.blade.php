@@ -74,7 +74,7 @@
                                     @php $final = in_array($req->status, ['Selesai', 'Ditolak']); @endphp
                                     <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer"
                                         onclick="window.location='{{ route('requests.show', $req->id) }}'">
-                                        <td class="px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
+                                        <td class="whitespace-nowrap px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
                                         <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ match($req->layanan) { 'reset_password' => 'Reset Password', 'tambah_akun' => 'Tambah Akun', 'rapat' => 'Operator Rapat', 'zoom' => 'Link Zoom', default => ucwords(str_replace('_', ' ', $req->layanan ?? '-')) } }}</td>
                                         <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->user?->nama ?? '-' }}</td>
                                         <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title="{{ $req->deskripsi }}">{{ $req->deskripsi ?? "-" }}</td>
@@ -107,13 +107,7 @@
                                                     </svg>
                                                 </a>
 
-                                                @php
-                                                    $isAdmin = auth()->user()->isAdmin();
-                                                    $editLink = $isAdmin 
-                                                        ? route('requests.edit', $req->id) 
-                                                        : (($req->status === 'Selesai') ? route('requests.editResolution', $req->id) : route('requests.edit', $req->id));
-                                                @endphp
-                                                <a href="{{ $editLink }}" title="Edit Data" aria-label="Edit"
+                                                <a href="{{ route('requests.edit', $req->id) }}" title="Edit Data" aria-label="Edit Data"
                                                     class="cursor-pointer inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -207,13 +201,7 @@
                                         </svg>
                                     </a>
 
-                                    @php
-                                        $isAdmin = auth()->user()->isAdmin();
-                                        $editLink = $isAdmin 
-                                            ? route('requests.edit', $req->id) 
-                                            : (($req->status === 'Selesai') ? route('requests.editResolution', $req->id) : route('requests.edit', $req->id));
-                                    @endphp
-                                    <a href="{{ $editLink }}" title="Edit Data" aria-label="Edit"
+                                    <a href="{{ route('requests.edit', $req->id) }}" title="Edit Data" aria-label="Edit Data"
                                        class="cursor-pointer inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stroke text-gray-500 transition hover:border-warning hover:text-warning dark:border-gray-800 dark:text-gray-400">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>

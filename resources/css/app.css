@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'tom-select/dist/css/tom-select.default.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../**/*.blade.php';
@@ -1349,33 +1350,53 @@ pre[class*='language-'] {
 /* ---- TomSelect Base & TailAdmin Integration ---- */
 .ts-wrapper {
   width: 100% !important;
+  position: relative;
 }
 
+.ts-wrapper.single .ts-control,
 .ts-control {
   width: 100% !important;
   min-height: 48px !important;
-  padding: 0.75rem 1.25rem !important;
+  padding: 0.75rem 2.25rem 0.75rem 1.25rem !important;
   border-radius: 0.5rem !important;
   border: 1.5px solid #e2e8f0 !important;
   background-color: transparent !important;
+  background-image: none !important;
   font-size: 0.875rem !important;
   color: #101828 !important;
   display: flex !important;
   align-items: center !important;
+  flex-wrap: nowrap !important;
   box-shadow: none !important;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
 }
 
-.ts-wrapper.focus .ts-control {
+.ts-wrapper.single .ts-control .item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ts-wrapper.focus .ts-control,
+.ts-wrapper.plugin-dropdown_input.focus.dropdown-active .ts-control {
   border-color: #465fff !important;
+  border-width: 1.5px !important;
   outline: none !important;
 }
 
+.ts-wrapper.plugin-dropdown_input .items-placeholder,
 .ts-control > input {
   font-size: 0.875rem !important;
   color: #101828 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 none !important;
+  box-shadow: none !important;
 }
 
+.ts-wrapper.plugin-dropdown_input .items-placeholder::placeholder,
 .ts-control > input::placeholder {
   color: #98a2b3 !important;
 }
@@ -1386,14 +1407,50 @@ pre[class*='language-'] {
   background-color: #ffffff !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
   margin-top: 4px !important;
-  z-index: 9999 !important;
+  z-index: 100000 !important;
   font-size: 0.875rem !important;
   overflow: hidden !important;
 }
 
-.ts-dropdown .option {
+.ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input-wrap {
+  padding: 0.5rem !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  background-color: #ffffff !important;
+}
+
+.ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input {
+  width: 100% !important;
+  border: 1px solid #d0d5dd !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+  background-color: #f9fafb !important;
+  color: #101828 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input:focus {
+  border-color: #465fff !important;
+}
+
+.ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input::placeholder {
+  color: #98a2b3 !important;
+}
+
+.ts-dropdown-content {
+  max-height: 240px !important;
+  overflow-y: auto !important;
+}
+
+.ts-dropdown .option,
+.ts-dropdown .no-results {
   padding: 0.625rem 1.25rem !important;
   color: #344054 !important;
+}
+
+.ts-dropdown .option {
   cursor: pointer !important;
 }
 
@@ -1415,13 +1472,15 @@ pre[class*='language-'] {
 html.dark .ts-wrapper.single .ts-control,
 html.dark .ts-control {
   background-color: #101828 !important;
-  background: #101828 !important;
+  background-image: none !important;
   border-color: #1f2a37 !important;
   color: rgb(255 255 255 / 0.9) !important;
 }
 
 .dark .ts-wrapper.focus .ts-control,
-html.dark .ts-wrapper.focus .ts-control {
+.dark .ts-wrapper.plugin-dropdown_input.focus.dropdown-active .ts-control,
+html.dark .ts-wrapper.focus .ts-control,
+html.dark .ts-wrapper.plugin-dropdown_input.focus.dropdown-active .ts-control {
   border-color: #465fff !important;
 }
 
@@ -1432,12 +1491,16 @@ html.dark .ts-control .item {
   background-color: transparent !important;
 }
 
+.dark .ts-wrapper.plugin-dropdown_input .items-placeholder,
 .dark .ts-control > input,
+html.dark .ts-wrapper.plugin-dropdown_input .items-placeholder,
 html.dark .ts-control > input {
   color: #ffffff !important;
 }
 
+.dark .ts-wrapper.plugin-dropdown_input .items-placeholder::placeholder,
 .dark .ts-control > input::placeholder,
+html.dark .ts-wrapper.plugin-dropdown_input .items-placeholder::placeholder,
 html.dark .ts-control > input::placeholder {
   color: #98a2b3 !important;
 }
@@ -1445,14 +1508,33 @@ html.dark .ts-control > input::placeholder {
 .dark .ts-dropdown,
 html.dark .ts-dropdown {
   background-color: #101828 !important;
-  background: #101828 !important;
   border-color: #1f2a37 !important;
   color: rgb(255 255 255 / 0.9) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5) !important;
 }
 
+.dark .ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input-wrap,
+html.dark .ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input-wrap {
+  border-bottom-color: #1f2a37 !important;
+  background-color: #101828 !important;
+}
+
+.dark .ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input,
+html.dark .ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input {
+  border-color: #344054 !important;
+  background-color: #1d2939 !important;
+  color: #ffffff !important;
+}
+
+.dark .ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input::placeholder,
+html.dark .ts-wrapper.plugin-dropdown_input .ts-dropdown .dropdown-input::placeholder {
+  color: #98a2b3 !important;
+}
+
 .dark .ts-dropdown .option,
-html.dark .ts-dropdown .option {
+.dark .ts-dropdown .no-results,
+html.dark .ts-dropdown .option,
+html.dark .ts-dropdown .no-results {
   color: rgb(255 255 255 / 0.85) !important;
   background-color: transparent !important;
 }

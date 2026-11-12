@@ -22,8 +22,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('requests.all') : route('requests.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Permintaan Layanan TIK' : 'Permintaan Layanan Saya' }}
+                    <a href="{{ (auth()->user()->isAdmin()) ? route('requests.all') : route('requests.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isAdmin() ? 'Semua Permintaan Layanan TIK' : 'Permintaan Layanan Saya' }}
                     </a>
                 </li>
                 <li>
@@ -39,7 +39,7 @@
 
         {{-- Baris Judul & Tombol Kembali di Sebelah Kiri Judul --}}
         <div class="flex items-center gap-3">
-            <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('requests.all') : route('requests.index') }}"
+            <a href="{{ (auth()->user()->isAdmin()) ? route('requests.all') : route('requests.index') }}"
                title="Kembali ke Daftar Permintaan Layanan"
                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-white text-gray-600 shadow-xs transition hover:border-primary hover:bg-gray-50 hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
                 <svg class="h-5 w-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +67,15 @@
             <form action="{{ route('requests.store') }}" method="POST"
                 x-data="{ 
                     layanan: $el.querySelector('[name=layanan]') ? $el.querySelector('[name=layanan]').value : 'lainnya',
-                    submitting: false
+                    submitting: false,
+                    syncZoomBidang(selectEl) {
+                        const selectedOpt = selectEl?.options?.[selectEl.selectedIndex];
+                        const bidangId = selectedOpt?.dataset?.bidangId;
+                        const zoomBidangSelect = this.$el.querySelector('select[name=bidang_id]');
+                        if (zoomBidangSelect && bidangId) {
+                            zoomBidangSelect.value = bidangId;
+                        }
+                    }
                 }"
                 @submit="submitting = true">
                 @csrf
@@ -102,10 +110,16 @@
                                 Nama Pelapor <span class="text-meta-1">*</span>
                             </label>
                             <select id="pelapor_select_request" name="pelapor_id" required
+                                    data-searchable-select
+                                    data-placeholder="Ketik Nama atau NIP pegawai..."
+                                    @change="syncZoomBidang($event.target)"
                                     class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                                 @foreach($users as $userItem)
-                                    <option value="{{ $userItem->id }}" class="bg-white text-black dark:bg-gray-900 dark:text-white" @selected(old('pelapor_id', auth()->id()) == $userItem->id)>
-                                        {{ $userItem->nama }} (NIP: {{ $userItem->nip ?? '-' }} • {{ $userItem->bidang->nama_bidang ?? 'Umum' }}){{ $userItem->id === auth()->id() ? ' ★ (Anda)' : '' }}
+                                    <option value="{{ $userItem->id }}"
+                                            data-bidang-id="{{ $userItem->bidang_id }}"
+                                            class="bg-white text-black dark:bg-gray-900 dark:text-white"
+                                            @selected(old('pelapor_id', auth()->id()) == $userItem->id)>
+                                        {{ $userItem->displayLabel() }}
                                     </option>
                                 @endforeach
                             </select>
@@ -117,7 +131,7 @@
                         @else
                         <div>
                             <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Nama Pelapor</label>
-                            <input type="text" value="{{ auth()->user()->nama }} ({{ auth()->user()->bidang->nama_bidang ?? 'Umum' }})" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                            <input type="text" value="{{ auth()->user()->displayLabel() }}" readonly class="w-full rounded-lg border-[1.5px] border-stroke bg-gray-100 py-3 px-5 text-black dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         </div>
                         @endif
 
@@ -239,44 +253,4 @@
     </div>
 </div>
 
-@if($isStaff)
-@push('scripts')
-<script>
-    const USER_BIDANG = @json($users->pluck('bidang_id', 'id'));
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const pelaporEl = document.getElementById('pelapor_select_request');
-        const zoomBidangSelect = document.querySelector('select[name="bidang_id"]');
-
-        const initPelaporSelect = () => {
-            if (!pelaporEl || typeof TomSelect === 'undefined' || pelaporEl.tomselect) return;
-
-            new TomSelect(pelaporEl, {
-                create: false,
-                sortField: { field: 'text', direction: 'asc' },
-                placeholder: 'Ketik Nama atau NIP pegawai...',
-                maxOptions: 500,
-                onChange: function(value) {
-                    if (!value) return;
-
-                    const bidangId = USER_BIDANG[value] ?? null;
-
-                    // Jika ada dropdown Bidang pada form Zoom, sinkronkan ke bidang user terpilih
-                    if (zoomBidangSelect && bidangId) {
-                        zoomBidangSelect.value = bidangId;
-                    }
-                }
-            });
-        };
-
-        if (typeof TomSelect !== 'undefined') {
-            initPelaporSelect();
-        } else {
-            window.addEventListener('load', initPelaporSelect);
-        }
-        window.addEventListener('spa:navigated', initPelaporSelect);
-    });
-</script>
-@endpush
-@endif
 @endsection

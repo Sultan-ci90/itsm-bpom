@@ -1,0 +1,102 @@
+{
+  "info": {
+    "_postman_id": "1e04f98f-ac6d-4185-83ee-e5ad5a2c86a5",
+    "name": "Users SIBOB",
+    "description": "user sibob",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48479776"
+  },
+  "item": [
+    {
+      "name": "login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "email",
+              "value": "magangit@mail.com"
+            },
+            {
+              "key": "password",
+              "value": "magang14!T"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/login",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "v1", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "profile",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer ZpWpgk9NI7MnMpwzWtIgdmF0Rq0FO2zWurnhrsqxXsNr9qZoNxBXpoegumDs",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "email",
+              "value": "sitipurmayasari89@gmail.com",
+              "type": "text",
+              "uuid": "99ef8199-38d1-40a5-9e22-06719cf573aa"
+            },
+            {
+              "key": "password",
+              "value": "MayaViolet!",
+              "type": "text",
+              "uuid": "3b01b1c1-143d-4dae-bfb1-7be3449eef8e"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/v1/profile",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["api", "v1", "profile"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "list pegawai",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{TOKEN}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/users",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "v1", "users"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

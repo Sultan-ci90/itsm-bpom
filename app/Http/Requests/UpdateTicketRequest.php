@@ -9,8 +9,8 @@ class UpdateTicketRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Hanya teknisi dan admin yang boleh memproses tiket
-        return auth()->user()->isTeknisi() || auth()->user()->isAdmin();
+        // Hanya Administrator / Tim IT yang boleh memproses tiket
+        return auth()->user()->isAdmin();
     }
 
     protected function prepareForValidation(): void
@@ -42,10 +42,10 @@ class UpdateTicketRequest extends FormRequest
             'action_type' => 'required|in:draft,selesai',
             'status' => 'required|in:Sedang diproses,Selesai',
 
-            // Pemeriksa harus user dengan role teknisi/admin
+            // Pemeriksa harus user dengan role admin (Administrator / Tim IT)
             'pemeriksa_id' => [
                 'required',
-                Rule::exists('users', 'id')->whereIn('role', ['teknisi', 'admin']),
+                Rule::exists('users', 'id')->where('role', 'admin'),
             ],
 
             // Analisa (opsional) & tindak lanjut (wajib)

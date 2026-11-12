@@ -17,7 +17,7 @@ class KnowledgeBaseController extends Controller
     public function index(Request $request): View
     {
         $user = auth()->user();
-        $isStaff = $user && ($user->isTeknisi() || $user->isAdmin());
+        $isStaff = $user && $user->isAdmin();
 
         $query = KnowledgeBase::query()->with('author');
 
@@ -66,7 +66,7 @@ class KnowledgeBaseController extends Controller
     public function show(string $slug): View
     {
         $user = auth()->user();
-        $isStaff = $user && ($user->isTeknisi() || $user->isAdmin());
+        $isStaff = $user && $user->isAdmin();
 
         $query = KnowledgeBase::where('slug', $slug)->with('author');
         if (!$isStaff) {
@@ -253,7 +253,7 @@ class KnowledgeBaseController extends Controller
     private function authorizeStaff(): void
     {
         $user = auth()->user();
-        if (!$user || (!$user->isTeknisi() && !$user->isAdmin())) {
+        if (!$user || !$user->isAdmin()) {
             abort(403, 'Anda tidak memiliki hak akses untuk mengelola panduan.');
         }
     }

@@ -72,7 +72,7 @@
                             @forelse ($requests as $req)
                                 <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer"
                                     onclick="window.location='{{ route('requests.show', $req->id) }}'">
-                                    <td class="px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
+                                    <td class="whitespace-nowrap px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ $req->nomor_request }}</td>
                                     <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ match($req->layanan) { 'reset_password' => 'Reset Password', 'tambah_akun' => 'Tambah Akun', 'rapat' => 'Operator Rapat', 'zoom' => 'Link Zoom', default => ucwords(str_replace('_', ' ', $req->layanan ?? '-')) } }}</td>
                                     <td class="px-5 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title="{{ $req->deskripsi }}">{{ $req->deskripsi ?? "-" }}</td>
                                     <td class="px-5 py-4 text-gray-600 dark:text-gray-400">{{ $req->tgl_request?->format('d/m/Y') ?? '-' }}</td>
@@ -117,7 +117,7 @@
                                             @endif
 
                                             {{-- Hapus (soft delete) --}}
-                                            @if(auth()->user()->isTeknisi() || auth()->user()->isAdmin())
+                                            @if(auth()->user()->isAdmin())
                                                 <form action="{{ route('requests.destroy', $req->id) }}" method="POST"
                                                       onsubmit="return confirm('Hapus permintaan layanan {{ $req->nomor_request }}? Data tetap tersimpan sebagai arsip.')">
                                                     @csrf
@@ -205,7 +205,7 @@
                                     </a>
                                 @endif
 
-                                @if(auth()->user()->isTeknisi() || auth()->user()->isAdmin())
+                                @if(auth()->user()->isAdmin())
                                     <form action="{{ route('requests.destroy', $req->id) }}" method="POST"
                                           onsubmit="return confirm('Hapus permintaan layanan {{ $req->nomor_request }}? Data tetap tersimpan sebagai arsip.')">
                                         @csrf

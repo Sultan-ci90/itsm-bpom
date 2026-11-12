@@ -226,7 +226,7 @@
                         @forelse ($recentIncidents as $ticket)
                         <tr class="border-t border-stroke text-sm dark:border-strokedark cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
                             onclick="window.location='{{ route('incidents.show', $ticket) }}'">
-                            <td class="px-6 py-4 font-medium text-black dark:text-white sm:px-7.5">{{ $ticket->nomor_aduan }}</td>
+                            <td class="whitespace-nowrap px-6 py-4 font-medium text-black dark:text-white sm:px-7.5">{{ $ticket->nomor_aduan }}</td>
                             <td class="px-4 py-4 text-gray-600 dark:text-gray-400">{{ $ticket->pelapor->nama ?? '-' }}</td>
                             <td class="px-4 py-4">
                                 <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium {{ $badge[$ticket->status] ?? $badge['Ditolak'] }}"
@@ -268,7 +268,7 @@
                         @forelse ($recentRequests as $request)
                         <tr class="border-t border-stroke text-sm dark:border-strokedark cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
                             onclick="window.location='{{ route('requests.show', $request->id) }}'">
-                            <td class="px-6 py-4 font-medium text-black dark:text-white sm:px-7.5">{{ $request->nomor_request }}</td>
+                            <td class="whitespace-nowrap px-6 py-4 font-medium text-black dark:text-white sm:px-7.5">{{ $request->nomor_request }}</td>
                             <td class="px-4 py-4 text-gray-600 dark:text-gray-400">{{ $request->user->nama ?? '-' }}</td>
                             <td class="px-4 py-4 text-gray-600 dark:text-gray-400">{{ ucfirst($request->layanan) }}</td>
                             <td class="px-4 py-4">
@@ -365,7 +365,7 @@
                 { name: 'Aduan Kendala', data: @json($incidentTrend) },
                 { name: 'Permintaan Layanan', data: @json($requestTrend) }
             ],
-            colors: ['#465FFF', '#41B1FB'],
+            colors: ['#465FFF', '#10B981'],
             xaxis: { categories: @json($last6Months), labels: axisLabels, axisBorder: { show: false }, axisTicks: { show: false } },
             yaxis: { forceNiceScale: true, labels: { ...axisLabels, formatter: v => Math.round(v) } },
             plotOptions: {

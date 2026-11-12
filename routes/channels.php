@@ -11,5 +11,5 @@ Broadcast::channel('service-request.{id}', function ($user, $id) {
     if (!$req) {
         return false;
     }
-    return (int) $user->id === (int) $req->user_id || $user->isTeknisi() || $user->isAdmin();
+    return (int) $user->id === (int) $req->user_id || $user->isAdmin();
 });

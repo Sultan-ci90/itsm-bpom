@@ -1,38 +1,55 @@
-# AGENTS.md — TailAdmin Free Laravel
+# AGENTS.md — ITSM BPOM (TailAdmin Laravel 12)
 
-> Free Laravel 12 admin dashboard template · RTL Layout Support · Tailwind CSS v4 · Blade Components · Alpine.js · Vite · ApexCharts · FullCalendar · Swiper · Flatpickr
+> Aplikasi IT Service Management (ITSM) Balai Besar Pengawas Obat dan Makanan (BBPOM) · Laravel 12 · Tailwind CSS v4 · Alpine.js v3 · Vite 7 · ApexCharts · Reverb WebSocket · Fonnte WhatsApp Gateway · DomPDF · Maatwebsite Excel
 
 ## Repo Map
 
 ```
 app/
-├── Helpers/                  # MenuHelper and UI utilities
+├── Events/                   # WebSocket broadcast events (ServiceRequestChatMessageSent, dsb.)
+├── Exports/                  # Export spreadsheets Excel multi-sheet (IncidentExport, Sheets/*)
+├── Helpers/                  # MenuHelper (generator menu sidebar dinamis per role)
+├── Http/
+│   ├── Controllers/          # IncidentController, ServiceRequestController, DashboardController
+│   │   ├── Api/              # UserSearchController, AJAX endpoints
+│   │   └── Auth/             # LoginController, CaptchaController (Kamus Banjar)
+│   ├── Middleware/           # RoleMiddleware (RBAC pelapor|teknisi|admin), SetLocale
+│   └── Requests/             # Form validation requests (StoreIncidentRequest, UpdateIncident)
+├── Jobs/                     # Asynchronous Queue Jobs (SendWhatsAppJob)
+├── Models/                   # 18 Eloquent Models (Ticket, ServiceRequest, User, Lokasi, dsb.)
+├── Notifications/            # Database in-app notifications
+├── Services/                 # FonnteService (WA API), PeriodeResolver
+└── Support/                  # CaptchaImage (PHP GD PNG generator)
 bootstrap/
 ├── app.php                   # Laravel application configuration & middleware setup
 public/
-├── images/                   # Static images, user avatars, icons (flag-us.svg, flag-sa.svg)
+├── images/                   # Static images, screenshots, logo BPOM, favicon
 resources/
 ├── css/
-│   └── app.css               # Tailwind CSS v4 theme (@theme), global utilities & 3rd party overrides
+│   └── app.css               # Tailwind CSS v4 theme (@theme), global utilities & overrides
 ├── js/
 │   ├── app.js                # Main JS entry point (Alpine.js, component dynamic imports)
 │   ├── bootstrap.js          # Axios & HTTP setup
-│   └── components/           # Client-side modules (calendar-init, charts, map)
+│   ├── echo.js               # Lazy Laravel Echo & Reverb WebSocket listener
+│   └── components/           # ApexCharts, FullCalendar, Map modules
 └── views/
-    ├── components/           # Reusable Blade components (<x-ui.*>, <x-form.*>, <x-common.*>, etc.)
-    │   ├── common/           # Shared page elements (page-breadcrumb, component-card, table-dropdown)
-    │   ├── ecommerce/        # Ecommerce dashboard widgets (metrics, monthly-target, recent-orders)
-    │   ├── form/             # Form controls (input, select, date-picker, dropzone)
-    │   ├── header/           # Header widgets (user-dropdown, notification-dropdown)
-    │   ├── profile/          # User profile cards (personal-info, profile-card, address-card)
-    │   ├── tables/           # Table variations (basic-tables-one to five)
-    │   └── ui/               # UI primitives (alert, avatar, badge, button, modal)
-    ├── layouts/              # Master layouts (app.blade.php, fullscreen-layout.blade.php, sidebar.blade.php, app-header.blade.php)
-    └── pages/                # Route view templates (dashboard/, auth/, ui-elements/, form/, tables/, chart/, calender.blade.php)
+    ├── components/           # Reusable Blade components (<x-ui.*>, <x-form.*>, <x-common.*>)
+    ├── incidents/            # Tampilan Aduan Kendala TIK (index, create, show, edit, all)
+    ├── requests/             # Tampilan Permohonan Layanan TI (index, create, show, edit, all)
+    ├── panduan/              # Tampilan Pusat Bantuan & FAQ (Knowledge Base)
+    ├── master/               # Tampilan Master Lokasi Ruangan & Data Petugas
+    ├── reports/              # Tampilan Ekspor Laporan Excel
+    ├── settings/             # Tampilan Pengaturan WhatsApp Fonnte & Pejabat
+    ├── pdf/                  # Template Surat Permintaan Perbaikan BMN (DomPDF)
+    ├── layouts/              # Master layouts (app.blade.php, fullscreen-layout.blade.php, sidebar.blade.php)
+    └── pages/                # Route views (choice/index.blade.php, dashboard/index.blade.php, auth/)
 routes/
-├── web.php                   # Web application routes
+├── web.php                   # Web application routes & RBAC protection
+├── channels.php              # WebSocket private channel authorization (Reverb)
 ├── api.php                   # API routes
 └── console.php               # Console commands
+scripts/
+└── optimize-local.bat        # Skrip akselerasi performa lokal Windows/Laragon
 ```
 
 ## Stack

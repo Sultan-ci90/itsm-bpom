@@ -3,7 +3,7 @@
 @section('content')
 @php
     $user    = auth()->user();
-    $isStaff = $user->isTeknisi() || $user->isAdmin();
+    $isStaff = $user->isAdmin();
     $isFinal = in_array($ticket->status, ['Selesai', 'Ditolak']);
     $res     = $ticket->resolution;
 
@@ -567,14 +567,14 @@
                                 <svg class="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
-                                <span>Aduan kendala telah dikonfirmasi selesai secara otomatis oleh sistem (melewati batas waktu konfirmasi 2 hari) pada {{ ($ticket->konfirmasi_selesai_at ?? $deadline)->translatedFormat('d F Y, H:i') }} WIB.</span>
+                                <span>Aduan kendala telah dikonfirmasi selesai secara otomatis oleh sistem (melewati batas waktu konfirmasi 2 hari) pada {{ \App\Support\WitaTime::format($ticket->konfirmasi_selesai_at ?? $deadline) }}.</span>
                             </p>
                         @elseif($isConfirmed)
                             <p class="text-xs text-green-700 dark:text-green-400 font-medium mt-1 flex items-center gap-1.5">
                                 <svg class="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>
-                                <span>Aduan kendala telah dikonfirmasi selesai diterima oleh Pelapor pada {{ $ticket->konfirmasi_selesai_at->translatedFormat('d F Y, H:i') }} WIB.</span>
+                                <span>Aduan kendala telah dikonfirmasi selesai diterima oleh Pelapor pada {{ \App\Support\WitaTime::format($ticket->konfirmasi_selesai_at) }}.</span>
                             </p>
                         @else
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -589,7 +589,7 @@
                                     <svg class="h-3.5 w-3.5 text-amber-600 shrink-0 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
                                     </svg>
-                                    <span>Batas konfirmasi: s.d. <strong>{{ $deadline->translatedFormat('d M Y, H:i') }} WIB</strong> (tersisa {{ now()->diffForHumans($deadline, ['parts' => 1, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]) }} lagi, setelah itu otomatis dianggap selesai).</span>
+                                    <!-- <span>Batas konfirmasi: s.d. <strong>{{ \App\Support\WitaTime::format($deadline) }}</strong> (tersisa {{ \App\Support\WitaTime::remaining($deadline) }} lagi, setelah itu otomatis dianggap selesai).</span> -->
                                 </div>
                             @endif
                         @endif

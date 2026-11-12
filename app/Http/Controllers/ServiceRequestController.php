@@ -19,6 +19,7 @@ use App\Models\ServiceRequestChat;
 use App\Events\ServiceRequestChatMessageSent;
 use App\Events\ServiceRequestChatStatusChanged;
 use App\Services\FonnteService;
+use App\Support\DocumentNumberGenerator;
 
 class ServiceRequestController extends Controller
 {
@@ -28,7 +29,7 @@ class ServiceRequestController extends Controller
     public function index(Request $request)
     {
         // Admin & Teknisi selalu diarahkan ke Semua Permintaan Layanan TIK
-        if (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) {
+        if (auth()->user()->isAdmin()) {
             return redirect()->route('requests.all', $request->query());
         }
 
@@ -119,7 +120,7 @@ class ServiceRequestController extends Controller
     {
         $bidangs = Bidang::all();
         $user = auth()->user();
-        $isStaff = $user->isTeknisi() || $user->isAdmin();
+        $isStaff = $user->isAdmin();
 
         $users = $isStaff
             ? User::with('bidang')->select('id', 'nama', 'nip', 'bidang_id')->orderBy('nama')->get()
@@ -162,7 +163,7 @@ class ServiceRequestController extends Controller
         DB::beginTransaction();
         try {
             $currentUser = auth()->user();
-            $isStaff = $currentUser->isTeknisi() || $currentUser->isAdmin();
+            $isStaff = $currentUser->isAdmin();
 
             // Tentukan user pemilik request (user_id) dan user pen-submit (reported_by)
             $targetUserId = $currentUser->id;
@@ -177,13 +178,7 @@ class ServiceRequestController extends Controller
             }
 
             // Generate Nomor Request Otomatis (dikunci agar tidak bentrok saat submit bersamaan)
-            $date = Carbon::now()->format('Ymd');
-            $lastReq = ServiceRequest::where('nomor_request', 'like', "REQ-{$date}-%")
-                ->orderBy('nomor_request', 'desc')
-                ->lockForUpdate()
-                ->first();
-            $sequence = $lastReq ? ((int) substr($lastReq->nomor_request, -4)) + 1 : 1;
-            $nomorRequest = 'REQ-' . $date . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $nomorRequest = DocumentNumberGenerator::generateYearly(ServiceRequest::query(), 'nomor_request', 'PLTIK');
 
             // Insert ke tabel utama
             $serviceRequest = ServiceRequest::create([
@@ -222,13 +217,13 @@ class ServiceRequestController extends Controller
             }
 
             // Notify Admin & Teknisi
-            $staffs = User::whereIn('role', ['teknisi', 'admin'])->get();
+            $staffs = User::where('role', 'admin')->get();
             $targetUser = User::find($targetUserId);
             $namaPelaporText = $reportedById
                 ? $currentUser->nama . ' (atas nama ' . ($targetUser->nama ?? 'Pegawai lain') . ')'
                 : $currentUser->nama;
 
-            $avatar = $currentUser->foto_profil ? asset('storage/' . $currentUser->foto_profil) : asset('images/user/owner.png');
+            $avatar = $currentUser->avatarUrl(asset('images/user/owner.png'));
             Notification::send($staffs, new NewTicketNotification(
                 'Permintaan Layanan Baru',
                 $namaPelaporText . ' mengajukan permintaan layanan baru (' . $nomorRequest . ').',
@@ -246,7 +241,7 @@ class ServiceRequestController extends Controller
                 Log::warning('Fonnte sendNewTicketNotification error: ' . $e->getMessage());
             }
 
-            $targetRoute = (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? 'requests.all' : 'requests.index';
+            $targetRoute = (auth()->user()->isAdmin()) ? 'requests.all' : 'requests.index';
             return redirect()->route($targetRoute)
                 ->with('success', 'Permintaan layanan berhasil diajukan dengan Nomor: ' . $nomorRequest);
 
@@ -271,7 +266,7 @@ class ServiceRequestController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->isTeknisi() && !$user->isAdmin()) {
+        if (!$user->isAdmin()) {
             if ($req->user_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses untuk mengedit request ini.');
             }
@@ -292,7 +287,7 @@ class ServiceRequestController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->isTeknisi() && !$user->isAdmin()) {
+        if (!$user->isAdmin()) {
             if ($req->user_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses untuk mengedit request ini.');
             }
@@ -379,8 +374,8 @@ class ServiceRequestController extends Controller
         $req->autoConfirmIfExpired();
 
         // Daftar teknisi/admin untuk dropdown petugas
-        $petugasList = (auth()->user()->isTeknisi() || auth()->user()->isAdmin())
-            ? \App\Models\User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama'])
+        $petugasList = (auth()->user()->isAdmin())
+            ? \App\Models\User::where('role', 'admin')->orderBy('nama')->get(['id', 'nip', 'nama'])
             : collect();
 
         return view('requests.show', compact('req', 'petugasList'));
@@ -391,7 +386,7 @@ class ServiceRequestController extends Controller
      */
     public function take($id)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -432,7 +427,7 @@ class ServiceRequestController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses untuk memproses request ini.');
         }
 
@@ -481,7 +476,7 @@ class ServiceRequestController extends Controller
 
             // Notify Pelapor
             if ($oldStatus !== $validated['status'] && $req->user) {
-                $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+                $avatar = auth()->user()->avatarUrl(asset('images/user/owner.png'));
                 $req->user->notify(new TicketStatusUpdatedNotification(
                     'Status Request Diperbarui',
                     'Request Anda (' . $req->nomor_request . ') kini berstatus: ' . $validated['status'],
@@ -528,7 +523,7 @@ class ServiceRequestController extends Controller
      */
     public function editResolution(ServiceRequest $req)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -543,7 +538,7 @@ class ServiceRequestController extends Controller
 
         $req->load(['user.bidang', 'detailZoom.bidang', 'detailAkun', 'resolution.petugas']);
 
-        $petugasList = User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama']);
+        $petugasList = User::where('role', 'admin')->orderBy('nama')->get(['id', 'nip', 'nama']);
 
         return view('requests.edit-resolution', compact('req', 'petugasList'));
     }
@@ -553,7 +548,7 @@ class ServiceRequestController extends Controller
      */
     public function updateResolution(Request $request, ServiceRequest $req)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -679,8 +674,8 @@ class ServiceRequestController extends Controller
                         'pesan' => $chat->pesan,
                         'user_id' => $user->id,
                         'user_nama' => $user->nama,
-                        'user_avatar' => $user->foto_profil ? asset('storage/' . $user->foto_profil) : null,
-                        'is_staff' => $user->isTeknisi() || $user->isAdmin(),
+                        'user_avatar' => $user->avatarUrl(),
+                        'is_staff' => $user->isAdmin(),
                         'is_me' => true,
                         'created_time' => $chat->created_at?->format('H:i') ?? now()->format('H:i'),
                         'created_datetime' => $chat->created_at?->format('H:i, d M') ?? now()->format('H:i, d M'),
@@ -710,7 +705,7 @@ class ServiceRequestController extends Controller
     public function toggleChatStatus(Request $request, $id)
     {
         $user = auth()->user();
-        if (!$user->isTeknisi() && !$user->isAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403, 'Hanya tim IT (teknisi/admin) yang dapat mengubah status sesi diskusi.');
         }
 
@@ -848,7 +843,7 @@ class ServiceRequestController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 

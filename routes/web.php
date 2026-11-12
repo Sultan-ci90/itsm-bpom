@@ -8,6 +8,7 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\PetugasController;
+use App\Http\Controllers\AssetHistoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\KnowledgeBaseController;
 use App\Http\Controllers\SettingController;
@@ -92,29 +93,29 @@ Route::middleware('auth')->group(function () {
     
     // PENTING: route literal /incidents/all HARUS sebelum /incidents/{ticket}
     Route::get('/incidents/all', [IncidentController::class, 'all'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('incidents.all');
         
     Route::get('/incidents/{ticket}', [IncidentController::class, 'show'])->name('incidents.show');
     Route::post('/incidents/{ticket}/take', [IncidentController::class, 'take'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('incidents.take');
     Route::put('/incidents/{ticket}', [IncidentController::class, 'update'])->name('incidents.update');
     Route::get('/incidents/{ticket}/justifikasi', [IncidentController::class, 'justifikasi'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('incidents.justifikasi');
     Route::get('/incidents/{ticket}/edit', [IncidentController::class, 'edit'])
         ->name('incidents.edit');
     Route::put('/incidents/{ticket}/data', [IncidentController::class, 'updateData'])
         ->name('incidents.updateData');
     Route::get('/incidents/{ticket}/edit-resolution', [IncidentController::class, 'editResolution'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('incidents.editResolution');
     Route::put('/incidents/{ticket}/resolution', [IncidentController::class, 'updateResolution'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('incidents.updateResolution');
     Route::delete('/incidents/{ticket}/destroy', [IncidentController::class, 'destroy'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('incidents.destroy');
     Route::post('/incidents/{ticket}/confirm-selesai', [IncidentController::class, 'confirmCompleted'])
         ->name('incidents.confirmCompleted');
@@ -129,12 +130,12 @@ Route::middleware('auth')->group(function () {
     
     // PENTING: route literal /requests/all HARUS sebelum /requests/{req}
     Route::get('/requests/all', [ServiceRequestController::class, 'all'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('requests.all');
         
     Route::get('/requests/{req}', [ServiceRequestController::class, 'show'])->name('requests.show');
     Route::post('/requests/{req}/take', [ServiceRequestController::class, 'take'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('requests.take');
     Route::put('/requests/{req}', [ServiceRequestController::class, 'update'])->name('requests.update');
     Route::get('/requests/{req}/edit', [ServiceRequestController::class, 'edit'])
@@ -142,26 +143,26 @@ Route::middleware('auth')->group(function () {
     Route::put('/requests/{req}/data', [ServiceRequestController::class, 'updateData'])
         ->name('requests.updateData');
     Route::get('/requests/{req}/edit-resolution', [ServiceRequestController::class, 'editResolution'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('requests.editResolution');
     Route::put('/requests/{req}/resolution', [ServiceRequestController::class, 'updateResolution'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('requests.updateResolution');
     Route::post('/requests/{req}/chats', [ServiceRequestController::class, 'storeChat'])
         ->name('requests.chats.store');
     Route::post('/requests/{req}/chats/toggle', [ServiceRequestController::class, 'toggleChatStatus'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('requests.chats.toggle');
     Route::post('/requests/{req}/confirm-selesai', [ServiceRequestController::class, 'confirmCompleted'])
         ->name('requests.confirmCompleted');
     Route::delete('/requests/{req}/destroy', [ServiceRequestController::class, 'destroy'])
-        ->middleware('role:teknisi,admin')
+        ->middleware('role:admin')
         ->name('requests.destroy');
 
     // =========================
     // MASTER DATA (Setup Lokasi & Petugas)
     // =========================
-    Route::middleware('role:teknisi,admin')->prefix('master')->name('master.')->group(function () {
+    Route::middleware('role:admin')->prefix('master')->name('master.')->group(function () {
         Route::get('/', fn() => redirect()->route('master.lokasi.index'));
 
         // Setup Lokasi Ruangan
@@ -173,14 +174,20 @@ Route::middleware('auth')->group(function () {
         // Setup Petugas & Role
         Route::get('/petugas', [PetugasController::class, 'index'])->name('petugas.index');
         Route::post('/petugas', [PetugasController::class, 'store'])->name('petugas.store');
+        Route::post('/petugas/sync-sibob', [PetugasController::class, 'syncSibob'])->name('petugas.sync_sibob');
         Route::put('/petugas/{user}', [PetugasController::class, 'update'])->name('petugas.update');
         Route::delete('/petugas/{user}', [PetugasController::class, 'destroy'])->name('petugas.destroy');
+
+        // Riwayat Kerusakan Barang
+        Route::get('/riwayat-kerusakan', [AssetHistoryController::class, 'index'])->name('asset_history.index');
+        Route::get('/riwayat-kerusakan/{asset}', [AssetHistoryController::class, 'show'])->name('asset_history.show');
+        Route::get('/riwayat-kerusakan/{asset}/export', [ReportController::class, 'exportAssetHistory'])->name('asset_history.export');
     });
 
     // =========================
     // LAPORAN & REKAPITULASI (Khusus Staff)
     // =========================
-    Route::middleware('role:teknisi,admin')->prefix('reports')->name('reports.')->group(function () {
+    Route::middleware('role:admin')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::post('/export', [ReportController::class, 'export'])->name('export');
     });
@@ -202,7 +209,7 @@ Route::middleware('auth')->group(function () {
     // =========================
     // PENGATURAN SISTEM (WhatsApp Gateway Fonnte)
     // =========================
-    Route::middleware('role:teknisi,admin')->prefix('settings')->name('settings.')->group(function () {
+    Route::middleware('role:admin')->prefix('settings')->name('settings.')->group(function () {
         Route::get('/whatsapp', [SettingController::class, 'whatsapp'])->name('whatsapp');
         Route::put('/whatsapp', [SettingController::class, 'updateWhatsapp'])->name('whatsapp.update');
         Route::post('/whatsapp/test-send', [SettingController::class, 'testSend'])->name('whatsapp.test_send');
@@ -222,7 +229,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/assets/{id}', [IncidentController::class, 'getAssetDetail']);
 
     // API Khusus Staf (Search user & lokasi dinamis)
-    Route::middleware('role:teknisi,admin')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/users/search', [UserSearchController::class, 'search'])->name('api.users.search');
         Route::get('/lokasi-by-bidang/{bidangId?}', [LokasiController::class, 'getByBidang'])->name('api.lokasi.by_bidang');
     });

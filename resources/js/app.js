@@ -6,13 +6,15 @@ import Alpine from 'alpinejs';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
-// SPA & Live Table engines
+// SPA & UI engines
 import { registerLiveTable } from './live-table';
 import { initSpaNav } from './spa-nav';
+import { initSearchableSelects } from './searchable-select';
 
 window.Alpine = Alpine;
 window.createPopper = createPopper;
 window.flatpickr = flatpickr;
+window.initSearchableSelects = initSearchableSelects;
 
 // Daftarkan komponen live table ke Alpine sebelum start
 registerLiveTable(Alpine);
@@ -35,7 +37,10 @@ window.ensureApexCharts = function () {
 
 // Hook global untuk inisialisasi ulang komponen dinamis pada setiap navigasi SPA & DOM load
 window.initPageComponents = function () {
-    // 1. Chart components (Dynamic on-demand loading)
+    // 1. Searchable Select (TomSelect)
+    initSearchableSelects(document);
+
+    // 2. Chart components (Dynamic on-demand loading)
     const hasCharts = document.querySelector('#ticket-status-chart, #incidentTrendChart');
     if (hasCharts) {
         window.ensureApexCharts().then(() => {

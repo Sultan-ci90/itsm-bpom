@@ -195,7 +195,7 @@
                                 'Bidang/Bagian' => $user->bidang ? $user->bidang->nama_bidang : '-',
                                 'Status Kepegawaian' => $user->status_kepegawaian ?: '-',
                                 'Pangkat/Golongan' => $user->panggol ? $user->panggol->pangkat . ' (' . $user->panggol->golongan . ')' : '-',
-                                'Hak Akses (Role)' => strtoupper($user->role),
+                                'Hak Akses (Role)' => $user->isAdmin() ? 'Administrator / Tim IT' : 'Pelapor',
                             ];
                         @endphp
                         @foreach($kepegawaian as $k => $v)
@@ -311,7 +311,7 @@
         if (typeof Alpine === 'undefined') return;
         Alpine.data('profileForm', () => ({
             // data dari server
-            currentPhoto: @js($user->foto_profil ? asset('storage/' . $user->foto_profil) : null),
+            currentPhoto: @js($user->avatarUrl()),
             defaultPhoto: @js(asset('images/user/owner.png')),
 
             // state

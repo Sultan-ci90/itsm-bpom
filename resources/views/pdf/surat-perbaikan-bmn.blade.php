@@ -22,7 +22,7 @@
 </head>
 <body>
 
-<div class="nomor-formulir">Nomor Formulir: POM-14.01/CPM.01/SOP.01/IK.17A.01.F.01</div>
+<div class="nomor-formulir">Nomor Formulir: POM-14.01/CFM.01/SOP.01/IK.43B.01.F.01</div>
 
 <div class="kop">
     Balai Besar Pengawas Obat dan Makanan di Banjarbaru<br>

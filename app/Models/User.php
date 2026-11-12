@@ -31,6 +31,8 @@ class User extends Authenticatable
         'jabatan_id',
         'panggol_id',
         'role',
+        'sibob_id',
+        'sibob_synced_at',
     ];
 
     protected $hidden = [
@@ -43,6 +45,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'sibob_synced_at' => 'datetime',
         ];
     }
 
@@ -51,8 +54,28 @@ class User extends Authenticatable
     public function jabatan(): BelongsTo { return $this->belongsTo(Jabatan::class, 'jabatan_id'); }
     public function panggol(): BelongsTo { return $this->belongsTo(Panggol::class, 'panggol_id'); }
 
-    // Helper Role
+    // Helper Role & Integrasi
     public function isPelapor(): bool { return $this->role === 'pelapor'; }
-    public function isTeknisi(): bool { return $this->role === 'teknisi'; }
     public function isAdmin(): bool { return $this->role === 'admin'; }
+    public function isTeknisi(): bool { return $this->isAdmin(); } // Alias kompatibilitas pasca penyatuan role
+    public function isSibobLinked(): bool { return !empty($this->sibob_id); }
+
+    public function avatarUrl(?string $fallback = null): ?string
+    {
+        $foto = trim((string) $this->foto_profil);
+        if ($foto === '') {
+            return $fallback;
+        }
+
+        if (preg_match('/^https?:\/\//i', $foto)) {
+            return $foto;
+        }
+
+        return asset('storage/' . ltrim($foto, '/'));
+    }
+
+    public function displayLabel(): string
+    {
+        return ($this->nip ?: '-') . ' || ' . $this->nama;
+    }
 }

@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Exports\LaporanKerusakanExport;
 use App\Exports\LaporanLayananExport;
 use App\Http\Requests\GenerateReportRequest;
+use App\Models\Asset;
 use App\Models\ServiceRequest;
 use App\Models\Ticket;
 use App\Services\PeriodeResolver;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -43,7 +45,12 @@ class ReportController extends Controller
         // Urutkan tahun dari sekarang turun ke tahun paling awal
         $availableYears = range($currentYear, $minYear);
 
-        return view('reports.index', compact('availableYears', 'currentYear'));
+        $assets = Asset::select('id', 'kode_barang', 'nama_barang', 'nup', 'lokasi')
+            ->orderBy('nama_barang')
+            ->orderBy('nup')
+            ->get();
+
+        return view('reports.index', compact('availableYears', 'currentYear', 'assets'));
     }
 
     /**
@@ -53,6 +60,12 @@ class ReportController extends Controller
     {
         $validated = $request->validated();
         $jenis = $validated['jenis'];
+
+        if ($jenis === 'riwayat_kerusakan') {
+            $asset = Asset::findOrFail($validated['asset_id']);
+
+            return $this->downloadRiwayatKerusakanAsset($asset);
+        }
 
         // 1. Resolve periode menjadi start_date dan end_date
         $resolver = PeriodeResolver::resolve($validated);
@@ -85,6 +98,121 @@ class ReportController extends Controller
                 $fileName
             );
         }
+    }
+
+    /**
+     * Pintasan ekspor Excel riwayat kerusakan langsung dari halaman Master Riwayat Kerusakan Aset.
+     */
+    public function exportAssetHistory(Asset $asset)
+    {
+        return $this->downloadRiwayatKerusakanAsset($asset);
+    }
+
+    /**
+     * Bangun workbook Excel riwayat kerusakan seluruh periode untuk satu aset BMN.
+     */
+    protected function downloadRiwayatKerusakanAsset(Asset $asset)
+    {
+        $tickets = Ticket::with(['resolution'])
+            ->where('asset_id', $asset->id)
+            ->orderBy('tgl_pelaporan', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($tickets->isEmpty()) {
+            return back()->withInput()->with('error', 'Belum ada riwayat aduan kerusakan untuk barang ini.');
+        }
+
+        $summaryData = $this->buildRiwayatKerusakanSummary($asset, $tickets);
+
+        $safeKode = preg_replace('/[^A-Za-z0-9_-]+/', '_', (string) ($asset->kode_barang ?: 'aset'));
+        $safeNup = preg_replace('/[^A-Za-z0-9_-]+/', '_', (string) ($asset->nup !== null && $asset->nup !== '' ? $asset->nup : $asset->id));
+        $fileName = "Laporan_Riwayat_Kerusakan_{$safeKode}_NUP_{$safeNup}_Seluruh_Periode.xlsx";
+
+        return Excel::download(
+            new LaporanKerusakanExport($summaryData, null, null, $asset->id),
+            $fileName
+        );
+    }
+
+    /**
+     * Susun data rekapitulasi seluruh periode untuk Laporan Riwayat Kerusakan Per Barang BMN.
+     */
+    protected function buildRiwayatKerusakanSummary(Asset $asset, Collection $tickets): array
+    {
+        $defaultStatuses = [
+            'Belum diperiksa' => 0,
+            'Sedang diproses' => 0,
+            'Selesai'         => 0,
+            'Ditolak'         => 0,
+        ];
+        $statusCounts = $tickets->groupBy('status')
+            ->map(fn (Collection $group) => $group->count())
+            ->toArray();
+        $rekapStatus = array_merge($defaultStatuses, $statusCounts);
+
+        $rekapKategori = [
+            'Mandiri'          => 0,
+            'Pihak ke-3'       => 0,
+            'Belum Ditentukan' => 0,
+        ];
+
+        foreach ($tickets as $ticket) {
+            $jenisPenyelesaian = strtolower(trim((string) ($ticket->resolution?->jenis_penyelesaian ?? '')));
+            if ($jenisPenyelesaian === 'mandiri') {
+                $rekapKategori['Mandiri']++;
+            } elseif ($jenisPenyelesaian === 'pihak ke-3') {
+                $rekapKategori['Pihak ke-3']++;
+            } else {
+                $rekapKategori['Belum Ditentukan']++;
+            }
+        }
+
+        // Agregasi bulanan di PHP agar konsisten di MySQL (produksi) dan SQLite (test)
+        $monthlyCounts = [];
+        foreach ($tickets as $ticket) {
+            if (! $ticket->tgl_pelaporan) {
+                continue;
+            }
+            $ym = Carbon::parse($ticket->tgl_pelaporan)->format('Y-m');
+            $monthlyCounts[$ym] = ($monthlyCounts[$ym] ?? 0) + 1;
+        }
+        ksort($monthlyCounts);
+
+        $rekapBulanan = [];
+        foreach ($monthlyCounts as $ym => $val) {
+            $monthLabel = Carbon::createFromFormat('Y-m', $ym)->translatedFormat('F Y');
+            $rekapBulanan[$monthLabel] = $val;
+        }
+
+        $namaBarangLabel = trim(
+            ($asset->nama_barang ?? '-')
+            . ($asset->merk_type ? ' (' . $asset->merk_type . ')' : '')
+        );
+
+        $extraMetadata = [
+            ['Kode Barang BMN', $asset->kode_barang ?: '-'],
+            ['NUP', $asset->nup !== null && $asset->nup !== '' ? (string) $asset->nup : '-'],
+            ['Nama Barang', $namaBarangLabel],
+            ['Lokasi Saat Ini', $asset->lokasi ?: '-'],
+            ['Kondisi Saat Ini', $asset->status_kondisi ?: '-'],
+        ];
+
+        $user = auth()->user();
+
+        return [
+            'judul'           => 'LAPORAN RIWAYAT KERUSAKAN ASET BMN (ITSM BPOM)',
+            'jenis_label'     => 'Riwayat Kerusakan Per Barang BMN',
+            'periode_label'   => 'Seluruh Periode',
+            'tgl_cetak'       => Carbon::now('Asia/Makassar')->translatedFormat('d F Y H:i:s') . ' WITA',
+            'dicetak_oleh'    => ($user->nama ?? 'Sistem') . ' (NIP: ' . ($user->nip ?? '-') . ')',
+            'total_laporan'   => $tickets->count(),
+            'extra_metadata'  => $extraMetadata,
+            'kategori_header' => 'Jenis Penyelesaian',
+            'rekap_status'    => $rekapStatus,
+            'rekap_kategori'  => $rekapKategori,
+            'rekap_bulanan'   => $rekapBulanan,
+        ];
     }
 
     /**

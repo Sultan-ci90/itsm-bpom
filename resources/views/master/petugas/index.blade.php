@@ -5,7 +5,7 @@
     showCreateModal: false,
     showEditModal: false,
     showRevokeModal: false,
-    editTarget: { id: null, nama: '', role: 'teknisi' },
+    editTarget: { id: null, nama: '', role: 'admin' },
     revokeTarget: { id: null, nama: '' },
     openCreate() {
         this.showCreateModal = true;
@@ -52,17 +52,36 @@
                     Setup Petugas & Tim IT
                 </h2>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Kelola penugasan peran personil Tim IT dan Administrator dari seluruh pegawai BPOM
+                    Kelola penugasan peran Administrator / Tim IT dari seluruh pegawai BPOM
                 </p>
             </div>
-            <button @click="openCreate()"
-                    type="button"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#10B981] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-700 cursor-pointer">
-                <svg class="h-4 w-4 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>+ Tugaskan Petugas Baru</span>
-            </button>
+            <div class="flex flex-wrap items-center gap-2.5">
+                @if(config('sibob.enabled'))
+                    <form action="{{ route('master.petugas.sync_sibob') }}" method="POST"
+                          x-data="{ syncing: false }"
+                          @submit="syncing = true">
+                        @csrf
+                        <button type="submit"
+                                :disabled="syncing"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-xs transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-brand-500/30 dark:bg-brand-900/20 dark:text-brand-300 dark:hover:bg-brand-900/40 cursor-pointer">
+                            <svg class="h-4 w-4" :class="{ 'animate-spin': syncing }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            <span x-show="!syncing">Sinkronisasi Pegawai SIBOB</span>
+                            <span x-cloak x-show="syncing">Menyinkronkan...</span>
+                        </button>
+                    </form>
+                @endif
+
+                <button @click="openCreate()"
+                        type="button"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#10B981] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-green-700 cursor-pointer">
+                    <svg class="h-4 w-4 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>+ Tugaskan Petugas Baru</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -85,26 +104,11 @@
     @endif
 
     {{-- Ringkasan Kartu Metrik --}}
-    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="rounded-2xl border border-stroke bg-white p-5 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex items-center justify-between">
                 <div>
-                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Tim IT (Teknisi)</span>
-                    <h4 class="mt-1 text-2xl font-bold text-black dark:text-white">{{ $totalTeknisi }}</h4>
-                </div>
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-            </div>
-            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Petugas penanganan tiket & chat realtime</p>
-        </div>
-
-        <div class="rounded-2xl border border-stroke bg-white p-5 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="flex items-center justify-between">
-                <div>
-                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Administrator</span>
+                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Administrator / Tim IT</span>
                     <h4 class="mt-1 text-2xl font-bold text-black dark:text-white">{{ $totalAdmin }}</h4>
                 </div>
                 <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
@@ -113,7 +117,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Akses penuh konfigurasi & master data</p>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Akses penuh sistem, master data & penanganan tiket ITSM</p>
         </div>
 
         <div class="rounded-2xl border border-stroke bg-white p-5 shadow-default dark:border-gray-800 dark:bg-white/[0.03]">
@@ -149,9 +153,8 @@
                     <select name="role"
                             @change="applyFilter()"
                             class="w-full rounded-xl border border-stroke bg-transparent py-2.5 px-4 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                        <option value="" {{ empty($roleFilter) ? 'selected' : '' }}>Semua Petugas (Tim IT & Admin)</option>
-                        <option value="teknisi" {{ $roleFilter === 'teknisi' ? 'selected' : '' }}>Hanya Tim IT (Teknisi)</option>
-                        <option value="admin" {{ $roleFilter === 'admin' ? 'selected' : '' }}>Hanya Administrator</option>
+                        <option value="" {{ empty($roleFilter) ? 'selected' : '' }}>Semua Petugas (Administrator / Tim IT)</option>
+                        <option value="admin" {{ $roleFilter === 'admin' ? 'selected' : '' }}>Hanya Administrator / Tim IT</option>
                         <option value="pelapor" {{ $roleFilter === 'pelapor' ? 'selected' : '' }}>Pegawai Biasa (Pelapor)</option>
                     </select>
                 </div>
@@ -210,10 +213,14 @@
                                         {{ strtoupper(substr($petugas->nama, 0, 1)) }}
                                     </div>
                                     <div>
-                                        <div class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <div class="font-semibold text-gray-900 dark:text-white flex flex-wrap items-center gap-1.5">
                                             <span>{{ $petugas->nama }}</span>
                                             @if($isMe)
                                                 <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">(Anda)</span>
+                                            @endif
+                                            @if($petugas->isSibobLinked())
+                                                <span title="Tersinkron dengan SIBOB{{ $petugas->sibob_synced_at ? ' (' . $petugas->sibob_synced_at->format('d/m/Y H:i') . ')' : '' }}"
+                                                      class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">SIBOB</span>
                                             @endif
                                         </div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400">NIP: {{ $petugas->nip ?? '-' }}</div>
@@ -230,12 +237,7 @@
                                 @if($petugas->role === 'admin')
                                     <span class="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                                         <span class="h-1.5 w-1.5 rounded-full bg-purple-500"></span>
-                                        Administrator
-                                    </span>
-                                @elseif($petugas->role === 'teknisi')
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
-                                        Tim IT (Teknisi)
+                                        Administrator / Tim IT
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
@@ -256,7 +258,7 @@
                                         <span>Ubah</span>
                                     </button>
 
-                                    @if(!$isMe && in_array($petugas->role, ['teknisi', 'admin']))
+                                    @if(!$isMe && $petugas->role === 'admin')
                                         <button @click="confirmRevoke({{ $petugas->id }}, '{{ addslashes($petugas->nama) }}')"
                                                 type="button"
                                                 title="Cabut Status Petugas"
@@ -403,11 +405,14 @@
                         </label>
                         <select name="user_id"
                                 :required="mode === 'existing'"
+                                data-searchable-select
+                                data-placeholder="Ketik Nama atau NIP pegawai..."
+                                data-allow-empty="true"
                                 class="w-full rounded-xl border border-stroke bg-transparent py-2.5 px-4 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             <option value="">-- Pilih Pegawai --</option>
                             @foreach($availablePegawai as $pegawai)
                                 <option value="{{ $pegawai->id }}">
-                                    {{ $pegawai->nama }} (NIP: {{ $pegawai->nip ?? '-' }}) - {{ $pegawai->bidang->nama_bidang ?? 'Umum' }}
+                                    {{ $pegawai->displayLabel() }}
                                 </option>
                             @endforeach
                         </select>
@@ -429,20 +434,13 @@
                     </label>
                     <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                         <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-stroke p-3 transition hover:border-primary dark:border-gray-800">
-                            <input type="radio" name="role" value="teknisi" checked class="mt-0.5 text-primary">
+                            <input type="radio" name="role" value="admin" checked class="mt-0.5 text-primary">
                             <div>
-                                <span class="block text-xs font-semibold text-black dark:text-white">Tim IT (Teknisi)</span>
-                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">Akses respon & penyelesaian tiket ITSM</span>
+                                <span class="block text-xs font-semibold text-black dark:text-white">Administrator / Tim IT</span>
+                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">Akses penuh sistem, master data & penanganan tiket ITSM</span>
                             </div>
                         </label>
-                        <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-stroke p-3 transition hover:border-primary dark:border-gray-800">
-                            <input type="radio" name="role" value="admin" class="mt-0.5 text-primary">
-                            <div>
-                                <span class="block text-xs font-semibold text-black dark:text-white">Administrator</span>
-                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">Akses penuh sistem & master data</span>
-                            </div>
-                        </label>
-                        <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-stroke p-3 transition hover:border-primary dark:border-gray-800 sm:col-span-2"
+                        <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-stroke p-3 transition hover:border-primary dark:border-gray-800"
                                x-show="mode === 'new'">
                             <input type="radio" name="role" value="pelapor" class="mt-0.5 text-primary">
                             <div>
@@ -499,18 +497,10 @@
                     </label>
                     <div class="space-y-2">
                         <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stroke p-3 transition hover:border-primary dark:border-gray-800">
-                            <input type="radio" name="role" value="teknisi" :checked="editTarget.role === 'teknisi'" class="mt-0.5 text-primary">
-                            <div>
-                                <span class="block text-sm font-medium text-black dark:text-white">Tim IT (Teknisi)</span>
-                                <span class="block text-xs text-gray-500 dark:text-gray-400">Bisa merespon & menyelesaikan tiket permohonan / insiden</span>
-                            </div>
-                        </label>
-
-                        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stroke p-3 transition hover:border-primary dark:border-gray-800">
                             <input type="radio" name="role" value="admin" :checked="editTarget.role === 'admin'" class="mt-0.5 text-primary">
                             <div>
-                                <span class="block text-sm font-medium text-black dark:text-white">Administrator</span>
-                                <span class="block text-xs text-gray-500 dark:text-gray-400">Akses penuh pengaturan master data dan sistem</span>
+                                <span class="block text-sm font-medium text-black dark:text-white">Administrator / Tim IT</span>
+                                <span class="block text-xs text-gray-500 dark:text-gray-400">Akses penuh sistem, master data & penanganan tiket ITSM</span>
                             </div>
                         </label>
 

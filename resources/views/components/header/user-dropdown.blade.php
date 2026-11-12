@@ -65,7 +65,7 @@
             @click="toggleDropdown()"
         >
             <span class="mr-3 overflow-hidden rounded-full h-11 w-11 rtl:mr-0 rtl:ml-3">
-                <img src="{{ $user->foto_profil ? asset('storage/' . $user->foto_profil) : asset('images/user/owner.png') }}" alt="User" class="w-full h-full object-cover" />
+                <img src="{{ $user->avatarUrl(asset('images/user/owner.png')) }}" alt="User" class="w-full h-full object-cover" />
             </span>
 
             <span class="block mr-1 font-medium text-theme-sm rtl:mr-0 rtl:ml-1">{{ $user->nama }}</span>

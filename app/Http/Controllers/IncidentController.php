@@ -19,13 +19,14 @@ use App\Notifications\TicketStatusUpdatedNotification;
 use Illuminate\Support\Facades\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\FonnteService;
+use App\Support\DocumentNumberGenerator;
 
 class IncidentController extends Controller
 {
     public function index(Request $request)
     {
         // Admin & Teknisi selalu diarahkan ke Semua Aduan Kendala TIK
-        if (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) {
+        if (auth()->user()->isAdmin()) {
             return redirect()->route('incidents.all', $request->query());
         }
 
@@ -105,7 +106,7 @@ class IncidentController extends Controller
                        ->get();
 
         $user = auth()->user();
-        $isStaff = $user->isTeknisi() || $user->isAdmin();
+        $isStaff = $user->isAdmin();
 
         $users = $isStaff
             ? User::with('bidang')->select('id', 'nama', 'nip', 'bidang_id')->orderBy('nama')->get()
@@ -119,7 +120,7 @@ class IncidentController extends Controller
         DB::beginTransaction();
         try {
             $currentUser = auth()->user();
-            $isStaff = $currentUser->isTeknisi() || $currentUser->isAdmin();
+            $isStaff = $currentUser->isAdmin();
 
             // Tentukan siapa pemilik laporan (pelapor_id) dan siapa yang men-submit (reported_by)
             $targetPelaporId = $currentUser->id;
@@ -133,13 +134,7 @@ class IncidentController extends Controller
                 }
             }
 
-            $date = Carbon::now()->format('Ymd');
-            $lastTicket = Ticket::withTrashed()->where('nomor_aduan', 'like', "TIK-{$date}-%")
-                                ->lockForUpdate()
-                                ->latest('id')
-                                ->first();
-            $sequence = $lastTicket ? (int) Str::afterLast($lastTicket->nomor_aduan, '-') + 1 : 1;
-            $nomorAduan = 'TIK-' . $date . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $nomorAduan = DocumentNumberGenerator::generateYearly(Ticket::withTrashed(), 'nomor_aduan', 'SPTIK');
 
             $fotoPath = null;
             if ($request->hasFile('foto_kendala')) {
@@ -173,8 +168,8 @@ class IncidentController extends Controller
             ]);
 
             // Notify Admin & Teknisi
-            $staffs = User::whereIn('role', ['teknisi', 'admin'])->get();
-            $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+            $staffs = User::where('role', 'admin')->get();
+            $avatar = auth()->user()->avatarUrl(asset('images/user/owner.png'));
             Notification::send($staffs, new NewTicketNotification(
                 'Aduan Kendala Baru',
                 auth()->user()->nama . ' membuat aduan kendala baru (' . $nomorAduan . ').',
@@ -192,7 +187,7 @@ class IncidentController extends Controller
                 Log::warning('Fonnte sendNewTicketNotification error: ' . $e->getMessage());
             }
 
-            $targetRoute = (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? 'incidents.all' : 'incidents.index';
+            $targetRoute = (auth()->user()->isAdmin()) ? 'incidents.all' : 'incidents.index';
             return redirect()
                 ->route($targetRoute)
                 ->with('success', 'Aduan kendala berhasil dibuat dengan Nomor Aduan: ' . $nomorAduan);
@@ -229,8 +224,8 @@ class IncidentController extends Controller
         $ticket->autoConfirmIfExpired();
 
         // Daftar pemeriksa (dropdown) hanya dibutuhkan oleh teknisi/admin
-        $pemeriksas = (auth()->user()->isTeknisi() || auth()->user()->isAdmin())
-            ? User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama'])
+        $pemeriksas = (auth()->user()->isAdmin())
+            ? User::where('role', 'admin')->orderBy('nama')->get(['id', 'nip', 'nama'])
             : collect();
 
         return view('incidents.show', compact('ticket', 'pemeriksas'));
@@ -241,7 +236,7 @@ class IncidentController extends Controller
      */
     public function take(Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -283,7 +278,7 @@ class IncidentController extends Controller
 
     public function update(UpdateTicketRequest $request, Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -339,7 +334,7 @@ class IncidentController extends Controller
 
                 // Notify Pelapor
                 if ($ticket->pelapor) {
-                    $avatar = auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/user/owner.png');
+                    $avatar = auth()->user()->avatarUrl(asset('images/user/owner.png'));
                     $ticket->pelapor->notify(new TicketStatusUpdatedNotification(
                         'Status Aduan Diperbarui',
                         'Aduan Anda (' . $ticket->nomor_aduan . ') kini berstatus: ' . $newStatus,
@@ -384,7 +379,7 @@ class IncidentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->isTeknisi() && !$user->isAdmin()) {
+        if (!$user->isAdmin()) {
             if ($ticket->pelapor_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses untuk mengedit tiket ini.');
             }
@@ -407,7 +402,7 @@ class IncidentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->isTeknisi() && !$user->isAdmin()) {
+        if (!$user->isAdmin()) {
             if ($ticket->pelapor_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses untuk mengedit tiket ini.');
             }
@@ -471,7 +466,7 @@ class IncidentController extends Controller
      */
     public function destroy(Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -502,7 +497,7 @@ class IncidentController extends Controller
      */
     public function editResolution(Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -517,7 +512,7 @@ class IncidentController extends Controller
 
         $ticket->load(['asset.penanggungJawab', 'pelapor.bidang', 'resolution.pemeriksa']);
         
-        $pemeriksas = User::whereIn('role', ['teknisi', 'admin'])->orderBy('nama')->get(['id', 'nip', 'nama']);
+        $pemeriksas = User::where('role', 'admin')->orderBy('nama')->get(['id', 'nip', 'nama']);
 
         return view('incidents.edit-resolution', compact('ticket', 'pemeriksas'));
     }
@@ -527,7 +522,7 @@ class IncidentController extends Controller
      */
     public function updateResolution(Request $request, Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -595,7 +590,7 @@ class IncidentController extends Controller
      */
     public function justifikasi(Ticket $ticket)
     {
-        if (!auth()->user()->isTeknisi() && !auth()->user()->isAdmin()) {
+        if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -622,7 +617,9 @@ class IncidentController extends Controller
             'pemeriksa' => $pemeriksa,
         ])->setPaper('a4', 'portrait');
 
-        return $pdf->stream("surat-perbaikan-{$ticket->nomor_aduan}.pdf");
+        $safeNomor = str_replace(['/', '\\'], '-', $ticket->nomor_aduan);
+
+        return $pdf->stream("surat-perbaikan-{$safeNomor}.pdf");
     }
 
     /**

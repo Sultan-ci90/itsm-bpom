@@ -217,8 +217,8 @@ class FonnteService
      */
     public function sendNewTicketNotification(Ticket|ServiceRequest $ticket): void
     {
-        // Kumpulkan nomor telepon staf IT & Admin
-        $staffNumbers = User::whereIn('role', ['teknisi', 'admin'])
+        // Kumpulkan nomor telepon staf IT / Admin
+        $staffNumbers = User::where('role', 'admin')
             ->whereNotNull('no_telp')
             ->where('no_telp', '!=', '')
             ->pluck('no_telp')

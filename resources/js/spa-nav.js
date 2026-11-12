@@ -66,7 +66,7 @@ function updateSidebarActive(targetUrl) {
         sidebar.querySelectorAll('a.menu-item, a.menu-dropdown-item').forEach(link => {
             try {
                 const linkPath = new URL(link.href, window.location.origin).pathname;
-                const isExact = (linkPath === targetPath);
+                const isExact = (linkPath === targetPath) || (linkPath !== '/' && targetPath.startsWith(linkPath + '/'));
 
                 if (link.classList.contains('menu-item')) {
                     if (isExact) {
@@ -136,7 +136,14 @@ export async function navigateTo(url, pushState = true) {
             return;
         }
 
-        // 1. Update Title Dokumen
+        // 1. Bersihkan instance TomSelect lama agar tidak meninggalkan referensi/listener stale
+        currentMain.querySelectorAll('select').forEach((selectEl) => {
+            if (selectEl.tomselect) {
+                selectEl.tomselect.destroy();
+            }
+        });
+
+        // 2. Update Title Dokumen
         document.title = doc.title;
 
         // 2. Ganti konten utama

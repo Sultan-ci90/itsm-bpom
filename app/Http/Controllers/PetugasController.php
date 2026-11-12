@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Bidang;
+use App\Services\Sibob\SibobService;
+use App\Services\Sibob\SibobUserMapper;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class PetugasController extends Controller
 {
@@ -19,11 +23,11 @@ class PetugasController extends Controller
 
         $query = User::with('bidang')->orderBy('role', 'asc')->orderBy('nama', 'asc');
 
-        // Default menampilkan Tim IT dan Admin jika tidak ada filter khusus
-        if ($roleFilter) {
+        // Default menampilkan Administrator / Tim IT jika tidak ada filter khusus
+        if (in_array($roleFilter, ['admin', 'pelapor'], true)) {
             $query->where('role', $roleFilter);
         } else {
-            $query->whereIn('role', ['teknisi', 'admin']);
+            $query->where('role', 'admin');
         }
 
         if ($search) {
@@ -36,7 +40,7 @@ class PetugasController extends Controller
 
         $petugasList = $query->paginate(15)->withQueryString();
 
-        // Pegawai biasa (pelapor) yang tersedia untuk diangkat menjadi Tim IT / Admin
+        // Pegawai biasa (pelapor) yang tersedia untuk diangkat menjadi Administrator / Tim IT
         $availablePegawai = User::with('bidang')
             ->where('role', 'pelapor')
             ->orderBy('nama', 'asc')
@@ -44,8 +48,7 @@ class PetugasController extends Controller
 
         $bidangs = Bidang::orderBy('nama_bidang', 'asc')->get();
 
-        // Hitung ringkasan
-        $totalTeknisi = User::where('role', 'teknisi')->count();
+        // Hitung ringkasan 2 peran
         $totalAdmin = User::where('role', 'admin')->count();
         $totalPelapor = User::where('role', 'pelapor')->count();
 
@@ -55,7 +58,6 @@ class PetugasController extends Controller
             'bidangs',
             'search',
             'roleFilter',
-            'totalTeknisi',
             'totalAdmin',
             'totalPelapor'
         ));
@@ -72,7 +74,7 @@ class PetugasController extends Controller
         if ($mode === 'existing') {
             $validated = $request->validate([
                 'user_id' => 'required|exists:users,id',
-                'role' => 'required|in:pelapor,teknisi,admin',
+                'role' => 'required|in:pelapor,admin',
             ], [
                 'user_id.required' => 'Pilih pegawai yang akan ditugaskan.',
                 'user_id.exists' => 'Data pegawai tidak ditemukan.',
@@ -83,11 +85,9 @@ class PetugasController extends Controller
             $user = User::findOrFail($validated['user_id']);
             $user->update(['role' => $validated['role']]);
 
-            $roleLabel = match($validated['role']) {
-                'admin' => 'Administrator',
-                'teknisi' => 'Tim IT (Teknisi)',
-                default => 'Pegawai Biasa (Pelapor)',
-            };
+            $roleLabel = $validated['role'] === 'admin'
+                ? 'Administrator / Tim IT'
+                : 'Pegawai Biasa (Pelapor)';
 
             return redirect()->route('master.petugas.index')
                 ->with('success', "Pegawai {$user->nama} berhasil diatur perannya menjadi {$roleLabel}.");
@@ -99,7 +99,7 @@ class PetugasController extends Controller
             'nip' => ['required', 'string', 'regex:/^[0-9]{8,18}$/', 'unique:users,nip'],
             'email' => 'nullable|email|max:150|unique:users,email',
             'bidang_id' => 'nullable|exists:bidang,id',
-            'role' => 'required|in:pelapor,teknisi,admin',
+            'role' => 'required|in:pelapor,admin',
         ], [
             'nama.required' => 'Nama pegawai wajib diisi.',
             'nip.required' => 'NIP pegawai wajib diisi.',
@@ -127,11 +127,9 @@ class PetugasController extends Controller
             'alamat' => '-',
         ]);
 
-        $roleLabel = match($validated['role']) {
-            'admin' => 'Administrator',
-            'teknisi' => 'Tim IT (Teknisi)',
-            default => 'Pegawai Biasa (Pelapor)',
-        };
+        $roleLabel = $validated['role'] === 'admin'
+            ? 'Administrator / Tim IT'
+            : 'Pegawai Biasa (Pelapor)';
 
         return redirect()->route('master.petugas.index')
             ->with('success', "Petugas baru {$user->nama} ({$roleLabel}) berhasil ditambahkan ke database.");
@@ -143,7 +141,7 @@ class PetugasController extends Controller
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            'role' => 'required|in:pelapor,teknisi,admin',
+            'role' => 'required|in:pelapor,admin',
         ], [
             'role.required' => 'Pilih peran baru untuk pegawai.',
             'role.in' => 'Peran tidak valid.',
@@ -156,11 +154,9 @@ class PetugasController extends Controller
 
         $user->update(['role' => $validated['role']]);
 
-        $roleLabel = match($validated['role']) {
-            'admin' => 'Administrator',
-            'teknisi' => 'Tim IT (Teknisi)',
-            default => 'Pegawai Biasa (Pelapor)',
-        };
+        $roleLabel = $validated['role'] === 'admin'
+            ? 'Administrator / Tim IT'
+            : 'Pegawai Biasa (Pelapor)';
 
         return redirect()->route('master.petugas.index')
             ->with('success', "Peran untuk {$user->nama} berhasil diubah menjadi {$roleLabel}.");
@@ -181,5 +177,42 @@ class PetugasController extends Controller
 
         return redirect()->route('master.petugas.index')
             ->with('success', "Status petugas {$nama} telah dicabut dan dikembalikan ke Pegawai Biasa.");
+    }
+
+    /**
+     * Sinkronisasi massal daftar pegawai dari API SIBOB (/api/v1/users).
+     */
+    public function syncSibob(SibobService $sibob, SibobUserMapper $mapper)
+    {
+        if (!$sibob->isEnabled()) {
+            return redirect()->route('master.petugas.index')
+                ->with('error', 'Integrasi SIBOB sedang dinonaktifkan (SIBOB_ENABLED=false).');
+        }
+
+        $sessionToken = null;
+        if (session()->has('sibob_token')) {
+            try {
+                $sessionToken = Crypt::decryptString((string) session('sibob_token'));
+            } catch (\Throwable) {
+                $sessionToken = null;
+            }
+        }
+
+        try {
+            $rawUsers = $sibob->fetchAllUsers($sessionToken);
+            $summary = $mapper->syncMany($rawUsers);
+
+            $msg = "Sinkronisasi SIBOB selesai: {$summary['created']} pegawai baru ditambahkan, {$summary['updated']} pegawai diperbarui";
+            if ($summary['skipped'] > 0) {
+                $msg .= ", {$summary['skipped']} dilewati";
+            }
+
+            return redirect()->route('master.petugas.index')->with('success', $msg . '.');
+        } catch (\Throwable $e) {
+            Log::warning('Gagal sinkronisasi pegawai SIBOB', ['message' => $e->getMessage()]);
+
+            return redirect()->route('master.petugas.index')
+                ->with('error', 'Sinkronisasi SIBOB gagal: ' . $e->getMessage());
+        }
     }
 }

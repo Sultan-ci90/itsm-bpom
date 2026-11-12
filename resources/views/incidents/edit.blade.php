@@ -20,8 +20,8 @@
                     </svg>
                 </li>
                 <li>
-                    <a href="{{ (auth()->user()->isTeknisi() || auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
-                        {{ auth()->user()->isTeknisi() || auth()->user()->isAdmin() ? 'Semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
+                    <a href="{{ (auth()->user()->isAdmin()) ? route('incidents.all') : route('incidents.index') }}" class="transition hover:text-primary">
+                        {{ auth()->user()->isAdmin() ? 'Semua Aduan Kendala TIK' : 'Aduan Kendala Saya' }}
                     </a>
                 </li>
                 <li>
@@ -62,10 +62,6 @@
             </div>
         </div>
     </div>
-
-    <script>
-        const ASSET_LOKASI = @json($assets->pluck('lokasi', 'id'));
-    </script>
 
     <div class="mx-auto w-full max-w-3xl">
         <div class="rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
@@ -126,11 +122,17 @@
                             Aset / Barang <span class="text-red-500">*</span>
                         </label>
                         <select id="asset_select" name="asset_id" x-ref="assetSelect" :required="jenisKendala === 'aset'"
-                                @change="lokasi = ASSET_LOKASI[$event.target.value] ?? ''"
+                                data-searchable-select
+                                data-placeholder="Ketik Kode Barang, NUP, atau Nama Aset..."
+                                data-allow-empty="true"
+                                @change="updateLokasiFromSelect($event.target)"
                                 class="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                             <option value="" class="bg-white text-black dark:bg-gray-900 dark:text-white">-- Cari Kode Barang, NUP, atau Nama --</option>
                             @foreach ($assets as $asset)
-                                <option value="{{ $asset->id }}" class="bg-white text-black dark:bg-gray-900 dark:text-white" @selected(old('asset_id', $ticket->asset_id) == $asset->id)>
+                                <option value="{{ $asset->id }}"
+                                        data-lokasi="{{ $asset->lokasi ?? '' }}"
+                                        class="bg-white text-black dark:bg-gray-900 dark:text-white"
+                                        @selected(old('asset_id', $ticket->asset_id) == $asset->id)>
                                     {{ $asset->kode_barang }} - {{ $asset->nama_barang }} (NUP: {{ $asset->nup }})
                                 </option>
                             @endforeach
@@ -195,36 +197,25 @@
                 jenisKendala: @js(old('jenis_kendala', $ticket->jenis_kendala ?? ($ticket->asset_id ? 'aset' : 'lainnya'))),
                 lokasi: '',
                 submitting: false,
+                updateLokasiFromSelect(select) {
+                    if (!select || !select.value) {
+                        this.lokasi = '';
+                        return;
+                    }
+                    const selectedOpt = select.options?.[select.selectedIndex];
+                    this.lokasi = selectedOpt?.dataset?.lokasi || 'Lokasi tidak diketahui';
+                },
                 init() {
                     const select = this.$refs.assetSelect;
 
                     if (select && select.value) {
-                        this.lokasi = ASSET_LOKASI[select.value] ?? '';
+                        this.updateLokasiFromSelect(select);
                     }
-
-                    const setupTomSelect = () => {
-                        if (typeof TomSelect === 'undefined' || !select || select.tomselect) return;
-
-                        new TomSelect(select, {
-                            create: false,
-                            sortField: { field: 'text', direction: 'asc' },
-                            placeholder: 'Ketik Kode Barang, NUP, atau Nama Aset...',
-                            maxOptions: 1000,
-                            allowEmptyOption: true,
-                            onChange: (value) => {
-                                this.lokasi = value ? (ASSET_LOKASI[value] ?? 'Lokasi tidak diketahui') : '';
-                            },
-                        });
-                    };
 
                     this.$watch('jenisKendala', (val) => {
                         if (val === 'aset') {
                             this.$nextTick(() => {
-                                if (select && select.tomselect) {
-                                    select.tomselect.sync();
-                                } else {
-                                    setupTomSelect();
-                                }
+                                window.initSearchableSelects?.(this.$el);
                             });
                         } else {
                             if (select && select.tomselect) {
@@ -236,13 +227,7 @@
                         }
                     });
 
-                    if (typeof TomSelect !== 'undefined') {
-                        this.$nextTick(() => setupTomSelect());
-                    } else {
-                        window.addEventListener('load', setupTomSelect);
-                        document.addEventListener('DOMContentLoaded', setupTomSelect);
-                    }
-                    window.addEventListener('spa:navigated', setupTomSelect);
+                    this.$nextTick(() => window.initSearchableSelects?.(this.$el));
                 },
             };
         }

@@ -51,7 +51,7 @@
                     <label class="mb-2 block text-sm font-semibold text-gray-900 dark:text-white">
                         1. Jenis Laporan <span class="text-red-500">*</span>
                     </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition"
                                :class="jenis === 'kerusakan' ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-950/20' : 'border-gray-200 dark:border-gray-800'">
                             <input type="radio" name="jenis" value="kerusakan" x-model="jenis"
@@ -79,9 +79,58 @@
                                 </span>
                             </div>
                         </label>
+
+                        <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition"
+                               :class="jenis === 'riwayat_kerusakan' ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-950/20' : 'border-gray-200 dark:border-gray-800'">
+                            <input type="radio" name="jenis" value="riwayat_kerusakan" x-model="jenis"
+                                   class="mt-1 text-brand-500 focus:ring-brand-500">
+                            <div>
+                                <span class="block text-sm font-semibold text-gray-900 dark:text-white">
+                                    Laporan Riwayat Kerusakan
+                                </span>
+                                <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Rekam jejak kerusakan per barang BMN (seluruh periode)
+                                </span>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
+                {{-- 2A. Pilihan Barang BMN (khusus Laporan Riwayat Kerusakan) --}}
+                <div x-show="jenis === 'riwayat_kerusakan'" x-cloak class="space-y-3">
+                    <div>
+                        <label for="report_asset_select" class="mb-2 block text-sm font-semibold text-gray-900 dark:text-white">
+                            2. Pilih Barang / Aset BMN <span class="text-error-500">*</span>
+                        </label>
+                        <select id="report_asset_select"
+                                name="asset_id"
+                                data-searchable-select
+                                data-placeholder="Ketik Kode Barang, NUP, atau Nama Barang..."
+                                data-allow-empty="true"
+                                data-max-options="5000"
+                                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                            <option value="">-- Pilih Aset / Barang BMN --</option>
+                            @foreach($assets as $asset)
+                                <option value="{{ $asset->id }}" {{ (string) old('asset_id') === (string) $asset->id ? 'selected' : '' }}>
+                                    {{ $asset->kode_barang }} - {{ $asset->nama_barang }} (NUP: {{ $asset->nup }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                            Menampilkan seluruh aset BMN terdaftar. Ketik kode barang, NUP, atau nama perangkat untuk mencari cepat.
+                        </p>
+                    </div>
+
+                    <div class="rounded-xl border border-brand-200 bg-brand-50/60 p-4 text-xs text-brand-800 dark:border-brand-900/40 dark:bg-brand-950/30 dark:text-brand-300">
+                        <p class="font-semibold">Penarikan Data: Seluruh Periode</p>
+                        <p class="mt-0.5 leading-relaxed">
+                            Laporan riwayat kerusakan otomatis menarik seluruh riwayat tiket kerusakan untuk barang yang dipilih sejak awal hingga saat ini tanpa pembatasan rentang tanggal.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- 2B & 3. Pilihan Model Periode & Input Parameter (khusus Laporan Kerusakan & Layanan) --}}
+                <div x-show="jenis !== 'riwayat_kerusakan'" x-cloak class="space-y-6">
                 {{-- 2. Pilihan Model Periode --}}
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-900 dark:text-white">
@@ -91,28 +140,28 @@
                         {{-- Per 3 Bulan (Triwulan) --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
                                :class="periode === 'triwulan' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
-                            <input type="radio" name="periode" value="triwulan" x-model="periode" class="sr-only">
+                            <input type="radio" name="periode" value="triwulan" x-model="periode" :disabled="jenis === 'riwayat_kerusakan'" class="sr-only">
                             <span class="text-xs">Per 3 Bulan (Triwulan)</span>
                         </label>
 
                         {{-- Per Bulan --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
                                :class="periode === 'bulan' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
-                            <input type="radio" name="periode" value="bulan" x-model="periode" class="sr-only">
+                            <input type="radio" name="periode" value="bulan" x-model="periode" :disabled="jenis === 'riwayat_kerusakan'" class="sr-only">
                             <span class="text-xs">Rentang Bulan</span>
                         </label>
 
                         {{-- Per 6 Bulan (Semester) --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
                                :class="periode === 'semester' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
-                            <input type="radio" name="periode" value="semester" x-model="periode" class="sr-only">
+                            <input type="radio" name="periode" value="semester" x-model="periode" :disabled="jenis === 'riwayat_kerusakan'" class="sr-only">
                             <span class="text-xs">Per 6 Bulan (Semester)</span>
                         </label>
 
                         {{-- Per Tahun --}}
                         <label class="flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer text-center transition"
                                :class="periode === 'tahun' ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 font-semibold' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400'">
-                            <input type="radio" name="periode" value="tahun" x-model="periode" class="sr-only">
+                            <input type="radio" name="periode" value="tahun" x-model="periode" :disabled="jenis === 'riwayat_kerusakan'" class="sr-only">
                             <span class="text-xs">Per 1 Tahun</span>
                         </label>
                     </div>
@@ -132,7 +181,7 @@
                             <div>
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
                                 <select name="tahun_triwulan"
-                                        :disabled="periode !== 'triwulan'"
+                                        :disabled="jenis === 'riwayat_kerusakan' || periode !== 'triwulan'"
                                         class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     @foreach($availableYears as $yr)
                                         <option value="{{ $yr }}" {{ (string)old('tahun_triwulan', $currentYear) === (string)$yr ? 'selected' : '' }}>
@@ -147,7 +196,7 @@
                                     $curQuarter = ceil(date('n') / 3);
                                 @endphp
                                 <select name="triwulan"
-                                        :disabled="periode !== 'triwulan'"
+                                        :disabled="jenis === 'riwayat_kerusakan' || periode !== 'triwulan'"
                                         class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     <option value="1" {{ old('triwulan', $curQuarter) == '1' ? 'selected' : '' }}>
                                         Triwulan 1 (Januari - Maret)
@@ -179,14 +228,14 @@
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Dari Bulan</label>
                                 <input type="month" name="bulan_awal"
                                        value="{{ old('bulan_awal', date('Y-01')) }}"
-                                       :disabled="periode !== 'bulan'"
+                                       :disabled="jenis === 'riwayat_kerusakan' || periode !== 'bulan'"
                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                             </div>
                             <div>
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Sampai Bulan</label>
                                 <input type="month" name="bulan_akhir"
                                        value="{{ old('bulan_akhir', date('Y-m')) }}"
-                                       :disabled="periode !== 'bulan'"
+                                       :disabled="jenis === 'riwayat_kerusakan' || periode !== 'bulan'"
                                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                             </div>
                         </div>
@@ -204,7 +253,7 @@
                             <div>
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
                                 <select name="tahun_semester"
-                                        :disabled="periode !== 'semester'"
+                                        :disabled="jenis === 'riwayat_kerusakan' || periode !== 'semester'"
                                         class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     @foreach($availableYears as $yr)
                                         <option value="{{ $yr }}" {{ (string)old('tahun_semester', $currentYear) === (string)$yr ? 'selected' : '' }}>
@@ -216,7 +265,7 @@
                             <div>
                                 <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Semester</label>
                                 <select name="semester"
-                                        :disabled="periode !== 'semester'"
+                                        :disabled="jenis === 'riwayat_kerusakan' || periode !== 'semester'"
                                         class="cursor-pointer w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                     <option value="1" {{ old('semester', (date('n') <= 6 ? '1' : '2')) == '1' ? 'selected' : '' }}>
                                         Semester 1 (Januari - Juni)
@@ -240,7 +289,7 @@
                         <div>
                             <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">Pilih Tahun</label>
                             <select name="tahun"
-                                    :disabled="periode !== 'tahun'"
+                                    :disabled="jenis === 'riwayat_kerusakan' || periode !== 'tahun'"
                                     class="cursor-pointer w-full sm:w-1/2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50">
                                 @foreach($availableYears as $yr)
                                     <option value="{{ $yr }}" {{ (string)old('tahun', $currentYear) === (string)$yr ? 'selected' : '' }}>
@@ -250,6 +299,7 @@
                             </select>
                         </div>
                     </div>
+                </div>
                 </div>
 
                 {{-- Action Submit --}}
@@ -315,9 +365,13 @@
                         i
                     </span>
                     <div class="text-xs text-blue-900 dark:text-blue-300 space-y-1">
-                        <p class="font-semibold">Aturan Rentang Periode</p>
-                        <p>
+                        <p class="font-semibold" x-show="jenis !== 'riwayat_kerusakan'">Aturan Rentang Periode</p>
+                        <p x-show="jenis !== 'riwayat_kerusakan'">
                             Untuk menjaga efisiensi kinerja server, batas rentang maksimum laporan yang dapat diekspor dalam satu file adalah <strong>2 Tahun</strong>.
+                        </p>
+                        <p class="font-semibold" x-show="jenis === 'riwayat_kerusakan'" x-cloak>Cakupan Riwayat Kerusakan</p>
+                        <p x-show="jenis === 'riwayat_kerusakan'" x-cloak>
+                            Khusus <strong>Laporan Riwayat Kerusakan Per Barang</strong>, data ditarik untuk <strong>Seluruh Periode</strong> tanpa pembatasan rentang waktu agar rekam jejak pemeliharaan aset BMN tercatat utuh.
                         </p>
                     </div>
                 </div>

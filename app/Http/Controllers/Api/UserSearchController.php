@@ -38,7 +38,7 @@ class UserSearchController extends Controller
                     'bidang_id' => $user->bidang_id,
                     'bidang_nama' => $bidangName,
                     'role' => $user->role,
-                    'label' => "{$user->nama} ({$user->nip} - {$bidangName})",
+                    'label' => $user->displayLabel(),
                 ];
             });
 

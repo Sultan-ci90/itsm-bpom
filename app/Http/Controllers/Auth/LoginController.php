@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Services\Sibob\SibobService;
+use App\Services\Sibob\SibobUserMapper;
 use App\Support\CaptchaImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 
 class LoginController extends Controller
 {
@@ -16,7 +20,7 @@ class LoginController extends Controller
         ]);
     }
 
-    public function login(Request $request)
+    public function login(Request $request, SibobService $sibob, SibobUserMapper $mapper)
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -43,24 +47,68 @@ class LoginController extends Controller
                 ->onlyInput('email');
         }
 
+        $email = trim($credentials['email']);
+        $password = $credentials['password'];
         $remember = $request->boolean('remember');
 
-        if (Auth::attempt(
-            [
-                'email' => $credentials['email'],
-                'password' => $credentials['password'],
-            ],
-            $remember
-        )) {
+        if ($sibob->isEnabled()) {
+            $authResult = $sibob->authenticate($email, $password);
+
+            if ($authResult->isAuthenticated() && is_array($authResult->profile)) {
+                $user = $mapper->upsertUser($authResult->profile, $password);
+
+                Auth::login($user, $remember);
+                $request->session()->regenerate();
+                $request->session()->forget('url.intended');
+
+                if ($authResult->token) {
+                    $request->session()->put('sibob_token', Crypt::encryptString($authResult->token));
+                }
+
+                return $this->redirectAfterLogin($user);
+            }
+
+            if ($authResult->isInvalidCredentials()) {
+                $localUser = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
+
+                // Akun lokal non-SIBOB (mis. akun darurat/testing) tetap bisa login lokal
+                if ($localUser && !$localUser->isSibobLinked() && Auth::attempt(['email' => $localUser->email, 'password' => $password], $remember)) {
+                    $request->session()->regenerate();
+                    $request->session()->forget('url.intended');
+
+                    return $this->redirectAfterLogin(Auth::user());
+                }
+
+                return back()
+                    ->withErrors(['email' => 'Email atau password salah.'])
+                    ->onlyInput('email');
+            }
+
+            // Server SIBOB tidak dapat dijangkau / error 5xx
+            if (config('sibob.allow_local_fallback_on_outage', true)) {
+                $localUser = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
+                if ($localUser && Auth::attempt(['email' => $localUser->email, 'password' => $password], $remember)) {
+                    $request->session()->regenerate();
+                    $request->session()->forget('url.intended');
+
+                    return $this->redirectAfterLogin(Auth::user());
+                }
+
+                return back()
+                    ->withErrors(['email' => 'Server SIBOB sedang tidak dapat dijangkau dan autentikasi lokal tidak cocok.'])
+                    ->onlyInput('email');
+            }
+
+            return back()
+                ->withErrors(['email' => 'Server autentikasi SIBOB sedang tidak dapat dijangkau. Silakan coba lagi nanti.'])
+                ->onlyInput('email');
+        }
+
+        if (Auth::attempt(['email' => $email, 'password' => $password], $remember)) {
             $request->session()->regenerate();
             $request->session()->forget('url.intended');
 
-            $user = Auth::user();
-            if ($user && $user->isPelapor()) {
-                return redirect()->route('home');
-            }
-
-            return redirect()->route('dashboard');
+            return $this->redirectAfterLogin(Auth::user());
         }
 
         return back()
@@ -74,11 +122,21 @@ class LoginController extends Controller
     {
         Auth::logout();
 
+        $request->session()->forget('sibob_token');
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()
             ->route('signin')
             ->with('success', 'Berhasil logout.');
+    }
+
+    private function redirectAfterLogin(?User $user)
+    {
+        if ($user && $user->isPelapor()) {
+            return redirect()->route('home');
+        }
+
+        return redirect()->route('dashboard');
     }
 }

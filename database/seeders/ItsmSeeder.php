@@ -82,7 +82,7 @@ class ItsmSeeder extends Seeder
             array_merge($profilDefault, [
                 'nip' => '002', 'nama' => 'Teknisi IT',
                 'email' => 'teknisi@bpom.test', 'password' => Hash::make('password'),
-                'role' => 'teknisi',
+                'role' => 'admin',
             ]),
             array_merge($profilDefault, [
                 'nip' => '003', 'nama' => 'Pegawai Pelapor',

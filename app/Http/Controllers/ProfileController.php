@@ -74,7 +74,7 @@ class ProfileController extends Controller
         $user->save();
 
         // File lama baru dihapus setelah data berhasil disimpan
-        if ($replaced && $oldPhoto && Storage::disk('public')->exists($oldPhoto)) {
+        if ($replaced && $oldPhoto && !preg_match('/^https?:\/\//i', $oldPhoto) && Storage::disk('public')->exists($oldPhoto)) {
             Storage::disk('public')->delete($oldPhoto);
         }
 

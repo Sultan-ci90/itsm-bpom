@@ -14,11 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- TomSelect CSS & JS (Searchable Selects) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/css/tom-select.default.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"></script>
-
-    <!-- Scripts -->
+    <!-- Scripts & Styles (termasuk TomSelect terbundel lokal) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Theme Store -->

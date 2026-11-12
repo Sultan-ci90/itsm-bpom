@@ -7,7 +7,7 @@ class MenuHelper
     public static function getMenuGroups()
     {
         $user = auth()->user();
-        $isStaff = $user && ($user->isTeknisi() || $user->isAdmin());
+        $isStaff = $user && $user->isAdmin();
 
         $mainItems = [
             // =========================
@@ -49,6 +49,11 @@ class MenuHelper
                     [
                         'name' => 'Setup Petugas',
                         'path' => '/master/petugas',
+                        'pro' => false,
+                    ],
+                    [
+                        'name' => 'Riwayat Kerusakan Barang',
+                        'path' => '/master/riwayat-kerusakan',
                         'pro' => false,
                     ],
                 ],
