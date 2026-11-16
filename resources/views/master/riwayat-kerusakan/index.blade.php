@@ -143,7 +143,8 @@
                             class="cursor-pointer rounded-xl border border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         <option value="" @selected($kondisi === '')>Semua Kondisi</option>
                         <option value="Baik" @selected($kondisi === 'Baik')>Baik</option>
-                        <option value="Rusak" @selected($kondisi === 'Rusak')>Rusak</option>
+                        <option value="Rusak" @selected($kondisi === 'Rusak')>Rusak (Semua)</option>
+                        <option value="Rusak Berat" @selected($kondisi === 'Rusak Berat')>Rusak Berat</option>
                     </select>
 
                     <select name="sort"
@@ -209,7 +210,7 @@
                                                 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
                                                 : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400');
 
-                                        $kondisiBadge = $asset->status_kondisi === 'Rusak'
+                                        $kondisiBadge = str_starts_with($asset->status_kondisi ?? '', 'Rusak')
                                             ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                                             : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
 
@@ -297,7 +298,7 @@
                                     : ($totalRusak === 1
                                         ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
                                         : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400');
-                                $kondisiBadge = $asset->status_kondisi === 'Rusak'
+                                $kondisiBadge = str_starts_with($asset->status_kondisi ?? '', 'Rusak')
                                     ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                                     : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
                                 $terakhirRusak = $asset->terakhir_rusak_at

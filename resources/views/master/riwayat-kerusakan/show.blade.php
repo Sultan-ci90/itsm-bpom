@@ -9,7 +9,7 @@
         'Ditolak'         => 'bg-red-100 text-red-700 dark:bg-red-800/20 dark:text-red-400',
     ];
 
-    $kondisiBadge = $asset->status_kondisi === 'Rusak'
+    $kondisiBadge = str_starts_with($asset->status_kondisi ?? '', 'Rusak')
         ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
         : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
 @endphp
@@ -122,7 +122,17 @@
             </div>
             <div>
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tanggal Perolehan</dt>
-                <dd class="mt-0.5 text-black dark:text-white">{{ $asset->tgl_terima?->format('d/m/Y') ?? '-' }}</dd>
+                <dd class="mt-0.5 text-black dark:text-white">{{ ($asset->tgl_perolehan ?? $asset->tgl_terima)?->format('d/m/Y') ?? '-' }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tanggal Buku Pertama</dt>
+                <dd class="mt-0.5 text-black dark:text-white">{{ $asset->tgl_buku_pertama?->format('d/m/Y') ?? '-' }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Nilai Perolehan</dt>
+                <dd class="mt-0.5 font-medium text-black dark:text-white">
+                    {{ $asset->nilai_perolehan ? 'Rp ' . number_format($asset->nilai_perolehan, 0, ',', '.') : '-' }}
+                </dd>
             </div>
             <div>
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Lokasi Ruang</dt>

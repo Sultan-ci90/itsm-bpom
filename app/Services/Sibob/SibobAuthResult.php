@@ -13,6 +13,7 @@ class SibobAuthResult
         public readonly ?string $token = null,
         public readonly ?array $profile = null,
         public readonly ?string $message = null,
+        public readonly ?int $httpStatus = null,
     ) {}
 
     public static function authenticated(string $token, array $profile): self
@@ -20,9 +21,9 @@ class SibobAuthResult
         return new self(self::STATUS_AUTHENTICATED, $token, $profile);
     }
 
-    public static function invalidCredentials(?string $message = null): self
+    public static function invalidCredentials(?string $message = null, ?int $httpStatus = null): self
     {
-        return new self(self::STATUS_INVALID_CREDENTIALS, message: $message);
+        return new self(self::STATUS_INVALID_CREDENTIALS, message: $message, httpStatus: $httpStatus);
     }
 
     public static function unavailable(?string $message = null): self

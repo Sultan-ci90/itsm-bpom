@@ -17,17 +17,23 @@ class Asset extends Model
         'merk_type',
         'nup',
         'tgl_terima',
+        'tgl_perolehan',
+        'tgl_buku_pertama',
         'jenis_barang',
         'satuan',
         'lokasi',
         'penanggung_jawab_id',
         'status_kondisi',
+        'nilai_perolehan',
         'spesifikasi',
         'foto_barang',
     ];
 
     protected $casts = [
         'tgl_terima' => 'date',
+        'tgl_perolehan' => 'date',
+        'tgl_buku_pertama' => 'date',
+        'nilai_perolehan' => 'decimal:2',
     ];
 
     public function penanggungJawab(): BelongsTo

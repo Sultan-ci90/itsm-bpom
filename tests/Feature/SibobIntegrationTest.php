@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
@@ -578,4 +579,86 @@ test('employee dropdowns and search API display only NIP || Nama format without 
         ->assertOk()
         ->assertJsonFragment(['label' => '00201290192309 || Ziad Sultan Rafi'])
         ->assertJsonFragment(['label' => '- || Hendra Setiawan']);
+});
+
+test('sibob login logs rejection safely without password and surfaces distinct messages for 401, 403, and 422', function () {
+    Log::spy();
+
+    Http::fake([
+        'https://sibob.bbpombanjarmasin.com/api/v1/login' => Http::sequence()
+            ->push(['message' => 'Invalid credentials'], 401)
+            ->push(['message' => 'Akses API belum diaktifkan untuk akun ini'], 403)
+            ->push([
+                'message' => 'The given data was invalid.',
+                'errors' => ['email' => ['Format email pegawai tidak dikenali SIBOB.']],
+            ], 422),
+    ]);
+
+    // 1. HTTP 401 -> pesan umum & log aman
+    $this->from('/signin')
+        ->followingRedirects()
+        ->withSession(validCaptchaSession())
+        ->post('/signin', [
+            'email' => 'Pegawai.BPOM@pom.go.id',
+            'password' => 'RahasiaSuper!99',
+            'captcha' => 'bujur',
+        ])
+        ->assertOk()
+        ->assertSee('Email atau password salah.');
+
+    // 2. HTTP 403 -> tampilkan status 403 & pesan dari SIBOB di alert box /signin
+    $this->from('/signin')
+        ->followingRedirects()
+        ->withSession(validCaptchaSession())
+        ->post('/signin', [
+            'email' => 'pegawai.bpom@pom.go.id',
+            'password' => 'RahasiaSuper!99',
+            'captcha' => 'bujur',
+        ])
+        ->assertOk()
+        ->assertSee('Akses login melalui API SIBOB ditolak (HTTP 403). Akses API belum diaktifkan untuk akun ini');
+
+    // 3. HTTP 422 -> tampilkan pesan validasi SIBOB di alert box /signin
+    $this->from('/signin')
+        ->followingRedirects()
+        ->withSession(validCaptchaSession())
+        ->post('/signin', [
+            'email' => 'pegawai.bpom@pom.go.id',
+            'password' => 'RahasiaSuper!99',
+            'captcha' => 'bujur',
+        ])
+        ->assertOk()
+        ->assertSee('Validasi data login oleh SIBOB gagal (HTTP 422). The given data was invalid. (Format email pegawai tidak dikenali SIBOB.)');
+
+    $this->assertGuest();
+
+    Log::shouldHaveReceived('warning')
+        ->withArgs(function (string $message, array $context) {
+            return $message === 'SIBOB login rejected'
+                && ($context['status'] ?? null) === 401
+                && ($context['email_masked'] ?? null) === 'Pe***@pom.go.id'
+                && ($context['has_uppercase_email'] ?? null) === true
+                && ($context['sibob_message'] ?? null) === 'Invalid credentials'
+                && !str_contains(json_encode($context), 'RahasiaSuper!99');
+        })
+        ->once();
+
+    Log::shouldHaveReceived('warning')
+        ->withArgs(function (string $message, array $context) {
+            return $message === 'SIBOB login rejected'
+                && ($context['status'] ?? null) === 403
+                && ($context['email_masked'] ?? null) === 'pe***@pom.go.id'
+                && ($context['has_uppercase_email'] ?? null) === false
+                && !str_contains(json_encode($context), 'RahasiaSuper!99');
+        })
+        ->once();
+
+    Log::shouldHaveReceived('warning')
+        ->withArgs(function (string $message, array $context) {
+            return $message === 'SIBOB login rejected'
+                && ($context['status'] ?? null) === 422
+                && str_contains((string) ($context['sibob_message'] ?? ''), 'Format email pegawai tidak dikenali SIBOB.')
+                && !str_contains(json_encode($context), 'RahasiaSuper!99');
+        })
+        ->once();
 });

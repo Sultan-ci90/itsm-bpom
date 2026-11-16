@@ -18,7 +18,7 @@ class AssetHistoryController extends Controller
         }
 
         $kondisi = (string) $request->input('kondisi', '');
-        if (!in_array($kondisi, ['', 'Baik', 'Rusak'], true)) {
+        if (!in_array($kondisi, ['', 'Baik', 'Rusak', 'Rusak Berat'], true)) {
             $kondisi = '';
         }
 
@@ -54,7 +54,12 @@ class AssetHistoryController extends Controller
             $query->whereHas('tickets', fn ($q) => $q->where('status', '!=', 'Ditolak'));
         }
 
-        if ($kondisi !== '') {
+        if ($kondisi === 'Rusak') {
+            $query->where(function ($q) {
+                $q->where('status_kondisi', 'Rusak')
+                    ->orWhere('status_kondisi', 'like', 'Rusak%');
+            });
+        } elseif ($kondisi !== '') {
             $query->where('status_kondisi', $kondisi);
         }
 

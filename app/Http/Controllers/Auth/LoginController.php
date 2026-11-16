@@ -80,7 +80,7 @@ class LoginController extends Controller
                 }
 
                 return back()
-                    ->withErrors(['email' => 'Email atau password salah.'])
+                    ->withErrors(['email' => $authResult->message ?: 'Email atau password salah.'])
                     ->onlyInput('email');
             }
 

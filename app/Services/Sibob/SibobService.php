@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SibobService
 {
@@ -48,8 +49,21 @@ class SibobService
             return SibobAuthResult::unavailable('Terjadi gangguan saat menghubungi SIBOB.');
         }
 
-        if (in_array($response->status(), [401, 403, 422], true)) {
-            return SibobAuthResult::invalidCredentials('Email atau password ditolak oleh SIBOB.');
+        $status = $response->status();
+        if (in_array($status, [401, 403, 422], true)) {
+            $sibobMessage = $this->extractErrorMessage($response);
+
+            Log::warning('SIBOB login rejected', [
+                'status' => $status,
+                'email_masked' => $this->maskEmail($email),
+                'has_uppercase_email' => $email !== mb_strtolower($email, 'UTF-8'),
+                'sibob_message' => $sibobMessage,
+            ]);
+
+            return SibobAuthResult::invalidCredentials(
+                $this->formatRejectionMessage($status, $sibobMessage),
+                $status,
+            );
         }
 
         if ($response->serverError() || !$response->successful()) {
@@ -354,5 +368,58 @@ class SibobService
         }
 
         return $base;
+    }
+
+    private function extractErrorMessage(Response $response): ?string
+    {
+        $json = $response->json();
+        if (!is_array($json)) {
+            return null;
+        }
+
+        $message = data_get($json, 'message');
+        $errors = data_get($json, 'errors');
+
+        if (is_array($errors)) {
+            foreach ($errors as $errorItem) {
+                $firstError = is_array($errorItem) ? ($errorItem[0] ?? null) : $errorItem;
+                if (is_string($firstError) && trim($firstError) !== '') {
+                    $detail = trim($firstError);
+                    $base = is_string($message) && trim($message) !== '' ? trim($message) : '';
+
+                    return Str::limit($base !== '' && $base !== $detail ? "{$base} ({$detail})" : $detail, 200);
+                }
+            }
+        }
+
+        return is_string($message) && trim($message) !== ''
+            ? Str::limit(trim($message), 200)
+            : null;
+    }
+
+    private function formatRejectionMessage(int $status, ?string $sibobMessage): string
+    {
+        $suffix = $sibobMessage !== null && $sibobMessage !== '' ? ' ' . $sibobMessage : '';
+
+        return match ($status) {
+            403 => 'Akses login melalui API SIBOB ditolak (HTTP 403).' . $suffix,
+            422 => 'Validasi data login oleh SIBOB gagal (HTTP 422).' . $suffix,
+            default => 'Email atau password salah.',
+        };
+    }
+
+    private function maskEmail(string $email): string
+    {
+        $trimmed = trim($email);
+        $atPos = mb_strrpos($trimmed, '@', 0, 'UTF-8');
+        if ($atPos === false || $atPos === 0) {
+            return '***';
+        }
+
+        $local = mb_substr($trimmed, 0, $atPos, 'UTF-8');
+        $domain = mb_substr($trimmed, $atPos + 1, null, 'UTF-8');
+        $prefixLen = mb_strlen($local, 'UTF-8') <= 2 ? 1 : 2;
+
+        return mb_substr($local, 0, $prefixLen, 'UTF-8') . '***@' . $domain;
     }
 }
