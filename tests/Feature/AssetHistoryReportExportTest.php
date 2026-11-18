@@ -243,18 +243,31 @@ test('existing report types still require periode', function () {
         ->assertSessionHasErrors('periode');
 });
 
-test('export riwayat_kerusakan flashes informative error when selected asset has zero tickets', function () {
+test('export riwayat_kerusakan succeeds for asset with zero tickets and produces clean zero summary', function () {
     $admin = createReportUser('admin', '005');
     $emptyAsset = createSampleAsset('3.10.01.02.099', 'Scanner Baru', '0');
 
-    $this->actingAs($admin)
+    $response = $this->actingAs($admin)
         ->from(route('reports.index'))
         ->post(route('reports.export'), [
             'jenis' => 'riwayat_kerusakan',
             'asset_id' => $emptyAsset->id,
-        ])
-        ->assertRedirect(route('reports.index'))
-        ->assertSessionHas('error', 'Belum ada riwayat aduan kerusakan untuk barang ini.');
+        ]);
+
+    $response->assertOk();
+
+    $spreadsheet = IOFactory::load($response->getFile()->getPathname());
+    $ringkasanRows = $spreadsheet->getSheetByName('Ringkasan')->toArray();
+    $detailRows = $spreadsheet->getSheetByName('Detail')->toArray();
+
+    // Sheet Ringkasan memuat Total Laporan: 0
+    $totalLaporanRow = collect($ringkasanRows)->first(fn ($r) => ($r[0] ?? '') === 'Total Laporan');
+    expect($totalLaporanRow[1] ?? null)->toBe('0');
+
+    // Sheet Detail hanya berisi baris header (1 baris), tanpa baris data
+    expect($detailRows)->toHaveCount(1)
+        ->and($detailRows[0][0])->toBe('No')
+        ->and($detailRows[0][1])->toBe('Nomor Aduan');
 });
 
 test('export riwayat_kerusakan downloads full multi-year excel workbook filtered strictly to selected asset', function () {
@@ -461,11 +474,12 @@ test('master asset history page shows Ekspor Excel shortcut and direct export ro
         ->assertSee(route('master.asset_history.export', $assetWithTicket), false)
         ->assertSee('Ekspor Excel');
 
-    // Halaman detail aset kosong tidak menampilkan tombol pintasan Ekspor Excel
+    // Halaman detail aset kosong tetap menampilkan tombol pintasan Ekspor Excel
     $this->actingAs($admin)
         ->get(route('master.asset_history.show', $assetEmpty))
         ->assertOk()
-        ->assertDontSee(route('master.asset_history.export', $assetEmpty), false);
+        ->assertSee(route('master.asset_history.export', $assetEmpty), false)
+        ->assertSee('Ekspor Excel');
 
     // Ekspor langsung dari rute master berhasil mengunduh Excel
     $exportResponse = $this->actingAs($admin)
@@ -479,10 +493,13 @@ test('master asset history page shows Ekspor Excel shortcut and direct export ro
         ->and($detailRows[0])->not->toContain('Status')
         ->and($detailRows[1][1])->toBe('ADU-2025-900');
 
-    // Memanggil rute ekspor langsung pada aset kosong mengembalikan flash error
-    $this->actingAs($admin)
-        ->from(route('master.asset_history.show', $assetEmpty))
-        ->get(route('master.asset_history.export', $assetEmpty))
-        ->assertRedirect(route('master.asset_history.show', $assetEmpty))
-        ->assertSessionHas('error', 'Belum ada riwayat aduan kerusakan untuk barang ini.');
+    // Memanggil rute ekspor langsung pada aset kosong juga berhasil mengunduh Excel
+    $exportEmptyResponse = $this->actingAs($admin)
+        ->get(route('master.asset_history.export', $assetEmpty));
+    $exportEmptyResponse->assertOk();
+
+    $spreadsheetEmpty = IOFactory::load($exportEmptyResponse->getFile()->getPathname());
+    $detailEmptyRows = $spreadsheetEmpty->getSheetByName('Detail')->toArray();
+    expect($detailEmptyRows)->toHaveCount(1)
+        ->and($detailEmptyRows[0][0])->toBe('No');
 });

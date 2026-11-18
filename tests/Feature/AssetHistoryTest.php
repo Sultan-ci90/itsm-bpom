@@ -345,7 +345,7 @@ test('asset history excludes rejected non-asset and soft-deleted tickets while f
         'created_at' => Carbon::create(2026, 11, 9, 2, 0, 0, 'UTC'),
     ]);
 
-    // 1. Default cakupan (Pernah Rusak >= 1x): tampil Asset A & Asset B saja, disertai WITA format tanpa TypeError
+    // 1. Default cakupan (Semua Barang): tampil seluruh 4 aset termasuk Monitor C (hanya ditolak) dan UPS D (tanpa tiket), disertai WITA format tanpa TypeError
     $responseDefault = $this->actingAs($admin)->get(route('master.asset_history.index'));
     $responseDefault->assertOk()
         ->assertSee('Printer Laser A')
@@ -355,22 +355,42 @@ test('asset history excludes rejected non-asset and soft-deleted tickets while f
         ->assertSee(WitaTime::format($t2Time))
         ->assertSee('Scanner Dokumen B')
         ->assertSee('1x rusak')
-        ->assertDontSee('Monitor C')
-        ->assertDontSee('UPS D')
+        ->assertSee('Monitor C')
+        ->assertSee('UPS D')
+        ->assertSee('0x rusak')
         ->assertViewHas('totalAset', 4)
         ->assertViewHas('totalPernahRusak', 2)
         ->assertViewHas('totalSedangDitangani', 2)
         ->assertViewHas('totalSeringRusak', 1);
 
-    // 2. Cakupan sering_rusak (>= 2x): hanya Asset A
+    // 2. Cakupan pernah_rusak (>= 1x): hanya Asset A & Asset B
+    $this->actingAs($admin)
+        ->get(route('master.asset_history.index', ['cakupan' => 'pernah_rusak']))
+        ->assertOk()
+        ->assertSee('Printer Laser A')
+        ->assertSee('Scanner Dokumen B')
+        ->assertDontSee('Monitor C')
+        ->assertDontSee('UPS D');
+
+    // 3. Cakupan belum_rusak (0x): hanya Monitor C & UPS D
+    $this->actingAs($admin)
+        ->get(route('master.asset_history.index', ['cakupan' => 'belum_rusak']))
+        ->assertOk()
+        ->assertDontSee('Printer Laser A')
+        ->assertDontSee('Scanner Dokumen B')
+        ->assertSee('Monitor C')
+        ->assertSee('UPS D');
+
+    // 4. Cakupan sering_rusak (>= 2x): hanya Asset A
     $this->actingAs($admin)
         ->get(route('master.asset_history.index', ['cakupan' => 'sering_rusak']))
         ->assertOk()
         ->assertSee('Printer Laser A')
         ->assertDontSee('Scanner Dokumen B')
-        ->assertDontSee('Monitor C');
+        ->assertDontSee('Monitor C')
+        ->assertDontSee('UPS D');
 
-    // 3. Cakupan semua: tampil seluruh 4 aset termasuk Monitor C dan UPS D
+    // 5. Cakupan semua: tampil seluruh 4 aset termasuk Monitor C dan UPS D
     $this->actingAs($admin)
         ->get(route('master.asset_history.index', ['cakupan' => 'semua']))
         ->assertOk()

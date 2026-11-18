@@ -3,9 +3,10 @@
 @section('content')
 @php
     $cakupanLabels = [
-        '' => 'Pernah Rusak (≥ 1x)',
+        '' => 'Semua Barang (Default)',
+        'pernah_rusak' => 'Pernah Rusak (≥ 1x)',
         'sering_rusak' => 'Sering Rusak (≥ 2x)',
-        'semua' => 'Semua Barang Master',
+        'belum_rusak' => 'Belum Pernah Rusak (0x)',
     ];
 @endphp
 
@@ -133,7 +134,7 @@
                             aria-label="Filter cakupan aset"
                             class="cursor-pointer rounded-xl border border-stroke bg-transparent px-4 py-2.5 text-sm text-black outline-none transition focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white">
                         @foreach($cakupanLabels as $value => $label)
-                            <option value="{{ $value }}" @selected($cakupan === $value)>{{ $label }}</option>
+                            <option value="{{ $value }}" @selected($cakupan === $value || ($value === '' && $cakupan === 'semua'))>{{ $label }}</option>
                         @endforeach
                     </select>
 

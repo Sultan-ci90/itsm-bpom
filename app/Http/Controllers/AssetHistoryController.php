@@ -13,7 +13,7 @@ class AssetHistoryController extends Controller
     public function index(Request $request)
     {
         $cakupan = (string) $request->input('cakupan', '');
-        if (!in_array($cakupan, ['', 'sering_rusak', 'semua'], true)) {
+        if (!in_array($cakupan, ['', 'semua', 'pernah_rusak', 'sering_rusak', 'belum_rusak'], true)) {
             $cakupan = '';
         }
 
@@ -50,8 +50,10 @@ class AssetHistoryController extends Controller
 
         if ($cakupan === 'sering_rusak') {
             $query->whereHas('tickets', fn ($q) => $q->where('status', '!=', 'Ditolak'), '>=', 2);
-        } elseif ($cakupan === '') {
+        } elseif ($cakupan === 'pernah_rusak') {
             $query->whereHas('tickets', fn ($q) => $q->where('status', '!=', 'Ditolak'));
+        } elseif ($cakupan === 'belum_rusak') {
+            $query->whereDoesntHave('tickets', fn ($q) => $q->where('status', '!=', 'Ditolak'));
         }
 
         if ($kondisi === 'Rusak') {

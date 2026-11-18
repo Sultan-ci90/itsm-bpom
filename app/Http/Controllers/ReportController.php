@@ -119,10 +119,6 @@ class ReportController extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
-        if ($tickets->isEmpty()) {
-            return back()->withInput()->with('error', 'Belum ada riwayat aduan kerusakan untuk barang ini.');
-        }
-
         $summaryData = $this->buildRiwayatKerusakanSummary($asset, $tickets);
 
         $safeKode = preg_replace('/[^A-Za-z0-9_-]+/', '_', (string) ($asset->kode_barang ?: 'aset'));

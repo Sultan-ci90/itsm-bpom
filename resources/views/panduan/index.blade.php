@@ -111,7 +111,7 @@
             @if($panduans->count() > 0)
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                     @foreach($panduans as $item)
-                        <div class="group flex flex-col justify-between rounded-2xl border border-stroke bg-white p-6 shadow-default transition-all hover:-translate-y-1 hover:border-brand-500 hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03]">
+                        <div class="relative group flex flex-col justify-between rounded-2xl border border-stroke bg-white p-6 shadow-default transition-all hover:-translate-y-1 hover:border-brand-500 hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03] cursor-pointer">
                             <div>
                                 <div class="flex items-center justify-between gap-2">
                                     <span class="inline-block rounded-lg border px-2.5 py-1 text-[11px] font-semibold {{ $item->kategori_badge }}">
@@ -127,6 +127,7 @@
 
                                 <h3 class="mt-4 text-base font-bold text-gray-900 group-hover:text-brand-500 dark:text-white line-clamp-2">
                                     <a href="{{ route('panduan.show', $item->slug) }}">
+                                        <span class="absolute inset-0" aria-hidden="true"></span>
                                         {{ $item->judul }}
                                     </a>
                                 </h3>
@@ -154,14 +155,14 @@
                                         </span>
                                     </div>
 
-                                    <a href="{{ route('panduan.show', $item->slug) }}" class="inline-flex items-center gap-1 font-semibold text-[#10B981] hover:underline">
+                                    <span class="inline-flex items-center gap-1 font-semibold text-[#10B981] group-hover:underline">
                                         Baca Solusi &rarr;
-                                    </a>
+                                    </span>
                                 </div>
 
                                 {{-- Aksi Edit/Hapus khusus Staf --}}
                                 @if($isStaff)
-                                    <div class="mt-3 flex items-center justify-end gap-2 border-t border-dashed border-stroke pt-2 dark:border-gray-800">
+                                    <div class="relative z-10 mt-3 flex items-center justify-end gap-2 border-t border-dashed border-stroke pt-2 dark:border-gray-800">
                                         <a href="{{ route('panduan.edit', $item->id) }}" class="text-[11px] font-medium text-amber-600 hover:underline dark:text-amber-400">
                                             Edit
                                         </a>
